@@ -227,8 +227,11 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 			// --------------------- Auth --------------------------------------------------------------------------------------------------------------
 			::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_ENABLE, BM_SETCHECK, options->hmac.enable, 0);
-			if(operation == Crypt::Operation::Encryption && options->hmac.enable && options->hmac.key_id == -1)
-				options->hmac.key_id = 0;
+			if (operation == Crypt::Operation::Encryption && options->hmac.enable && options->hmac.key_id == -1) {
+				std::wstring tstr;
+				Encode::utf8_to_wchar(options->hmac.key_input.c_str(), -1, tstr);
+				::SetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE, tstr.c_str());
+			}
 			while(Crypt::Strings::nextHash(true)) {
 				::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_HASH, CB_ADDSTRING, 0, (LPARAM)Crypt::Strings::getHash());
 			}
@@ -375,6 +378,9 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 						::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_SETCHECK, false, 0);
 					}
 					break;
+				case IDC_CRYPT_AUTH_KEY_CUSTOM:
+					SendMessage(hwnd_auth, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE), TRUE);
+					break;
 
 				// --------------------- auth key-value show clear check ----------------------------------------------------------------------------------------------
 				case IDC_CRYPT_AUTH_KEY_SHOW: {
@@ -385,7 +391,7 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 				// --------------------- auth key-editbox change ------------------------------------------------------------------------------------------------------
 				case IDC_CRYPT_AUTH_KEY_VALUE:
-					if(HIWORD(wParam)==EN_CHANGE) {
+					if(HIWORD(wParam)== EN_SETFOCUS) {
 						::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_SETCHECK, true, 0);
 						::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_SETCHECK, false, 0);
 					}
@@ -543,107 +549,90 @@ void DlgCrypt::enableKeyDeriControls()
 
 bool DlgCrypt::updateOptions()
 {
-	// get current cipher, cipher_mode and encoding
-	options->cipher = (Crypt::Cipher)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_CIPHER, CB_GETCURSEL, 0, 0);
-	int t_mode = ::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0);
-	if(t_mode >= 0)
-		options->mode = Crypt::Strings::getModeByIndex(options->cipher, t_mode);
-	else
-		options->mode = Crypt::Mode::cbc;
-	if(::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_ENC_ASCII, BM_GETCHECK, 0, 0))
-		options->encoding = Crypt::Encoding::ascii;
-	else if(::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_ENC_HEX, BM_GETCHECK, 0, 0))
-		options->encoding = Crypt::Encoding::hex;
-	else
-		options->encoding = Crypt::Encoding::base64;
+	try {
 
-	// salt
-	if(::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_GETCHECK, 0, 0)) {
-		options->key.salt_bytes = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT_SPIN, UDM_GETPOS32, 0, 0);
-	} else {
-		options->key.salt_bytes = 0;
-	}
+		// get current cipher, cipher_mode and encoding
+		options->cipher = (Crypt::Cipher)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_CIPHER, CB_GETCURSEL, 0, 0);
+		int t_mode = ::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0);
+		if(t_mode >= 0)
+			options->mode = Crypt::Strings::getModeByIndex(options->cipher, t_mode);
+		else
+			options->mode = Crypt::Mode::cbc;
+		if(::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_ENC_ASCII, BM_GETCHECK, 0, 0))
+			options->encoding = Crypt::Encoding::ascii;
+		else if(::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_ENC_HEX, BM_GETCHECK, 0, 0))
+			options->encoding = Crypt::Encoding::hex;
+		else
+			options->encoding = Crypt::Encoding::base64;
 
-	// key-derivation algo
-	if(::SendDlgItemMessage(hwnd_key, IDC_CRYPT_KEY_PBKDF2, BM_GETCHECK, 0, 0)) {
-		options->key.algorithm = Crypt::KeyDerivation::pbkdf2;
-		options->key.option1 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_HASH, CB_GETCURSEL, 0, 0);
-		options->key.option2 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_GETPOS32, 0, 0);
-		options->key.option3 = 0;
-	} else if(::SendDlgItemMessage(hwnd_key, IDC_CRYPT_KEY_BCRYPT, BM_GETCHECK, 0, 0)) {
-		options->key.algorithm = Crypt::KeyDerivation::bcrypt;
-		options->key.option1 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_GETPOS32, 0, 0);
-		options->key.option2 = 0;
-		options->key.option3 = 0;
-	} else {
-		options->key.algorithm = Crypt::KeyDerivation::scrypt;
-		options->key.option1 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_GETPOS32, 0, 0);
-		options->key.option2 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_GETPOS32, 0, 0);
-		options->key.option3 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_GETPOS32, 0, 0);
-	}
-
-	// iv
-	if(::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_RANDOM, BM_GETCHECK, 0, 0))
-		options->iv = Crypt::InitVector::random;
-	else if(::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0))
-		options->iv = Crypt::InitVector::keyderivation;
-	else
-		options->iv = Crypt::InitVector::zero;
-
-	// auth
-	if(operation == Crypt::Operation::Encryption) {
-		options->hmac.enable = (::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_ENABLE, BM_GETCHECK, 0, 0) ? true: false);
-		options->hmac.hash = static_cast<Crypt::Hash>(::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_HASH, CB_GETCURSEL, 0, 0));
-		if(::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_GETCHECK, 0, 0)) {
-			options->hmac.key_id = ::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_LIST, CB_GETCURSEL, 0, 0);
-			memcpy(options->hmac.key, preferences.getKey(options->hmac.key_id), 16);
+		// salt
+		if(::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_GETCHECK, 0, 0)) {
+			options->key.salt_bytes = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT_SPIN, UDM_GETPOS32, 0, 0);
 		} else {
-			options->hmac.key_id = -1;
-			// convert auth key to utf8
-			TCHAR temp_key[33];
-			::GetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE, temp_key, 33);
+			options->key.salt_bytes = 0;
+		}
 
-			try {
-				std::string temp_key_s;
+		// key-derivation algo
+		if(::SendDlgItemMessage(hwnd_key, IDC_CRYPT_KEY_PBKDF2, BM_GETCHECK, 0, 0)) {
+			options->key.algorithm = Crypt::KeyDerivation::pbkdf2;
+			options->key.option1 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_HASH, CB_GETCURSEL, 0, 0);
+			options->key.option2 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_GETPOS32, 0, 0);
+			options->key.option3 = 0;
+		} else if(::SendDlgItemMessage(hwnd_key, IDC_CRYPT_KEY_BCRYPT, BM_GETCHECK, 0, 0)) {
+			options->key.algorithm = Crypt::KeyDerivation::bcrypt;
+			options->key.option1 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_GETPOS32, 0, 0);
+			options->key.option2 = 0;
+			options->key.option3 = 0;
+		} else {
+			options->key.algorithm = Crypt::KeyDerivation::scrypt;
+			options->key.option1 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_GETPOS32, 0, 0);
+			options->key.option2 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_GETPOS32, 0, 0);
+			options->key.option3 = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_GETPOS32, 0, 0);
+		}
 
+		// iv
+		if(::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_RANDOM, BM_GETCHECK, 0, 0))
+			options->iv = Crypt::InitVector::random;
+		else if(::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0))
+			options->iv = Crypt::InitVector::keyderivation;
+		else
+			options->iv = Crypt::InitVector::zero;
+
+		// auth
+		if(operation == Crypt::Operation::Encryption) 
+		{
+			options->hmac.enable = (::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_ENABLE, BM_GETCHECK, 0, 0) ? true: false);
+			options->hmac.hash = static_cast<Crypt::Hash>(::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_HASH, CB_GETCURSEL, 0, 0));
+			if(::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_GETCHECK, 0, 0))
+			{
+				options->hmac.key_id = ::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_LIST, CB_GETCURSEL, 0, 0);
+			} 
+			else {
+				TCHAR temp_key[33];
+
+				options->hmac.key_id = -1;
+				::GetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE, temp_key, 33);
+			
 				#ifdef UNICODE
-				int tpw_buf_size = WideCharToMultiByte(CP_UTF8, 0, temp_key, -1, NULL,0,NULL,false);
-				if(tpw_buf_size < 1)
-					throw CExc(CExc::dlg_crypt,__LINE__, CExc::utf8conversion);
-				temp_key_s.resize((size_t)tpw_buf_size);
-				if(!WideCharToMultiByte(CP_UTF8, 0, temp_key, -1, &temp_key_s[0], tpw_buf_size, NULL, false))
-					throw CExc(CExc::dlg_crypt,__LINE__, CExc::utf8conversion);
+				Encode::wchar_to_utf8(temp_key, -1, options->hmac.key_input);
 				#else
-				temp_key_s = std::string(temp_key);
+				options->hmac.key_input.assign(temp_key);
 				#endif
-
-				Crypt::shake128((const unsigned char*)temp_key_s.c_str(), temp_key_s.size(), options->hmac.key, 16);
-
-			} catch(CExc& exc) {
-				::MessageBox(_hSelf, exc.getErrorMsg(), TEXT("Error"), MB_OK);
-				return false;
 			}
 		}
-	}
 
-	// convert the password to utf8
-	#ifdef UNICODE
-	try {
-		int tpw_buf_size = WideCharToMultiByte(CP_UTF8, 0, temp.password, -1, NULL,0,NULL,false);
-		if(tpw_buf_size < 1)
-			throw CExc(CExc::dlg_crypt,__LINE__, CExc::utf8conversion);
-		options->password.resize((size_t)tpw_buf_size);
-		if(!WideCharToMultiByte(CP_UTF8, 0, temp.password, -1, &options->password[0], tpw_buf_size, NULL, false))
-			throw CExc(CExc::dlg_crypt,__LINE__, CExc::utf8conversion);
+		// convert the password to utf8
+		#ifdef UNICODE
+		Encode::wchar_to_utf8(temp.password, -1, options->password);
 		for(size_t i=0; i<Crypt::Constants::pw_length_max; i++)
 			temp.password[i]=0;
-	} catch(CExc& exc) {
+		#else
+		options->password = std::string(temp.password);
+		#endif
+	}
+	catch (CExc& exc) {
 		::MessageBox(_hSelf, exc.getErrorMsg(), TEXT("Error"), MB_OK);
 		return false;
 	}
-	#else
-	options->password = std::string(temp.password);
-	#endif
-
 	return true;
 }

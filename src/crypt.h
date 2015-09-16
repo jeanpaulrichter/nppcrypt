@@ -85,7 +85,7 @@ namespace Crypt {
 	struct Options {
 		Options(): cipher(Cipher::aes256),mode(Mode::cbc),encoding(Encoding::hex),iv(InitVector::random) { 
 			key.salt_bytes = 16; key.algorithm = KeyDerivation::pbkdf2; key.option1=1; key.option2=Constants::pbkdf2_iter_default;
-			hmac.enable = false; hmac.hash = Hash::sha256; hmac.key_id = 0;
+			hmac.enable = false; hmac.hash = Hash::sha256;
 		};
 
 		Cipher			cipher;
@@ -103,10 +103,11 @@ namespace Crypt {
 		} key;		
 
 		struct {
-			bool			enable;
-			Hash			hash;
-			int				key_id;
-			unsigned char	key[16];
+			bool						enable;
+			Hash						hash;
+			std::vector<unsigned char>	key;
+			std::string					key_input;
+			int							key_id;
 		} hmac;
 	};
 
@@ -129,7 +130,7 @@ namespace Crypt {
 	size_t getMDLength(Hash h);
 	void doCrypt(Operation op, const unsigned char* in, size_t in_len, std::vector<unsigned char>& buffer, Options* options, std::string& s_iv, std::string& s_salt, std::string& s_tag);
 	void doHash(const unsigned char* in, size_t in_len, std::vector<unsigned char>& buffer, const HashOptions* options);
-	void hmac(const char* header, unsigned int header_len, const unsigned char* data, unsigned int data_len, Hash algo, const unsigned char* key, std::string& out);
+	void hmac(const char* header, unsigned int header_len, const unsigned char* data, unsigned int data_len, Hash algo, const unsigned char* key, size_t key_len, std::string& out);
 	void hmac(const unsigned char* data, unsigned int data_len, const Crypt::HashOptions& options, std::vector<unsigned char>& out);
 	void getRandom(const RandOptions* options, std::vector<unsigned char>& buffer);
 	void shake128(const unsigned char* in, size_t in_len, unsigned char* out, size_t out_len);

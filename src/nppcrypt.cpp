@@ -27,7 +27,7 @@ enum class Menu: unsigned {
 	COUNT
 };
 
-FuncItem				funcItem[Menu::COUNT];
+FuncItem				funcItem[unsigned(Menu::COUNT)];
 NppData					nppData;
 HINSTANCE				m_hInstance;
 
@@ -42,13 +42,13 @@ DlgAbout&				dlg_about = DlgAbout::Instance();
 // to store the current (last used) options for encryption etc.:
 namespace current 
 {
-	Crypt::Options		crypt;
+	NppOptions			crypt;
 	Crypt::HashOptions	hash;
 	Crypt::RandOptions	random;
 }
 
 // map to store information about opened nppcrypt-files. (to allow saving without user input):
-std::map<std::vector<TCHAR> , Crypt::Options> crypt_files;
+std::map<std::vector<TCHAR> , NppOptions> crypt_files;
 
 // encodings enum (from Parameters.h):
 enum UniMode {uni8Bit=0, uniUTF8=1, uni16BE=2, uni16LE=3, uniCookie=4, uni7Bit=5, uni16BE_NoBOM=6, uni16LE_NoBOM=7, uniEnd};
@@ -179,7 +179,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					if(!data)
 						throw CExc(CExc::nppcrypt, __LINE__);
 
-					Crypt::Options	options;
+					NppOptions		options;
 					HeaderInfo		header;
 
 					// read header
@@ -191,22 +191,19 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					getFilename(&file_path[0], filename, 40);
 
 					// check hmac if enabled
-					if(options.hmac.enable) {
-						const unsigned char* pAuthkey;
-						if(options.hmac.key_id == -1) {
-							if(!dlg_auth.doDialog(filename))
+					if(options.hmac.enable) 
+					{
+						if (options.hmac.key_id == -1)
+						{
+							if (!dlg_auth.doDialog())
 								return;
-							pAuthkey = dlg_auth.getKey();
-							memcpy(options.hmac.key, pAuthkey, 16);
-						} else {
-							pAuthkey = preferences.getKey(options.hmac.key_id);
+							dlg_auth.getKeyString(options.hmac.key_input);
 						}
+						options.setupHMAC(header.version);
 						std::string s_hmac_cmp;
-						Crypt::hmac((const char*)data+header.body_start, header.body_end-header.body_start, data+header.length, data_length-header.length, options.hmac.hash, pAuthkey, s_hmac_cmp);
+						Crypt::hmac((const char*)data+header.body_start, header.body_end-header.body_start, data+header.length, data_length-header.length, options.hmac.hash, &options.hmac.key[0], options.hmac.key.size(), s_hmac_cmp);
 						if(s_hmac_cmp.compare(header.s_hmac) != 0)
 							throw CExc(CExc::authentication);
-						
-						dlg_auth.clearKey();
 					}
 
 					int encoding = ::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
@@ -217,6 +214,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 						// decrypt data
 						std::vector<unsigned char> buffer;
+						options.setupPassword(header.version);
 						Crypt::doCrypt(Crypt::Operation::Decryption, data+header.length, data_length-header.length, buffer, &options, header.s_iv, header.s_salt, header.s_tag);
 
 						// replace text with decrypted data
@@ -227,7 +225,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
 
 						// save current Crypt::Options for automatic save without user input.
-						crypt_files.insert(std::pair<std::vector<TCHAR>, Crypt::Options>(file_path, options));
+						crypt_files.insert(std::pair<std::vector<TCHAR>, NppOptions>(file_path, options));
 					}
 				}
 			} catch(CExc& exc) {
@@ -296,7 +294,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						HeaderInfo					header_info;
 
 						// does this file already exist?
-						std::map<std::vector<TCHAR>, Crypt::Options>::iterator fiter= crypt_files.find(file_path);
+						std::map<std::vector<TCHAR>, NppOptions>::iterator fiter= crypt_files.find(file_path);
 
 						// yes it does:
 						if(fiter != crypt_files.end()) {
@@ -316,39 +314,44 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 							if(autoencrypt) {
 								// encrypt data and setup header-string
+								fiter->second.setupPassword(header_info.version);
 								Crypt::doCrypt(Crypt::Operation::Encryption, data, data_length, buffer, &fiter->second, header_info.s_iv, header_info.s_salt, header_info.s_tag);
 								writeHeader(header, header_info, fiter->second);
 
 								// if activated: create hmac and insert copy it into the header
-								if(fiter->second.hmac.enable) {
-									Crypt::hmac(&header[header_info.body_start], header_info.body_end-header_info.body_start, &buffer[0], buffer.size(), fiter->second.hmac.hash, fiter->second.hmac.key, header_info.s_hmac);
+								if(fiter->second.hmac.enable) 
+								{
+									fiter->second.setupHMAC(header_info.version);
+									Crypt::hmac(&header[header_info.body_start], header_info.body_end-header_info.body_start, &buffer[0], buffer.size(), fiter->second.hmac.hash, &fiter->second.hmac.key[0], fiter->second.hmac.key.size(), header_info.s_hmac);
 									std::copy(header_info.s_hmac.begin(), header_info.s_hmac.end(), header.begin()+header_info.hmac_start);
 								}
 							}
 						}
+
+						NppOptions& coptions = (fiter != crypt_files.end()) ? fiter->second : current::crypt;
 						
 						// no encrypted data yet therefore crypt dialog needed:
 						if(!buffer.size()) {
 							int encoding = ::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
 							preferences.no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
 
-							if(dlg_crypt.doDialog(Crypt::Operation::Encryption, &current::crypt, filename))
+							if(dlg_crypt.doDialog(Crypt::Operation::Encryption, &coptions, filename))
 							{
 								// encrypt data and setup header-string
-								Crypt::doCrypt(Crypt::Operation::Encryption, data, data_length, buffer, &current::crypt, header_info.s_iv, header_info.s_salt, header_info.s_tag);
-								writeHeader(header, header_info, current::crypt);
+								coptions.setupPassword(header_info.version);
+								Crypt::doCrypt(Crypt::Operation::Encryption, data, data_length, buffer, &coptions, header_info.s_iv, header_info.s_salt, header_info.s_tag);
+								writeHeader(header, header_info, coptions);
 
 								// if activated: create hmac and insert copy it into the header
-								if(current::crypt.hmac.enable) {
-									Crypt::hmac(&header[header_info.body_start], header_info.body_end-header_info.body_start, &buffer[0], buffer.size(), current::crypt.hmac.hash, current::crypt.hmac.key, header_info.s_hmac);
+								if(coptions.hmac.enable) {
+									coptions.setupHMAC(header_info.version);
+									Crypt::hmac(&header[header_info.body_start], header_info.body_end-header_info.body_start, &buffer[0], buffer.size(), coptions.hmac.hash, &coptions.hmac.key[0], coptions.hmac.key.size(), header_info.s_hmac);
 									std::copy(header_info.s_hmac.begin(), header_info.s_hmac.end(), header.begin()+header_info.hmac_start);
 								}
 
 								// update existing cryptoptions or save the current one as new
 								if(fiter!=crypt_files.end()) {
-									fiter->second = current::crypt;
-								} else {
-									crypt_files.insert(std::pair<std::vector<TCHAR>, Crypt::Options>(file_path, current::crypt));
+									crypt_files.insert(std::pair<std::vector<TCHAR>, NppOptions>(file_path, current::crypt));
 								}
 							} else {
 								return;
@@ -429,13 +432,15 @@ void EncryptDlg()
 			std::vector<unsigned char>	buffer;
 
 			// -------------- encrypt data:
+			current::crypt.setupPassword(header_info.version);
 			Crypt::doCrypt(Crypt::Operation::Encryption, data, data_length, buffer, &current::crypt, header_info.s_iv, header_info.s_salt, header_info.s_tag);
 
 			// -------------- create header -----------------------------------------------------------------------------------------------------------------------
 			writeHeader(header, header_info, current::crypt);
 			if(current::crypt.hmac.enable) {
 				// get hmac of header-body + encrypted data
-				Crypt::hmac(&header[header_info.body_start], header_info.body_end-header_info.body_start, &buffer[0], buffer.size(), current::crypt.hmac.hash, current::crypt.hmac.key, header_info.s_hmac);
+				current::crypt.setupHMAC(header_info.version);
+				Crypt::hmac(&header[header_info.body_start], header_info.body_end-header_info.body_start, &buffer[0], buffer.size(), current::crypt.hmac.hash, &current::crypt.hmac.key[0], 16, header_info.s_hmac);
 				std::copy(header_info.s_hmac.begin(), header_info.s_hmac.end(), header.begin()+header_info.hmac_start);
 			}
 			// ------------------------------------------------------------------------------------------------------------------------------------------------
@@ -490,31 +495,29 @@ void DecryptDlg()
 		found_header = readHeader(data, data_length, current::crypt, header_info);
 
 		// hmac-check nessecary:
-		if(found_header && current::crypt.hmac.enable) {
-			const unsigned char* pAuthkey;
-			// get key either by user input or preset:
-			if(current::crypt.hmac.key_id == -1) {
+		if(found_header && current::crypt.hmac.enable) 
+		{
+			if(current::crypt.hmac.key_id == -1)
+			{
 				if(!dlg_auth.doDialog())
 					return;
-				pAuthkey = dlg_auth.getKey();
-			} else {
-				pAuthkey = preferences.getKey(current::crypt.hmac.key_id);
+				dlg_auth.getKeyString(current::crypt.hmac.key_input);
 			}
-			// calc hmac of header-body + data and compare it to header-hmac
+			current::crypt.setupHMAC(header_info.version);
 			std::string s_hmac_cmp;
-			Crypt::hmac((const char*)data+header_info.body_start, header_info.body_end-header_info.body_start, data+header_info.length, data_length-header_info.length, current::crypt.hmac.hash, pAuthkey, s_hmac_cmp);
+			Crypt::hmac((const char*)data+header_info.body_start, header_info.body_end-header_info.body_start, data+header_info.length, data_length-header_info.length, current::crypt.hmac.hash, &current::crypt.hmac.key[0], current::crypt.hmac.key.size(), s_hmac_cmp);
 			if(s_hmac_cmp.compare(header_info.s_hmac) != 0)
 				throw CExc(CExc::authentication);
-			dlg_auth.clearKey();
 		}
 
 		int file_encoding = ::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTBUFFERID, 0, 0), 0);
 		preferences.no_ascii = (file_encoding != uni8Bit && file_encoding != uniUTF8 && file_encoding != uniCookie) ? true : false;
 
 		// show decrypt-dialog
-		if(dlg_crypt.doDialog(Crypt::Operation::Decryption, &current::crypt)) {
-
+		if(dlg_crypt.doDialog(Crypt::Operation::Decryption, &current::crypt))
+		{
 			// decrypt data
+			current::crypt.setupPassword(header_info.version);
 			Crypt::doCrypt(Crypt::Operation::Decryption, data+header_info.length, data_length-header_info.length, buffer, &current::crypt, header_info.s_iv, header_info.s_salt, header_info.s_tag);
 
 			// replace current selection with decrypted data
@@ -783,12 +786,9 @@ bool readHeader(const unsigned char* in, unsigned int in_len, Crypt::Options& op
 		throw CExc(CExc::nppcrypt, __LINE__, CExc::parse_header);
 
 	// ------ check version:
-	int version;
-	xml_err = xml_nppcrypt->QueryIntAttribute( "version", &version );
+	xml_err = xml_nppcrypt->QueryIntAttribute( "version", &info.version );
 	if(xml_err != tinyxml2::XMLError::XML_NO_ERROR)
 		throw CExc(TEXT("Header: version missing."));
-	if(version != NPPCRYPT_VERSION)
-		throw CExc(TEXT("Header: wrong version."));
 
 	Crypt::Options t_options;
 
@@ -804,7 +804,7 @@ bool readHeader(const unsigned char* in, unsigned int in_len, Crypt::Options& op
 		{
 			throw CExc(TEXT("Header: invalid hmac-hash."));
 		}
-		xml_err = xml_nppcrypt->QueryIntAttribute( "auth-key", &t_options.hmac.key_id );
+		xml_err = xml_nppcrypt->QueryIntAttribute( "auth-key", &t_options.hmac.key_id);
 		if(xml_err != tinyxml2::XMLError::XML_NO_ERROR)
 			t_options.hmac.key_id = -1;
 		if(t_options.hmac.key_id >= (int)preferences.getKeyNum() || t_options.hmac.key_id < -1) {
@@ -927,6 +927,35 @@ bool readHeader(const unsigned char* in, unsigned int in_len, Crypt::Options& op
 	}
 
 	return true;
+}
+
+void NppOptions::setupHMAC(int header_version)
+{
+	if (hmac.enable) {
+		if (hmac.key_id >= 0) {
+			const unsigned char* tkey = preferences.getKey(hmac.key_id);
+			hmac.key.assign(tkey, tkey + 16);
+		}
+		else {
+			hmac.key.resize(16);
+			if (header_version <= 101)
+				hmac.key_input.push_back(0);
+			Crypt::shake128((const unsigned char*)hmac.key_input.c_str(), hmac.key_input.size(), &hmac.key[0], 16);
+			if (header_version <= 101)
+				hmac.key_input.pop_back();
+		}
+	}
+}
+
+void NppOptions::setupPassword(int header_version)
+{
+	if (header_version <= 101) {
+		password.push_back(0);
+	}
+	else {
+		if (password.size() > 0 && password.back() == 0)
+			password.pop_back();
+	}
 }
 
 // ====================================================================================================================================================================

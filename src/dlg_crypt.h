@@ -25,6 +25,7 @@ GNU General Public License for more details.
 #include "resource.h"
 #include "npp/Window.h"
 #include "crypt.h"
+#include "encoding.h"
 
 
 class DlgCrypt : public Window

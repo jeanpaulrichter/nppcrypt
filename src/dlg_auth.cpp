@@ -89,23 +89,14 @@ BOOL CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 		    {
 			case IDC_OK: {
 					TCHAR temp_key[33];
-					std::string temp_key_s;
 					::GetDlgItemText(_hSelf, IDC_AUTH_KEY, temp_key, 33);		
 
 					try {
 						#ifdef UNICODE
-						
-						int tpw_buf_size = WideCharToMultiByte(CP_UTF8, 0, temp_key, -1, NULL,0,NULL,false);
-						if(tpw_buf_size < 1)
-							throw CExc(CExc::dlg_auth,__LINE__, CExc::utf8conversion);
-						temp_key_s.resize((size_t)tpw_buf_size);
-						if(!WideCharToMultiByte(CP_UTF8, 0, temp_key, -1, &temp_key_s[0], tpw_buf_size, NULL, false))
-							throw CExc(CExc::dlg_auth,__LINE__, CExc::utf8conversion);
+						Encode::wchar_to_utf8(temp_key, -1, keystring);
 						#else
-						temp_key_s(temp_key);
+						keystring.assign(temp_key);
 						#endif
-
-						Crypt::shake128((unsigned char*)temp_key_s.c_str(), temp_key_s.size(), key, 16);
 
 					} catch(CExc& exc) {
 						::MessageBox(_hSelf, exc.getErrorMsg(), TEXT("Error"), MB_OK);
@@ -132,12 +123,8 @@ BOOL CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-const unsigned char* DlgAuth::getKey()
+void DlgAuth::getKeyString(std::string& s)
 {
-	return key;
-}
-
-void DlgAuth::clearKey()
-{
-	memset(key,0,16);
+	s.assign(keystring);
+	keystring.clear();
 }

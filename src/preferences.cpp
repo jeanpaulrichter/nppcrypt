@@ -37,14 +37,9 @@ bool CPreferences::load(const TCHAR* path, Crypt::Options& crypt, Crypt::HashOpt
 		false;
 
 	#ifdef UNICODE
-	int tpw_buf_size = WideCharToMultiByte(CP_UTF8, 0, path, -1, NULL,0,NULL,false);
-	if(tpw_buf_size < 1)
-		return false;
-	filepath.resize((size_t)tpw_buf_size);
-	if(!WideCharToMultiByte(CP_UTF8, 0, path, -1, &filepath[0], tpw_buf_size, NULL, false))
-		return false;
+	Encode::wchar_to_utf8(path, -1, filepath);
 	#else
-	options->password = std::string(temp.password);
+	filepath.assign(path);
 	#endif
 
 	std::ifstream f(filepath);

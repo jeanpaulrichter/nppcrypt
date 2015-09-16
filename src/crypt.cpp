@@ -575,7 +575,7 @@ void Crypt::doHash(const unsigned char* in, size_t in_len, std::vector<unsigned 
 	}
 }
 
-void Crypt::hmac(const char* header, unsigned int header_len, const unsigned char* data, unsigned int data_len, Hash algo, const unsigned char* key, std::string& out)
+void Crypt::hmac(const char* header, unsigned int header_len, const unsigned char* data, unsigned int data_len, Hash algo, const unsigned char* key, size_t key_len, std::string& out)
 {
 	HMAC_CTX ctx;
 	HMAC_CTX_init(&ctx);
@@ -587,7 +587,7 @@ void Crypt::hmac(const char* header, unsigned int header_len, const unsigned cha
 		throw CExc(CExc::crypt,__LINE__);
 
 	try {
-		if(1 != HMAC_Init_ex(&ctx, key, 16, md, NULL))
+		if(1 != HMAC_Init_ex(&ctx, key, key_len, md, NULL))
 			throw CExc(CExc::crypt,__LINE__);
 		if(1 != HMAC_Update(&ctx, (const unsigned char*)header, header_len))
 			throw CExc(CExc::crypt,__LINE__);

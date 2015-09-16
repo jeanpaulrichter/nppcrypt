@@ -16,6 +16,7 @@ GNU General Public License for more details.
 #define DLG_AUTH_DEFINE_H
 
 #include "npp/Window.h"
+#include "encoding.h"
 
 class DlgAuth: public Window
 {
@@ -26,8 +27,7 @@ public:
     virtual void destroy() { ::DestroyWindow(_hSelf); };
 	static DlgAuth& Instance() { static DlgAuth single; return single; }
    	bool doDialog(const TCHAR* filename=NULL);
-	const unsigned char* getKey();
-	void clearKey();
+	void getKeyString(std::string& s);
 
 private:
 	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
@@ -35,7 +35,7 @@ private:
 	DlgAuth(DlgAuth const&);
 	DlgAuth& operator=(DlgAuth const&);
 
-	unsigned char		key[16];
+	std::string			keystring;
 	const TCHAR*		filename;
 };
 

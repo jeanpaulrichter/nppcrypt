@@ -1,6 +1,18 @@
-
+// Microsoft Visual C++ generated resource script.
+//
 #include "resource.h"
 #include "winres.h"
+/////////////////////////////////////////////////////////////////////////////
+// Deutsch (Deutschland) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 1,0,1,0
@@ -209,10 +221,80 @@ EXSTYLE WS_EX_TOOLWINDOW
 CAPTION "authentication"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
+    EDITTEXT        IDC_AUTH_KEY,5,15,137,12,ES_AUTOHSCROLL
     DEFPUSHBUTTON   "OK",IDC_OK,73,31,50,14
     PUSHBUTTON      "Abbrechen",IDC_CANCEL,124,31,50,14
-    EDITTEXT        IDC_AUTH_KEY,5,15,137,12,ES_AUTOHSCROLL
     LTEXT           "please enter authentication-key:",IDC_STATIC,5,4,135,9
     CONTROL         "show",IDC_AUTH_SHOW,"Button",BS_AUTOCHECKBOX,146,17,29,9
 END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_CRYPT_AUTH, DIALOG
+    BEGIN
+    END
+
+    IDD_AUTH, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_AUTH AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // Deutsch (Deutschland) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
 

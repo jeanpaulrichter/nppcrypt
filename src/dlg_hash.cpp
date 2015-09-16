@@ -89,10 +89,14 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEY, EM_LIMITTEXT, 32, 0);
 			::EnableWindow(::GetDlgItem(_hSelf,IDC_HASH_KEY), options->use_key);
 
-			if(options->key.size()) {
-				TCHAR tstr[33];
-				if(::MultiByteToWideChar(CP_UTF8, 0, options->key.c_str(), options->key.size(), tstr, 33))
+			if(options->key.size()) 
+			{
+				TCHAR tstr[34];
+				int key_length_wchar = ::MultiByteToWideChar(CP_UTF8, 0, options->key.c_str(), options->key.size(), tstr, 33);
+				if (key_length_wchar > 0) {
+					tstr[key_length_wchar] = 0;
 					::SetDlgItemText(_hSelf, IDC_HASH_KEY, tstr);
+				}
 			}
 
 			return TRUE;
@@ -121,12 +125,7 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 						}
 						try {
 							#ifdef UNICODE
-							int tpw_buf_size = WideCharToMultiByte(CP_UTF8, 0, temp_key, -1, NULL,0,NULL,false);
-							if(tpw_buf_size < 1)
-								throw CExc(CExc::dlg_hash,__LINE__, CExc::utf8conversion);
-							options->key.resize((size_t)tpw_buf_size);
-							if(!WideCharToMultiByte(CP_UTF8, 0, temp_key, -1, &options->key[0], tpw_buf_size, NULL, false))
-								throw CExc(CExc::dlg_hash,__LINE__, CExc::utf8conversion);
+							Encode::wchar_to_utf8(temp_key, -1, options->key);
 							#else
 							options->key = std::string(temp_key);
 							#endif

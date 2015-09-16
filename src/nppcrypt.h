@@ -34,7 +34,7 @@ GNU General Public License for more details.
 #include <map>
 
 const TCHAR NPP_PLUGIN_NAME[] = TEXT("NppCrypt");
-const int NPPCRYPT_VERSION = 101;
+const int NPPCRYPT_VERSION = 1011;
 
 // -------------------------------------------------------
 
@@ -57,7 +57,10 @@ void AboutDlg();
 
 // -------------------------------------------------------
 
-struct HeaderInfo {
+struct HeaderInfo 
+{
+	HeaderInfo() : version(NPPCRYPT_VERSION), length(0), body_start(0), body_end(0), hmac_start(0) {};
+
 	std::string s_salt;
 	std::string s_iv;
 	std::string s_tag;
@@ -66,6 +69,14 @@ struct HeaderInfo {
 	size_t body_start;
 	size_t body_end;
 	size_t hmac_start;
+	int version;
+};
+
+struct NppOptions : public Crypt::Options
+{
+public:
+	void setupHMAC(int header_version);
+	void setupPassword(int header_version);
 };
 
 void writeHeader(std::string& header, HeaderInfo& info, const Crypt::Options& opt);

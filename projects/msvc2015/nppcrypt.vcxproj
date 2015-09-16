@@ -151,7 +151,7 @@
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|Win32'">
-    <OutDir>$(SolutionDir)..\..\build</OutDir>
+    <OutDir>..\..\..\..\..\..\..\bin\notepad++\plugins</OutDir>
     <IntDir>$(SolutionDir)..\..\obj\$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(IncludePath)</IncludePath>

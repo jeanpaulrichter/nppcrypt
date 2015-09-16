@@ -18,6 +18,7 @@ GNU General Public License for more details.
 #include "npp/Window.h"
 #include "exception.h"
 #include "crypt.h"
+#include "encoding.h"
 
 class DlgHash : public Window
 {

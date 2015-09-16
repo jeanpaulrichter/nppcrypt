@@ -15,6 +15,9 @@ GNU General Public License for more details.
 #ifndef ENCODING_DEFINE_H
 #define ENCODING_DEFINE_H
 
+#include <string>
+#include "exception.h"
+
 namespace Encode
 {
 	struct Options {
@@ -40,6 +43,9 @@ namespace Encode
 	size_t base64_to_bin(const char* src, unsigned int len, unsigned char* dest=0);
 
 	const char* linebreak();
+
+	void wchar_to_utf8(const wchar_t* i, int i_len, std::string& o);
+	void utf8_to_wchar(const char* i, int i_len, std::wstring& o);
 }
 
 #endif
