@@ -80,8 +80,9 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_HEX, BM_SETCHECK, (options->encoding == Crypt::Encoding::hex), 0);
 			::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE64, BM_SETCHECK, (options->encoding == Crypt::Encoding::base64), 0);
 
-			while(Crypt::Strings::nextHash(options->use_key)) {
-				::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)Crypt::Strings::getHash());
+			Crypt::Help::Iterator::setup(Crypt::Help::Iterator::Hash, options->use_key);
+			while (Crypt::Help::Iterator::next()) {
+				::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)Crypt::Help::Iterator::getString());
 			}
 			::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_SETCURSEL, (int)options->algorithm, 0);
 			
@@ -149,8 +150,9 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 					int cur_sel = ::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
 					int count=0;
 					::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_RESETCONTENT, 0, 0);
-					while(Crypt::Strings::nextHash(use_key)) {
-						::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)Crypt::Strings::getHash());
+					Crypt::Help::Iterator::setup(Crypt::Help::Iterator::Hash, use_key);
+					while (Crypt::Help::Iterator::next()) {
+						::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)Crypt::Help::Iterator::getString());
 						count++;
 					}
 					if(cur_sel < count)

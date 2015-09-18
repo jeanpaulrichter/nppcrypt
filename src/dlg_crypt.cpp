@@ -135,22 +135,23 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			MoveWindow(hwnd_iv, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, FALSE);
 
 			// --------------------- Cipher/Mode Comboboxes --------------------------------------------------------------------------------------------
-			Crypt::Strings::setup();
-			while(Crypt::Strings::nextCipher()) {
-				::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_CIPHER, CB_ADDSTRING, 0, (LPARAM)Crypt::Strings::Cipher());
+			Crypt::Help::Iterator::setup(Crypt::Help::Iterator::Cipher);
+			while (Crypt::Help::Iterator::next()) {
+				::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_CIPHER, CB_ADDSTRING, 0, (LPARAM)Crypt::Help::Iterator::getString());
 			}
 			temp.cipher = options->cipher;
-			Crypt::Strings::setCipher(temp.cipher);
+			
 			size_t m_count=0;
-			while(Crypt::Strings::nextMode()) {
-				::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_ADDSTRING, 0, (LPARAM)Crypt::Strings::Mode());
+			Crypt::Help::Iterator::setup(Crypt::Help::Iterator::Mode, temp.cipher);
+			while (Crypt::Help::Iterator::next()) {
+				::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_ADDSTRING, 0, (LPARAM)Crypt::Help::Iterator::getString());
 				m_count++;
 			}
 			::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_CIPHER, CB_SETCURSEL, (int)temp.cipher, 0);
 			if(!m_count) {
 				::EnableWindow(::GetDlgItem(hwnd_basic,IDC_CRYPT_MODE),false);
 			} else {
-				::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_SETCURSEL, Crypt::Strings::getIndexByMode(temp.cipher, options->mode), 0);
+				::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_SETCURSEL, Crypt::Help::getIndexByMode(temp.cipher, options->mode), 0);
 			}
 
 			// --------------------- Password --------------------------------------------------------------------------------------------
@@ -172,8 +173,9 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwnd_key,IDC_CRYPT_SALT_BYTES), 0);
 			::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT_SPIN, UDM_SETPOS32, 0, options->key.salt_bytes);
 			::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_SETCHECK, (options->key.salt_bytes > 0), 0);
-			while(Crypt::Strings::nextHash(true)) {
-				::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_HASH, CB_ADDSTRING, 0, (LPARAM)Crypt::Strings::getHash());
+			Crypt::Help::Iterator::setup(Crypt::Help::Iterator::Hash, true);
+			while (Crypt::Help::Iterator::next()) {
+				::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_HASH, CB_ADDSTRING, 0, (LPARAM)Crypt::Help::Iterator::getString());
 			}
 			::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(Crypt::Constants::pbkdf2_iter_max , Crypt::Constants::pbkdf2_iter_min));
 			::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwnd_key,IDC_CRYPT_PBKDF2_ITER), 0);
@@ -232,8 +234,9 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 				Encode::utf8_to_wchar(options->hmac.key_input.c_str(), -1, tstr);
 				::SetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE, tstr.c_str());
 			}
-			while(Crypt::Strings::nextHash(true)) {
-				::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_HASH, CB_ADDSTRING, 0, (LPARAM)Crypt::Strings::getHash());
+			Crypt::Help::Iterator::setup(Crypt::Help::Iterator::Hash, true);
+			while (Crypt::Help::Iterator::next()) {
+				::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_HASH, CB_ADDSTRING, 0, (LPARAM)Crypt::Help::Iterator::getString());
 			}
 			for(size_t i=0; i<preferences.getKeyNum(); i++)
 				::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_LIST, CB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
@@ -401,14 +404,14 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 				case IDC_CRYPT_CIPHER:
 					if(HIWORD(wParam)==CBN_SELCHANGE) {
 
-						Crypt::Mode old_mode = Crypt::Strings::getModeByIndex(temp.cipher, ::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0));
+						Crypt::Mode old_mode = Crypt::Help::getModeByIndex(temp.cipher, ::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0));
 						temp.cipher = (Crypt::Cipher)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_CIPHER, CB_GETCURSEL, 0, 0);						
 
 						// refill combobox with the modes available for the current cipher:
 						::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_RESETCONTENT, 0, 0);
-						Crypt::Strings::setCipher(temp.cipher);
-						while(Crypt::Strings::nextMode()) {
-							::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_ADDSTRING, 0, (LPARAM)Crypt::Strings::Mode());
+						Crypt::Help::Iterator::setup(Crypt::Help::Iterator::Mode, temp.cipher);
+						while (Crypt::Help::Iterator::next()) {
+							::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_ADDSTRING, 0, (LPARAM)Crypt::Help::Iterator::getString());
 						}
 
 						int cur_mode_count = ::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_GETCOUNT, 0, 0);
@@ -417,7 +420,7 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 						} else {
 							::EnableWindow(::GetDlgItem(hwnd_basic,IDC_CRYPT_MODE),true);
 							// check if the current cipher supports the old mode:
-							int i = Crypt::Strings::getIndexByMode(temp.cipher, old_mode);
+							int i = Crypt::Help::getIndexByMode(temp.cipher, old_mode);
 							if(i != -1) {
 								::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_SETCURSEL, i, 0);
 							} else {
@@ -431,7 +434,7 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 				// --------------------- Mode-Combobox-Selchange -----------------------------------------------------------------------------------------------------
 				case IDC_CRYPT_MODE:
 					if(HIWORD(wParam)==CBN_SELCHANGE) {
-						Crypt::Mode tmode = Crypt::Strings::getModeByIndex(temp.cipher, ::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0));
+						Crypt::Mode tmode = Crypt::Help::getModeByIndex(temp.cipher, ::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0));
 						// gcm and xts mode: zero-byte iv not possible.
 						if(tmode == Crypt::Mode::gcm || tmode == Crypt::Mode::xts) {
 							if(::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
@@ -555,7 +558,7 @@ bool DlgCrypt::updateOptions()
 		options->cipher = (Crypt::Cipher)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_CIPHER, CB_GETCURSEL, 0, 0);
 		int t_mode = ::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0);
 		if(t_mode >= 0)
-			options->mode = Crypt::Strings::getModeByIndex(options->cipher, t_mode);
+			options->mode = Crypt::Help::getModeByIndex(options->cipher, t_mode);
 		else
 			options->mode = Crypt::Mode::cbc;
 		if(::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_ENC_ASCII, BM_GETCHECK, 0, 0))

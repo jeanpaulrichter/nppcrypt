@@ -635,43 +635,50 @@ void writeHeader(std::string& header, HeaderInfo& info, const Crypt::Options& op
 {
 	std::ostringstream	ss_header;
 
+	static const char win[] = { '\r', '\n', 0 };
+	const char* linebreak;
+	if (Encode::Options::Common::eol == Encode::Options::Common::EOL::windows)
+		linebreak = win;
+	else
+		linebreak = &win[1];
+
 	ss_header << "<nppcrypt version=\"" << NPPCRYPT_VERSION << "\"";
-	if(options.hmac.enable) {
-		if(options.hmac.key_id >= 0)
+	if (options.hmac.enable) {
+		if (options.hmac.key_id >= 0)
 			ss_header << " auth-key=\"" << options.hmac.key_id << "\"";
-		ss_header << " hmac-hash=\"" << Crypt::Strings::getHash(options.hmac.hash) << "\" hmac=\"";
+		ss_header << " hmac-hash=\"" << Crypt::Help::getString(options.hmac.hash) << "\" hmac=\"";
 		info.hmac_start = static_cast<size_t>(ss_header.tellp());
-		ss_header << std::string(Encode::bin_to_base64(NULL, Crypt::getMDLength(options.hmac.hash), NULL, true),' ') << "\"";
+		ss_header << std::string(Encode::bin_to_base64(NULL, Crypt::getMDLength(options.hmac.hash), NULL, true), ' ') << "\"";
 	}
-	ss_header << ">" << Encode::linebreak();
+	ss_header << ">" << linebreak;
 	info.body_start = static_cast<size_t>(ss_header.tellp());
-	ss_header << "<encryption cipher=\"" << Crypt::Strings::Cipher(options.cipher) << "\" mode=\"" << Crypt::Strings::Mode(options.mode)
-				<< "\" encoding=\"" << Crypt::Strings::Encoding(options.encoding) << "\" ";
-	if(info.s_tag.size()) { ss_header << "tag=\"" << info.s_tag << "\" "; }
-	ss_header << "/>" << Encode::linebreak();
-	if((options.iv == Crypt::InitVector::random && info.s_iv.size()>0) || options.key.salt_bytes > 0) {
+	ss_header << "<encryption cipher=\"" << Crypt::Help::getString(options.cipher) << "\" mode=\"" << Crypt::Help::getString(options.mode)
+		<< "\" encoding=\"" << Crypt::Help::getString(options.encoding) << "\" ";
+	if (info.s_tag.size()) { ss_header << "tag=\"" << info.s_tag << "\" "; }
+	ss_header << "/>" << linebreak;
+	if ((options.iv == Crypt::InitVector::random && info.s_iv.size()>0) || options.key.salt_bytes > 0) {
 		ss_header << "<random ";
-		if((options.iv == Crypt::InitVector::random && info.s_iv.size()>0))
+		if ((options.iv == Crypt::InitVector::random && info.s_iv.size()>0))
 			ss_header << "iv=\"" << info.s_iv << "\" ";
-		if(options.key.salt_bytes > 0)
+		if (options.key.salt_bytes > 0)
 			ss_header << "salt=\"" << info.s_salt << "\" ";
-		ss_header << "/>" << Encode::linebreak();
+		ss_header << "/>" << linebreak;
 	}
-	ss_header << "<key algorithm=\"" << Crypt::Strings::KeyAlgorithm(options.key.algorithm);
-	switch(options.key.algorithm) {
+	ss_header << "<key algorithm=\"" << Crypt::Help::getString(options.key.algorithm);
+	switch (options.key.algorithm) {
 	case Crypt::KeyDerivation::pbkdf2:
-		ss_header << "\" hash=\"" << Crypt::Strings::getHash((Crypt::Hash)options.key.option1) << "\" iterations=\"" << options.key.option2 << "\" "; break;
+		ss_header << "\" hash=\"" << Crypt::Help::getString((Crypt::Hash)options.key.option1) << "\" iterations=\"" << options.key.option2 << "\" "; break;
 	case Crypt::KeyDerivation::bcrypt:
-		ss_header << "\" iterations=\"" << std::pow(2,options.key.option1) << "\" "; break;
+		ss_header << "\" iterations=\"" << std::pow(2, options.key.option1) << "\" "; break;
 	case Crypt::KeyDerivation::scrypt:
 		ss_header << "\" N=\"" << std::pow(2, options.key.option1) << "\" r=\"" << options.key.option2 << "\" p=\"" << options.key.option3 << "\" "; break;
 	}
-	if(options.iv == Crypt::InitVector::keyderivation)
-		ss_header << "generateIV=\"true\" />" << Encode::linebreak();
+	if (options.iv == Crypt::InitVector::keyderivation)
+		ss_header << "generateIV=\"true\" />" << linebreak;
 	else
-		ss_header << "/>" << Encode::linebreak();
+		ss_header << "/>" << linebreak;
 	info.body_end = static_cast<size_t>(ss_header.tellp());
-	ss_header << "</nppcrypt>" << Encode::linebreak();
+	ss_header << "</nppcrypt>" << linebreak;
 	header = ss_header.str();
 	info.length = header.size();
 }
@@ -799,7 +806,7 @@ bool readHeader(const unsigned char* in, unsigned int in_len, Crypt::Options& op
 			throw CExc(TEXT("Header: hmac data corrupted."));
 		info.s_hmac = std::string(pHMAC);
 		const char* pHMAC_hash = xml_nppcrypt->Attribute("hmac-hash");
-		if(!Crypt::Strings::getHashByString(pHMAC_hash, t_options.hmac.hash) || t_options.hmac.hash == Crypt::Hash::sha3_256
+		if(!Crypt::Help::getHash(pHMAC_hash, t_options.hmac.hash) || t_options.hmac.hash == Crypt::Hash::sha3_256
 				|| t_options.hmac.hash == Crypt::Hash::sha3_384  || t_options.hmac.hash == Crypt::Hash::sha3_512)
 		{
 			throw CExc(TEXT("Header: invalid hmac-hash."));
@@ -838,13 +845,13 @@ bool readHeader(const unsigned char* in, unsigned int in_len, Crypt::Options& op
 	tinyxml2::XMLElement* xml_crypt = xml_nppcrypt->FirstChildElement("encryption");
 	if(xml_crypt) {
 		const char* t = xml_crypt->Attribute( "cipher" );
-		if(!Crypt::Strings::getCipherByString(t, t_options.cipher))
+		if(!Crypt::Help::getCipher(t, t_options.cipher))
 			throw CExc(TEXT("Header: invalid cipher."));
 		t = xml_crypt->Attribute( "mode" );
-		if(!Crypt::Strings::getModeByString(t, t_options.mode))
+		if(!Crypt::Help::getCipherMode(t, t_options.mode))
 			throw CExc(TEXT("Header: invalid mode."));
 		t = xml_crypt->Attribute( "encoding" );
-		if(!Crypt::Strings::getEncodingByString(t, t_options.encoding))
+		if(!Crypt::Help::getEncoding(t, t_options.encoding))
 			throw CExc(TEXT("Header: invalid encoding."));
 		if((t = xml_crypt->Attribute( "tag" ))!=NULL) {
 			if(strlen(t) != 24)
@@ -857,7 +864,7 @@ bool readHeader(const unsigned char* in, unsigned int in_len, Crypt::Options& op
 	tinyxml2::XMLElement* xml_key = xml_nppcrypt->FirstChildElement("key");
 	if(xml_key) {
 		const char* t = xml_key->Attribute( "algorithm" );
-		if(!Crypt::Strings::getKeyDerivationByString(t, t_options.key.algorithm))
+		if(!Crypt::Help::getKeyDerivation(t, t_options.key.algorithm))
 			throw CExc(TEXT("Header: invalid key-derivation"));
 
 		switch(t_options.key.algorithm) {
@@ -865,7 +872,7 @@ bool readHeader(const unsigned char* in, unsigned int in_len, Crypt::Options& op
 			{
 			t = xml_key->Attribute( "hash" );
 			Crypt::Hash thash;
-			if(!Crypt::Strings::getHashByString(t, thash) || thash == Crypt::Hash::sha3_256 || thash == Crypt::Hash::sha3_384 || thash == Crypt::Hash::sha3_512)
+			if(!Crypt::Help::getHash(t, thash) || thash == Crypt::Hash::sha3_256 || thash == Crypt::Hash::sha3_384 || thash == Crypt::Hash::sha3_512)
 				throw CExc(TEXT("Header: invalid hash-algorithm for pbkdf2."));
 			t_options.key.option1 = static_cast<int>(thash);
 			if(!(t = xml_key->Attribute( "iterations" )))

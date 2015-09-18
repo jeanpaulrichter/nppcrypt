@@ -21,16 +21,25 @@ GNU General Public License for more details.
 namespace Encode
 {
 	struct Options {
-		/* non-numberic characters in hex-values written in lowercase */
-		static bool hex_lowercase;
-		/* spaces (ascii-charcter 32) between hex-values */
-		static bool hex_spaces;
-		/* hex-values (i.e. a4) written before linebreak */
-		static unsigned int  hex_values_p_line;
-		/* characters (bytes) written before linebreak */
-		static unsigned int  base64_chars_p_line;
-		/* \r\n (ascii charcters 13 and 10) on linebreaks instead of just \n (10) */
-		static bool win_line_endings;
+
+		struct Base16 {
+			/* case of non-numberic characters in hex-values */
+			static enum Case { lower, upper } letter_case;
+			/* spaces (ascii-charcter 32) between hex-values? */
+			static bool spaces;
+			/* number of hex-values (i.e. a4) written before linebreak */
+			static unsigned int vpl;
+		};
+
+		struct Base64 {
+			/* characters (bytes) written before linebreak */
+			static unsigned int cpl;
+		};
+
+		struct Common {
+			/* characters on linebreak: \r\n (13,10) or \n (10) */
+			static enum EOL { windows, unix } eol;
+		};
 	};
 
 	/* encode ascii data as hex. returns number of bytes written. if char*dest=NULL the exspected buffersize is returned (0 on error). */

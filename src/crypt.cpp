@@ -29,27 +29,38 @@ GNU General Public License for more details.
 // ---------------------------- SUPPORTED CIPHER MODES -------------------------------------------------------------------------------------------------------------------------------------------
 
 enum { ecb=1, cbc=2, cfb=4, ofb=8, ctr=16, xts=32, ccm=64, gcm=128 };
-static const unsigned int cipher_modes[Crypt::Cipher::COUNT] = { cbc|ecb|cfb|ofb, 
-																cbc|ecb|cfb|ofb,
-																cbc|ecb|cfb|ofb,
-																cbc,
-																cbc|ecb|cfb|ofb,
-																0,
-																cbc|ecb|cfb|ofb,
-																cbc|ecb|cfb|ofb,
-																cbc|ecb|cfb|ofb, 
-																cbc|ecb|cfb|ofb,
-																cbc|ecb|cfb|ofb|ctr|xts|ccm|gcm,
-																cbc|ecb|cfb|ofb|ctr|ccm|gcm,
-																cbc|ecb|cfb|ofb|ctr|xts|ccm|gcm, };
+static const unsigned int cipher_modes[unsigned(Crypt::Cipher::COUNT)] = 
+		{	cbc|ecb|cfb|ofb, 
+			cbc|ecb|cfb|ofb,
+			cbc|ecb|cfb|ofb,
+			cbc,
+			cbc|ecb|cfb|ofb,
+			0,
+			cbc|ecb|cfb|ofb,
+			cbc|ecb|cfb|ofb,
+			cbc|ecb|cfb|ofb, 
+			cbc|ecb|cfb|ofb,
+			cbc|ecb|cfb|ofb|ctr|xts|ccm|gcm,
+			cbc|ecb|cfb|ofb|ctr|ccm|gcm,
+			cbc|ecb|cfb|ofb|ctr|xts|ccm|gcm, 
+		};
 
 // ----------------------------- STRINGS ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static const TCHAR* cipher_str[] = {TEXT("des"), TEXT("des_ede"), TEXT("des_ede3"), TEXT("desx"), TEXT("rc2"), TEXT("rc4"), TEXT("rc5"), TEXT("idea"), TEXT("blowfish"), TEXT("cast5"), TEXT("aes128"), TEXT("aes192"), TEXT("aes256") };
-static const TCHAR* mode_str[] = {TEXT("ecb"), TEXT("cbc"), TEXT("cfb"), TEXT("ofb"), TEXT("ctr"), TEXT("xts"), TEXT("ccm"), TEXT("gcm")};
-static const char* encoding_str_c[] = {"ascii", "base16", "base64"};
+static const TCHAR* cipher_str[] = { TEXT("des"), TEXT("des_ede"), TEXT("des_ede3"), TEXT("desx"), TEXT("rc2"), TEXT("rc4"), TEXT("rc5"), TEXT("idea"), TEXT("blowfish"), TEXT("cast5"), TEXT("aes128"), TEXT("aes192"), TEXT("aes256") };
+static const char* cipher_str_c[] = { "des", "des_ede", "des_ede3", "desx", "rc2", "rc4", "rc5", "idea", "blowfish", "cast5", "aes128", "aes192", "aes256" };
+
+static const TCHAR* mode_str[] = { TEXT("ecb"), TEXT("cbc"), TEXT("cfb"), TEXT("ofb"), TEXT("ctr"), TEXT("xts"), TEXT("ccm"), TEXT("gcm") };
+static const char* mode_str_c[] = { "ecb", "cbc", "cfb", "ofb", "ctr", "xts", "ccm", "gcm" };
+
+static const char* iv_str_c[] = { "random", "keyderivation", "zero" };
+
+static const TCHAR* hash_str[] = { TEXT("md4"), TEXT("md5"), TEXT("mdc2"), TEXT("sha1"), TEXT("sha256"), TEXT("sha512"), TEXT("ripemd160"), TEXT("whirlpool"), TEXT("sha3_256"), TEXT("sha3_384"), TEXT("sha3_512") };
+static const char* hash_str_c[] = { "md4", "md5", "mdc2", "sha1", "sha256", "sha512", "ripemd160", "whirlpool", "sha3_256", "sha3_384", "sha3_512" };
+
+static const char* encoding_str_c[] = { "ascii", "base16", "base64" };
 static const char* key_algo_str_c[] = { "pbkdf2", "bcrypt", "scrypt" };
-static const TCHAR* hash_str[] = {TEXT("md4"), TEXT("md5"), TEXT("sha1"), TEXT("sha256"), TEXT("sha512"), TEXT("ripemd160"), TEXT("whirlpool"), TEXT("sha3_256"), TEXT("sha3_384"), TEXT("sha3_512")};
+static const char* random_mode_str_c[] = { "charnum", "specials", "ascii", "base16" , "base64" };
 
 // ----------------------------- MAIN FUNCTIONS ---------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -171,6 +182,7 @@ const EVP_MD* getEVPHash(Crypt::Hash algo)
 	switch(algo) {
 	case Crypt::Hash::md4: return EVP_md4();
 	case Crypt::Hash::md5: return EVP_md5();
+	case Crypt::Hash::mdc2: return EVP_mdc2();
 	case Crypt::Hash::sha1: return EVP_sha1();
 	case Crypt::Hash::sha256: return EVP_sha256();
 	case Crypt::Hash::sha512: return EVP_sha512();
@@ -767,97 +779,261 @@ void Crypt::shake128(const unsigned char* in, size_t in_len, unsigned char* out,
 /// ==========================================================================================================================================================================
 
 // ============================== CRYPT ======================================================================================================================================
+int Crypt::Help::Iterator::w = 0;
+int Crypt::Help::Iterator::i = -1;
+int Crypt::Help::Iterator::v = -1;
 
-int Crypt::Strings::cipher_id = -1;
-int Crypt::Strings::mode_id = -1;
-int Crypt::Strings::hash_id = -1;
-
-void Crypt::Strings::setup()
+void Crypt::Help::Iterator::setup(int what, Crypt::Cipher cipher)
 {
-	cipher_id = -1;
-	mode_id = -1;
-};
+	w = what;
+	if (w < 0 || w > 2)
+		w = 0;
+	switch (w) {
+	case Cipher:
+		i = static_cast<int>(cipher);
+		break;
+	case Mode:
+		v = static_cast<int>(cipher);
+		i = -1;
+		break;
+	case Hash:
+		i = -1;
+		break;
+	}
+}
 
-bool Crypt::Strings::nextCipher()
+void Crypt::Help::Iterator::setup(int what, bool only_openssl)
 {
-	cipher_id++;
-	if(cipher_id < static_cast<int>(Cipher::COUNT))
-	{
-		return true;
-	} else {
-		cipher_id=-1;
+	w = what;
+	if (w < 0 || w > 2)
+		w = 0;
+	switch (w) {
+	case Cipher:
+		i = -1;
+		break;
+	case Mode:
+		v = 0;
+		i = -1;
+		break;
+	case Hash:
+		i = -1;
+		v = (only_openssl) ? 1 : 0;
+		break;
+	}
+}
+
+bool Crypt::Help::Iterator::next()
+{
+	i++;
+
+	switch (w) {
+	case Cipher:
+
+		if (i < static_cast<int>(Cipher::COUNT))
+		{
+			return true;
+		}
+		else {
+			i = -1;
+			return false;
+		}
+	case Mode:
+		while (i < static_cast<int>(Mode::COUNT)) {
+			unsigned int x = static_cast<unsigned int>(pow(2, i));
+			if ((cipher_modes[v] & x) == x)
+				return true;
+			i++;
+		}
+		i = -1;
+		return false;
+	case Hash:
+		if (v) {
+			if (i < static_cast<int>(Hash::sha3_256))
+				return true;
+		}
+		else {
+			if (i < static_cast<int>(Hash::COUNT))
+				return true;
+		}
+		i = -1;
 		return false;
 	}
-};
-
-void Crypt::Strings::setCipher(Crypt::Cipher cipher) {
-	cipher_id = static_cast<int>(cipher);
-	mode_id = -1;
-}
-
-bool Crypt::Strings::nextMode()
-{
-	mode_id++;
-	while(mode_id < static_cast<int>(Mode::COUNT)) {
-		unsigned int x = static_cast<unsigned int>(pow(2, mode_id));
-		if((cipher_modes[cipher_id] & x) == x)
-			return true;
-		mode_id++;
-	}
 	return false;
-};
-
-std::string Crypt::Strings::Mode(Crypt::Mode mode)
-{
-	std::string ret;
-	ret.resize(lstrlen(mode_str[static_cast<int>(mode)]));
-	for(size_t i=0; i<ret.size(); i++)
-		ret[i] = static_cast<char>(mode_str[static_cast<int>(mode)][i]);
-	return ret;
 }
 
-std::string Crypt::Strings::Cipher(Crypt::Cipher cipher)
+const TCHAR* Crypt::Help::Iterator::getString()
 {
-	std::string ret;
-	ret.resize(lstrlen(cipher_str[static_cast<int>(cipher)]));
-	for(size_t i=0; i<ret.size(); i++)
-		ret[i] = static_cast<char>(cipher_str[static_cast<int>(cipher)][i]);
-	return ret;
+	if (i < 0)
+		return NULL;
+
+	switch (w) {
+	case Cipher:
+		return cipher_str[i];
+	case Mode:
+		return mode_str[i];
+	case Hash:
+		return hash_str[i];
+	}
+	return NULL;
 }
 
-const char*  Crypt::Strings::Encoding(Crypt::Encoding enc)
+
+const char* Crypt::Help::getString(Crypt::Cipher cipher)
+{
+	return cipher_str_c[static_cast<int>(cipher)];
+}
+
+const char* Crypt::Help::getString(Crypt::Mode mode)
+{
+	return mode_str_c[static_cast<int>(mode)];
+}
+
+const char*  Crypt::Help::getString(Crypt::Encoding enc)
 {
 	return encoding_str_c[static_cast<int>(enc)];
 }
 
-const char* Crypt::Strings::KeyAlgorithm(Crypt::KeyDerivation k)
+const char* Crypt::Help::getString(Crypt::KeyDerivation k)
 {
 	return key_algo_str_c[static_cast<int>(k)];
 }
 
-const TCHAR* Crypt::Strings::Cipher()
+const char* Crypt::Help::getString(Crypt::InitVector iv)
 {
-	if(cipher_id >= 0 )
-		return cipher_str[cipher_id];
-	else
-		return NULL;
-};
+	return iv_str_c[static_cast<int>(iv)];
+}
 
-const TCHAR* Crypt::Strings::Mode() {
-	if(mode_id >= 0)
-		return mode_str[mode_id];
-	else
-		return NULL;
-};
+const char* Crypt::Help::getString(Crypt::Hash h)
+{
+	return hash_str_c[static_cast<int>(h)];
+}
 
-Crypt::Mode Crypt::Strings::getModeByIndex(Crypt::Cipher cipher, int index)
+const char* Crypt::Help::getString(Crypt::RandomMode mode)
+{
+	return random_mode_str_c[static_cast<int>(mode)];
+}
+
+bool Crypt::Help::getCipher(const char* s, Crypt::Cipher& c)
+{
+	if (!s)
+		return false;
+	for (size_t i = 0; i< static_cast<int>(Cipher::COUNT); i++) {
+		size_t sl = strlen(s), x = 0;
+		if (sl != lstrlen(cipher_str[i]))
+			continue;
+		for (x = 0; x< sl; x++) {
+			if (s[x] != (char)cipher_str[i][x])
+				break;
+		}
+		if (x == sl) {
+			c = (Crypt::Cipher)i;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Crypt::Help::getCipherMode(const char* s, Crypt::Mode& m)
+{
+	if (!s)
+		return false;
+	for (size_t i = 0; i< static_cast<int>(Mode::COUNT); i++) {
+		size_t sl = strlen(s), x = 0;
+		if (sl != lstrlen(mode_str[i]))
+			continue;
+		for (x = 0; x< sl; x++) {
+			if (s[x] != (char)mode_str[i][x])
+				break;
+		}
+		if (x == sl) {
+			m = (Crypt::Mode)i;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Crypt::Help::getKeyDerivation(const char*s, KeyDerivation& v)
+{
+	if (!s)
+		return false;
+	for (int i = 0; i<static_cast<int>(KeyDerivation::COUNT); i++) {
+		if (strcmp(s, key_algo_str_c[i]) == 0) {
+			v = (Crypt::KeyDerivation)i;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Crypt::Help::getIVMode(const char* s, Crypt::InitVector& iv)
+{
+	if (!s)
+		return false;
+	for (int i = 0; i<static_cast<int>(InitVector::COUNT); i++) {
+		if (strcmp(s, iv_str_c[i]) == 0) {
+			iv = (Crypt::InitVector)i;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Crypt::Help::getEncoding(const char* s, Crypt::Encoding& e)
+{
+	if (!s)
+		return false;
+	for (int i = 0; i<static_cast<int>(Encoding::COUNT); i++) {
+		if (strcmp(s, encoding_str_c[i]) == 0) {
+			e = (Crypt::Encoding)i;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Crypt::Help::getRandomMode(const char* s, Crypt::RandomMode& m)
+{
+	if (!s)
+		return false;
+	for (int i = 0; i<static_cast<int>(RandomMode::COUNT); i++) {
+		if (strcmp(s, random_mode_str_c[i]) == 0) {
+			m = (Crypt::RandomMode)i;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Crypt::Help::getHash(const char* s, Hash& h, bool only_openssl)
+{
+	if (!s)
+		return false;
+	size_t m = (only_openssl) ? static_cast<size_t>(Hash::sha3_256) : static_cast<size_t>(Hash::COUNT);
+	for (size_t i = 0; i< m; i++) {
+		size_t sl = strlen(s), x = 0;
+		if (sl != lstrlen(hash_str[i]))
+			continue;
+		for (x = 0; x< sl; x++) {
+			if (s[x] != (char)hash_str[i][x])
+				break;
+		}
+		if (x == sl) {
+			h = (Hash)i;
+			return true;
+		}
+	}
+	return false;
+}
+
+Crypt::Mode Crypt::Help::getModeByIndex(Crypt::Cipher cipher, int index)
 {
 	int i = 0;
-	int modes=0;
-	while(i < static_cast<int>(Mode::COUNT)) {
+	int modes = 0;
+	while (i < static_cast<int>(Mode::COUNT)) {
 		unsigned int x = static_cast<unsigned int>(pow(2, i));
-		if((cipher_modes[static_cast<int>(cipher)] & x) == x) {
-			if(index==modes)
+		if ((cipher_modes[static_cast<int>(cipher)] & x) == x) {
+			if (index == modes)
 				return (Crypt::Mode)i;
 			modes++;
 		}
@@ -866,14 +1042,14 @@ Crypt::Mode Crypt::Strings::getModeByIndex(Crypt::Cipher cipher, int index)
 	return Mode::cbc;
 }
 
-int Crypt::Strings::getIndexByMode(Crypt::Cipher cipher, Crypt::Mode mode)
+int Crypt::Help::getIndexByMode(Crypt::Cipher cipher, Crypt::Mode mode)
 {
 	int i = 0;
-	int modes=0;
-	while(i < static_cast<int>(Mode::COUNT)) {
+	int modes = 0;
+	while (i < static_cast<int>(Mode::COUNT)) {
 		unsigned int x = static_cast<unsigned int>(pow(2, i));
-		if((cipher_modes[static_cast<int>(cipher)] & x) == x) {
-			if((Crypt::Mode)i == mode)
+		if ((cipher_modes[static_cast<int>(cipher)] & x) == x) {
+			if ((Crypt::Mode)i == mode)
 				return modes;
 			modes++;
 		}
@@ -882,118 +1058,11 @@ int Crypt::Strings::getIndexByMode(Crypt::Cipher cipher, Crypt::Mode mode)
 	return -1;
 }
 
-bool Crypt::Strings::getCipherByString(const char* s, Crypt::Cipher& c)
+bool Crypt::Help::validCipherMode(Crypt::Cipher cipher, Crypt::Mode mode)
 {
-	if(!s)
-		return false;
-	for(size_t i=0; i< static_cast<int>(Cipher::COUNT); i++) {
-		size_t sl = strlen(s), x=0;
-		if(sl != lstrlen(cipher_str[i]))
-			continue;
-		for(x=0; x< sl; x++) {
-			if(s[x] != (char)cipher_str[i][x])
-				break;
-		}
-		if(x == sl) {
-			c = (Crypt::Cipher)i;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool Crypt::Strings::getModeByString(const char* s, Crypt::Mode& m)
-{
-	if(!s)
-		return false;
-	for(size_t i=0; i< static_cast<int>(Mode::COUNT); i++) {
-		size_t sl = strlen(s), x=0;
-		if(sl != lstrlen(mode_str[i]))
-			continue;
-		for(x=0; x< sl; x++) {
-			if(s[x] != (char)mode_str[i][x])
-				break;
-		}
-		if(x == sl) {
-			m = (Crypt::Mode)i;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool Crypt::Strings::getKeyDerivationByString(const char*s, KeyDerivation& v )
-{
-	if(!s)
-		return false;
-	for(int i=0; i<static_cast<int>(KeyDerivation::COUNT); i++) {
-		if(strcmp(s, key_algo_str_c[i])==0) {
-			v = (Crypt::KeyDerivation)i;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool Crypt::Strings::getEncodingByString(const char* s, Crypt::Encoding& e)
-{
-	if(!s)
-		return false;
-	for(int i=0; i<static_cast<int>(Encoding::COUNT); i++) {
-		if(strcmp(s, encoding_str_c[i])==0) {
-			e = (Crypt::Encoding)i;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool Crypt::Strings::nextHash(bool only_openssl)
-{
-	hash_id++;
-	if(only_openssl) {
-		if(hash_id < static_cast<int>(Hash::sha3_256))
-			return true;
-	} else {
-		if(hash_id < static_cast<int>(Hash::COUNT))
-			return true;
-	}
-	hash_id=-1;
-	return false;
-};
-
-const TCHAR* Crypt::Strings::getHash() {
-	if(hash_id >= 0)
-		return hash_str[hash_id];
+	unsigned int x = static_cast<unsigned int>(pow(2, static_cast<int>(mode)));
+	if ((cipher_modes[static_cast<int>(cipher)] & x) == x)
+		return true;
 	else
-		return NULL;
-};
-
-std::string Crypt::Strings::getHash(Hash h)
-{
-	std::string ret;
-	ret.resize(lstrlen(hash_str[static_cast<int>(h)]));
-	for(size_t i=0; i<ret.size(); i++)
-		ret[i] = static_cast<char>(hash_str[static_cast<int>(h)][i]);
-	return ret;
-}
-
-bool Crypt::Strings::getHashByString(const char* s, Hash& h)
-{
-	if(!s)
 		return false;
-	for(size_t i=0; i< static_cast<int>(Hash::COUNT); i++) {
-		size_t sl = strlen(s), x=0;
-		if(sl != lstrlen(hash_str[i]))
-			continue;
-		for(x=0; x< sl; x++) {
-			if(s[x] != (char)hash_str[i][x])
-				break;
-		}
-		if(x == sl) {
-			h= (Hash)i;
-			return true;
-		}
-	}
-	return false;
 }

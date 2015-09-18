@@ -68,17 +68,17 @@ BOOL CALLBACK DlgConfig::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
         case WM_INITDIALOG :
 		{
 			// output/encoding-options:
-			::SendDlgItemMessage(_hSelf, IDC_PREF_EOL_WINDOWS, BM_SETCHECK, Encode::Options::win_line_endings, 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_EOL_UNIX, BM_SETCHECK, !Encode::Options::win_line_endings, 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_SPACES, BM_SETCHECK, Encode::Options::hex_spaces, 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LOWERCASE, BM_SETCHECK, Encode::Options::hex_lowercase, 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_UPPERCASE, BM_SETCHECK, !Encode::Options::hex_lowercase, 0);
+			::SendDlgItemMessage(_hSelf, IDC_PREF_EOL_WINDOWS, BM_SETCHECK, (Encode::Options::Common::eol == Encode::Options::Common::EOL::windows), 0);
+			::SendDlgItemMessage(_hSelf, IDC_PREF_EOL_UNIX, BM_SETCHECK, (Encode::Options::Common::eol == Encode::Options::Common::EOL::unix), 0);
+			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_SPACES, BM_SETCHECK, Encode::Options::Base16::spaces, 0);
+			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LOWERCASE, BM_SETCHECK, (Encode::Options::Base16::letter_case == Encode::Options::Base16::Case::lower), 0);
+			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_UPPERCASE, BM_SETCHECK, (Encode::Options::Base16::letter_case == Encode::Options::Base16::Case::upper), 0);
 			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(9999, 0));
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf,IDC_PREF_HEX_LV), 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_SETPOS32, 0, Encode::Options::hex_values_p_line);
+			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf, IDC_PREF_HEX_LV), 0);
+			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_SETPOS32, 0, Encode::Options::Base16::vpl);
 			::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(9999, 0));
-			::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf,IDC_PREF_BASE64_LV), 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_SETPOS32, 0, Encode::Options::base64_chars_p_line);
+			::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf, IDC_PREF_BASE64_LV), 0);
+			::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_SETPOS32, 0, Encode::Options::Base64::cpl);
 			// nppcrypt-files:
 			::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ENABLE, BM_SETCHECK, preferences.files.enable, 0);
 			::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ASK, BM_SETCHECK, preferences.files.askonsave, 0);
@@ -87,7 +87,7 @@ BOOL CALLBACK DlgConfig::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			// key-presets:
 			::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_VALUE, EM_LIMITTEXT, 24, 0);
 			::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LABEL, EM_LIMITTEXT, 30, 0);
-			for(size_t i=0; i< preferences.getKeyNum(); i++)
+			for (size_t i = 0; i< preferences.getKeyNum(); i++)
 				::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
 
 			return TRUE;
@@ -98,11 +98,11 @@ BOOL CALLBACK DlgConfig::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 		    {
 				case IDC_PREF_OK: {
 					
-					Encode::Options::win_line_endings = !!::SendDlgItemMessage(_hSelf, IDC_PREF_EOL_WINDOWS, BM_GETCHECK, 0, 0);
-					Encode::Options::hex_spaces = !!::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_SPACES, BM_GETCHECK, 0, 0);
-					Encode::Options::hex_lowercase  = !!::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LOWERCASE, BM_GETCHECK, 0, 0);
-					Encode::Options::hex_values_p_line = ::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_GETPOS32, 0, 0);
-					Encode::Options::base64_chars_p_line = ::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_GETPOS32, 0, 0);
+					Encode::Options::Common::eol = !!::SendDlgItemMessage(_hSelf, IDC_PREF_EOL_WINDOWS, BM_GETCHECK, 0, 0) ? Encode::Options::Common::EOL::windows : Encode::Options::Common::EOL::unix;
+					Encode::Options::Base16::spaces = !!::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_SPACES, BM_GETCHECK, 0, 0);
+					Encode::Options::Base16::letter_case = !!::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LOWERCASE, BM_GETCHECK, 0, 0) ? Encode::Options::Base16::Case::lower : Encode::Options::Base16::Case::upper;
+					Encode::Options::Base16::vpl = ::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_GETPOS32, 0, 0);
+					Encode::Options::Base64::cpl = ::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_GETPOS32, 0, 0);
 
 					preferences.files.enable = !!::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ENABLE, BM_GETCHECK, 0, 0);
 					preferences.files.askonsave = !!::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ASK, BM_GETCHECK, 0, 0);

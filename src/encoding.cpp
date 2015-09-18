@@ -15,12 +15,20 @@ GNU General Public License for more details.
 
 #include "encoding.h"
 
+bool Encode::Options::Base16::spaces = false;
+Encode::Options::Base16::Case Encode::Options::Base16::letter_case = lower;
+unsigned int Encode::Options::Base16::vpl = 64;
+unsigned int  Encode::Options::Base64::cpl = 128;
+Encode::Options::Common::EOL Encode::Options::Common::eol = windows;
 
-bool Encode::Options::hex_lowercase = true;
-bool Encode::Options::hex_spaces = false;
-unsigned int  Encode::Options::hex_values_p_line = 64;				
-unsigned int  Encode::Options::base64_chars_p_line = 128;
-bool Encode::Options::win_line_endings = true;
+inline const char* linebreak()
+{
+	static const char win[] = { '\r', '\n', 0 };
+	if (Encode::Options::Common::eol == Encode::Options::Common::EOL::windows)
+		return win;
+	else
+		return &win[1];
+}
 
 /* ================================================================================================================================
 The following code is part of the libb64 project, and has been placed in the public domain.
@@ -64,105 +72,111 @@ char base64_encode_value(char value_in)
 	return encoding[(int)value_in];
 }
 
-int base64_encode_block(const char* plaintext_in, int length_in, char* code_out, base64_encodestate* state_in, int chars_p_line, bool win_line_endings)
+int base64_encode_block(const char* plaintext_in, int length_in, char* code_out, base64_encodestate* state_in, bool no_linebreaks)
 {
 	const char* plainchar = plaintext_in;
 	const char* const plaintextend = plaintext_in + length_in;
 	char* codechar = code_out;
 	char result;
 	char fragment;
-	
+
+	int chars_p_line = (no_linebreaks ? 0 : Encode::Options::Base64::cpl);
+
 	result = state_in->result;
-	
+
 	switch (state_in->step)
 	{
 		while (1)
 		{
 	case step_A:
-			if (plainchar == plaintextend)
-			{
-				state_in->result = result;
-				state_in->step = step_A;
-				return codechar - code_out;
-			}
-			fragment = *plainchar++;
-			result = (fragment & 0x0fc) >> 2;
-			*codechar++ = base64_encode_value(result);
+		if (plainchar == plaintextend)
+		{
+			state_in->result = result;
+			state_in->step = step_A;
+			return codechar - code_out;
+		}
+		fragment = *plainchar++;
+		result = (fragment & 0x0fc) >> 2;
+		*codechar++ = base64_encode_value(result);
 
-			++(state_in->stepcount);
-			if (chars_p_line && state_in->stepcount == chars_p_line)
-			{
-				if(win_line_endings) {
-					*codechar++ = '\r';
-					*codechar++ = '\n';
-				} else {
-					*codechar++ = '\n';
-				}
-				state_in->stepcount = 0;
+		++(state_in->stepcount);
+		if (chars_p_line && state_in->stepcount == chars_p_line)
+		{
+			if (Encode::Options::Common::eol == Encode::Options::Common::EOL::windows) {
+				*codechar++ = '\r';
+				*codechar++ = '\n';
 			}
+			else {
+				*codechar++ = '\n';
+			}
+			state_in->stepcount = 0;
+		}
 
-			result = (fragment & 0x003) << 4;
+		result = (fragment & 0x003) << 4;
 	case step_B:
-			if (plainchar == plaintextend)
-			{
-				state_in->result = result;
-				state_in->step = step_B;
-				return codechar - code_out;
-			}
-			fragment = *plainchar++;
-			result |= (fragment & 0x0f0) >> 4;
-			*codechar++ = base64_encode_value(result);
+		if (plainchar == plaintextend)
+		{
+			state_in->result = result;
+			state_in->step = step_B;
+			return codechar - code_out;
+		}
+		fragment = *plainchar++;
+		result |= (fragment & 0x0f0) >> 4;
+		*codechar++ = base64_encode_value(result);
 
-			++(state_in->stepcount);
-			if (chars_p_line && state_in->stepcount == chars_p_line)
-			{
-				if(win_line_endings) {
-					*codechar++ = '\r';
-					*codechar++ = '\n';
-				} else {
-					*codechar++ = '\n';
-				}
-				state_in->stepcount = 0;
+		++(state_in->stepcount);
+		if (chars_p_line && state_in->stepcount == chars_p_line)
+		{
+			if (Encode::Options::Common::eol == Encode::Options::Common::EOL::windows) {
+				*codechar++ = '\r';
+				*codechar++ = '\n';
 			}
+			else {
+				*codechar++ = '\n';
+			}
+			state_in->stepcount = 0;
+		}
 
-			result = (fragment & 0x00f) << 2;
+		result = (fragment & 0x00f) << 2;
 	case step_C:
-			if (plainchar == plaintextend)
-			{
-				state_in->result = result;
-				state_in->step = step_C;
-				return codechar - code_out;
-			}
-			fragment = *plainchar++;
-			result |= (fragment & 0x0c0) >> 6;
-			*codechar++ = base64_encode_value(result);
+		if (plainchar == plaintextend)
+		{
+			state_in->result = result;
+			state_in->step = step_C;
+			return codechar - code_out;
+		}
+		fragment = *plainchar++;
+		result |= (fragment & 0x0c0) >> 6;
+		*codechar++ = base64_encode_value(result);
 
-			++(state_in->stepcount);
-			if (chars_p_line && state_in->stepcount == chars_p_line)
-			{
-				if(win_line_endings) {
-					*codechar++ = '\r';
-					*codechar++ = '\n';
-				} else {
-					*codechar++ = '\n';
-				}
-				state_in->stepcount = 0;
+		++(state_in->stepcount);
+		if (chars_p_line && state_in->stepcount == chars_p_line)
+		{
+			if (Encode::Options::Common::eol == Encode::Options::Common::EOL::windows) {
+				*codechar++ = '\r';
+				*codechar++ = '\n';
 			}
+			else {
+				*codechar++ = '\n';
+			}
+			state_in->stepcount = 0;
+		}
 
-			result  = (fragment & 0x03f) >> 0;
-			*codechar++ = base64_encode_value(result);
-			
-			++(state_in->stepcount);
-			if (chars_p_line && state_in->stepcount == chars_p_line)
-			{
-				if(win_line_endings) {
-					*codechar++ = '\r';
-					*codechar++ = '\n';
-				} else {
-					*codechar++ = '\n';
-				}
-				state_in->stepcount = 0;
+		result = (fragment & 0x03f) >> 0;
+		*codechar++ = base64_encode_value(result);
+
+		++(state_in->stepcount);
+		if (chars_p_line && state_in->stepcount == chars_p_line)
+		{
+			if (Encode::Options::Common::eol == Encode::Options::Common::EOL::windows) {
+				*codechar++ = '\r';
+				*codechar++ = '\n';
 			}
+			else {
+				*codechar++ = '\n';
+			}
+			state_in->stepcount = 0;
+		}
 		}
 	}
 	/* control should not reach here */
@@ -282,25 +296,26 @@ int base64_decode_block(const char* code_in, const int length_in, char* plaintex
 size_t Encode::bin_to_hex(const unsigned char* src, unsigned int len, char* dest)
 {
 	if(!dest) {
-		if(!len)
+		if (!len)
 			return 0;
-		size_t lines = (Options::hex_values_p_line) ? (len-1)/Options::hex_values_p_line+1 : 1;
-		if(Options::hex_spaces) {
-			if(Options::win_line_endings)
-				return len*3 - 1 + (lines-1);
+		size_t lines = (Options::Base16::vpl) ? (len - 1) / Options::Base16::vpl + 1 : 1;
+		if (Options::Base16::spaces) {
+			if (Options::Common::eol == Options::Common::EOL::windows)
+				return len * 3 - 1 + (lines - 1);
 			else
-				return len*3 - 1;
-		} else {
-			if(Options::win_line_endings)
-				return len*2  + (lines-1)*2;
+				return len * 3 - 1;
+		}
+		else {
+			if (Options::Common::eol == Options::Common::EOL::windows)
+				return len * 2 + (lines - 1) * 2;
 			else
-				return len*2 + (lines-1);
+				return len * 2 + (lines - 1);
 		}
 	} else {
 
 		static const char* const hex_chars_upper = "0123456789ABCDEF";
 		static const char* const hex_chars_lower = "0123456789abcdef";
-		const char* const hex_chars = (Options::hex_lowercase) ? hex_chars_lower : hex_chars_upper;
+		const char* const hex_chars = (Options::Base16::letter_case == Options::Base16::Case::lower) ? hex_chars_lower : hex_chars_upper;
 
 		size_t i_out=0;
 		size_t i_out_line=0;
@@ -312,19 +327,21 @@ size_t Encode::bin_to_hex(const unsigned char* src, unsigned int len, char* dest
 			i_out+=2;
 			i_out_line++;
 
-			if(i+1 != len) {
-				if(Options::hex_values_p_line && i_out_line >= Options::hex_values_p_line) {
-					i_out_line=0;
-					if(Options::win_line_endings) {
-						dest[i_out]='\r';
-						dest[i_out+1]='\n';
-						i_out+=2;
-					} else {
-						dest[i_out]='\n';
+			if (i + 1 != len) {
+				if (Options::Base16::vpl && i_out_line >= Options::Base16::vpl) {
+					i_out_line = 0;
+					if (Options::Common::eol == Options::Common::EOL::windows) {
+						dest[i_out] = '\r';
+						dest[i_out + 1] = '\n';
+						i_out += 2;
+					}
+					else {
+						dest[i_out] = '\n';
 						i_out++;
-					}			
-				} else if (Options::hex_spaces) {
-					dest[i_out]=' ';
+					}
+				}
+				else if (Options::Base16::spaces) {
+					dest[i_out] = ' ';
 					i_out++;
 				}
 			}
@@ -386,27 +403,28 @@ size_t Encode::hex_to_bin(const char* src, unsigned int len, unsigned char* dest
 size_t Encode::bin_to_base64(const unsigned char* src, unsigned int len, char* dest, bool no_linebreaks)
 {
 	if(!dest) {
-		if(len==0)
+		if (len == 0)
 			return 0;
 
 		unsigned int chars = 4 * (len + 2 - ((len + 2) % 3)) / 3;
-		if(!no_linebreaks && Options::base64_chars_p_line) {
-			if(Options::win_line_endings)
-				return chars + (((chars-1)/Options::base64_chars_p_line+1)-1)*2;
+		if (!no_linebreaks && Options::Base64::cpl) {
+			if (Options::Common::eol == Options::Common::EOL::windows)
+				return chars + (((chars - 1) / Options::Base64::cpl + 1) - 1) * 2;
 			else
-				return chars + (((chars-1)/Options::base64_chars_p_line+1)-1);
-		} else {
+				return chars + (((chars - 1) / Options::Base64::cpl + 1) - 1);
+		}
+		else {
 			return chars;
 		}
 	} else {
 		char* c = dest;
 		int cnt = 0;
 		base64_encodestate s;
-	
+
 		base64_init_encodestate(&s);
-		cnt = base64_encode_block((const char*)src, len, c, &s, (no_linebreaks? 0: Options::base64_chars_p_line), Options::win_line_endings);
+		cnt = base64_encode_block((const char*)src, len, c, &s, no_linebreaks);
 		c += cnt;
-		return size_t(cnt +base64_encode_blockend(c, &s));
+		return size_t(cnt + base64_encode_blockend(c, &s));
 	}
 }
 
@@ -463,15 +481,6 @@ size_t Encode::base64_to_bin(const char* src, unsigned int len, unsigned char* d
 		cnt = base64_decode_block(src, len, (char*)dest, &s);
 		return size_t(cnt);
 	}
-}
-
-const char* Encode::linebreak()
-{
-	static const char win[] = { '\r', '\n', 0 };
-	if(Options::win_line_endings)
-		return win;
-	else
-		return &win[1];
 }
 
 void Encode::wchar_to_utf8(const wchar_t* i, int i_len, std::string& o)

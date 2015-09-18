@@ -38,7 +38,7 @@ namespace Crypt {
 	};
 
 	enum class Hash: unsigned {
-		md4=0, md5,	sha1, sha256, sha512, ripemd160, whirlpool,	sha3_256, sha3_384,	sha3_512, COUNT
+		md4=0, md5, mdc2, sha1, sha256, sha512, ripemd160, whirlpool, sha3_256, sha3_384, sha3_512, COUNT
 	};
 
 	enum class Encoding : unsigned {
@@ -136,32 +136,41 @@ namespace Crypt {
 	void shake128(const unsigned char* in, size_t in_len, unsigned char* out, size_t out_len);
 
 
-	class Strings {
+	class Help {
 	public:
-		static void setup();
-		static bool nextCipher();
-		static void setCipher(Crypt::Cipher cipher);
-		static bool nextMode();
-		static const TCHAR* Cipher();
-		static const TCHAR* Mode();
-		static std::string Mode(Crypt::Mode mode);
-		static std::string Cipher(Crypt::Cipher cipher);
-		static const char* Encoding(Crypt::Encoding enc);
-		static const char* KeyAlgorithm(Crypt::KeyDerivation k);
+		static const char* getString(Crypt::Cipher cipher);
+		static const char* getString(Crypt::Mode mode);
+		static const char* getString(Crypt::Encoding enc);
+		static const char* getString(Crypt::KeyDerivation k);
+		static const char* getString(Crypt::InitVector iv);
+		static const char* getString(Crypt::Hash h);
+		static const char* getString(Crypt::RandomMode mode);
+
+		static bool getCipher(const char* s, Crypt::Cipher& c);
+		static bool getCipherMode(const char* s, Crypt::Mode& m);
+		static bool getKeyDerivation(const char*s, Crypt::KeyDerivation& v);
+		static bool getEncoding(const char* s, Crypt::Encoding& e);
+		static bool getIVMode(const char* s, Crypt::InitVector& iv);
+		static bool getHash(const char* s, Crypt::Hash& h, bool only_openssl = false);
+		static bool getRandomMode(const char* s, Crypt::RandomMode& m);
+
 		static Crypt::Mode getModeByIndex(Crypt::Cipher cipher, int index);
 		static int getIndexByMode(Crypt::Cipher cipher, Crypt::Mode mode);
-		static bool getCipherByString(const char* s, Crypt::Cipher& c);
-		static bool getModeByString(const char* s, Crypt::Mode& m);
-		static bool getKeyDerivationByString(const char*s, Crypt::KeyDerivation& v );
-		static bool getEncodingByString(const char* s, Crypt::Encoding& e);
-		static bool nextHash(bool only_openssl=false);
-		static const TCHAR* getHash();
-		static std::string getHash(Hash h);
-		static bool getHashByString(const char* s, Hash& h);
-	private:
-		static int cipher_id;
-		static int mode_id;
-		static int hash_id;
+		static bool validCipherMode(Crypt::Cipher cipher, Crypt::Mode mode);
+
+		// iteration through cipher/mode/hash-strings
+		class Iterator {
+		public:
+			enum { Cipher, Mode, Hash };
+			static void setup(int what, Crypt::Cipher cipher);
+			static void setup(int what, bool only_openssl = false);
+			static bool next();
+			static const TCHAR* getString();
+		private:
+			static int w;
+			static int i;
+			static int v;
+		};
 	};
 };
 

@@ -61,15 +61,15 @@ bool CPreferences::load(const TCHAR* path, Crypt::Options& crypt, Crypt::HashOpt
 
 		// encoding
 		f.read(reinterpret_cast<char*>(&t_bool), sizeof(bool));
-		Encode::Options::win_line_endings = t_bool ? true : false;
+		Encode::Options::Common::eol = t_bool ? Encode::Options::Common::EOL::windows : Encode::Options::Common::EOL::unix;
 		f.read(reinterpret_cast<char*>(&t_bool), sizeof(bool));
-		Encode::Options::hex_spaces = t_bool ? true : false;
+		Encode::Options::Base16::spaces = t_bool ? true : false;
 		f.read(reinterpret_cast<char*>(&t_bool), sizeof(bool));
-		Encode::Options::hex_lowercase = t_bool ? true : false;
+		Encode::Options::Base16::letter_case = t_bool ? Encode::Options::Base16::Case::lower : Encode::Options::Base16::Case::upper;
 		f.read(reinterpret_cast<char*>(&t_size_t), sizeof(size_t));
-		Encode::Options::hex_values_p_line = (t_size_t < 9999) ? t_size_t : 64;
+		Encode::Options::Base16::vpl = (t_size_t < 9999) ? t_size_t : 64;
 		f.read(reinterpret_cast<char*>(&t_size_t), sizeof(size_t));
-		Encode::Options::base64_chars_p_line = (t_size_t < 9999) ? t_size_t : 128;
+		Encode::Options::Base64::cpl = (t_size_t < 9999) ? t_size_t : 128;
 
 		// nppcrypt-files
 		f.read(reinterpret_cast<char*>(&t_bool), sizeof(bool));
@@ -177,11 +177,13 @@ bool CPreferences::save(Crypt::Options& crypt, Crypt::HashOptions& hash, Crypt::
 		size_t ts;
 
 		// encoding
-		f.write(reinterpret_cast<char*>(&Encode::Options::win_line_endings), sizeof(bool));
-		f.write(reinterpret_cast<char*>(&Encode::Options::hex_spaces), sizeof(bool));
-		f.write(reinterpret_cast<char*>(&Encode::Options::hex_lowercase), sizeof(bool));
-		f.write(reinterpret_cast<char*>(&Encode::Options::hex_values_p_line), sizeof(size_t));
-		f.write(reinterpret_cast<char*>(&Encode::Options::base64_chars_p_line), sizeof(size_t));
+		bool tbool = (Encode::Options::Common::eol == Encode::Options::Common::EOL::windows);
+		f.write(reinterpret_cast<char*>(&tbool), sizeof(bool));
+		f.write(reinterpret_cast<char*>(&Encode::Options::Base16::spaces), sizeof(bool));
+		tbool = (Encode::Options::Base16::letter_case == Encode::Options::Base16::Case::lower);
+		f.write(reinterpret_cast<char*>(&tbool), sizeof(bool));
+		f.write(reinterpret_cast<char*>(&Encode::Options::Base16::vpl), sizeof(size_t));
+		f.write(reinterpret_cast<char*>(&Encode::Options::Base64::cpl), sizeof(size_t));
 		// nppcrypt-files
 		f.write(reinterpret_cast<char*>(&files.enable), sizeof(bool));
 		f.write(reinterpret_cast<char*>(&files.askonsave), sizeof(bool));
