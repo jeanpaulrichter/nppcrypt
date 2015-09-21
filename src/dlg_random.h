@@ -26,19 +26,21 @@ public:
 	DlgRandom();
 	~DlgRandom();
     
-    void init(HINSTANCE hInst, HWND parent, Crypt::RandOptions* opt);
+    void init(HINSTANCE hInst, HWND parent, crypt::Options::Random* opt);
     virtual void destroy() { ::DestroyWindow(_hSelf); };
 	static DlgRandom& Instance() { static DlgRandom single; return single; }
 
-   	bool doDialog();
+   	bool doDialog(bool no_ascii);
 
 private:
+
 	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 	DlgRandom(DlgRandom const&);
 	DlgRandom& operator=(DlgRandom const&);
 
-	Crypt::RandOptions*	options;
+	crypt::Options::Random*	options;
+	bool					no_ascii;
 };
 
 

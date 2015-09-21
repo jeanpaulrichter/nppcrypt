@@ -489,10 +489,10 @@ void Encode::wchar_to_utf8(const wchar_t* i, int i_len, std::string& o)
 		i_len = -1;
 	int bytelen = WideCharToMultiByte(CP_UTF8, 0, i, i_len, NULL, 0, NULL, false);
 	if (bytelen < 1)
-		throw CExc(CExc::utf8conversion);
+		throw CExc(CExc::Code::utf8conversion);
 	o.resize((size_t)bytelen);
 	if (!WideCharToMultiByte(CP_UTF8, 0, i, i_len, &o[0], bytelen, NULL, false))
-		throw CExc(CExc::utf8conversion);
+		throw CExc(CExc::Code::utf8conversion);
 	if (i_len == -1)
 		o.pop_back();
 }
@@ -503,10 +503,10 @@ void Encode::utf8_to_wchar(const char* i, int i_len, std::wstring& o)
 		i_len = -1;
 	int charlen = ::MultiByteToWideChar(CP_UTF8, 0, i, i_len, NULL, 0);
 	if(charlen < 1)
-		throw CExc(CExc::utf8conversion);
+		throw CExc(CExc::Code::utf8conversion);
 	o.resize((size_t)charlen);
 	if (!MultiByteToWideChar(CP_UTF8, 0, i, i_len, &o[0], charlen))
-		throw CExc(CExc::utf8conversion);
+		throw CExc(CExc::Code::utf8conversion);
 	if (i_len == -1)
 		o.pop_back();
 }

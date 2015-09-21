@@ -27,19 +27,21 @@ public:
 	DlgHash();
 	~DlgHash();
     
-    void init(HINSTANCE hInst, HWND parent, Crypt::HashOptions* opt);
+    void init(HINSTANCE hInst, HWND parent, crypt::Options::Hash* opt);
     virtual void destroy() { ::DestroyWindow(_hSelf); };
 	static DlgHash& Instance() { static DlgHash single; return single; }
 
-   	bool doDialog();
+   	bool doDialog(bool no_ascii);
 
 private:
+
 	static  BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 	DlgHash(DlgHash const&);
 	DlgHash& operator=(DlgHash const&);
 
-	Crypt::HashOptions*	options;
+	crypt::Options::Hash*	options;
+	bool no_ascii;
 };
 
 

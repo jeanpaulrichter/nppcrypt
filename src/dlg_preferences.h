@@ -20,21 +20,21 @@ GNU General Public License for more details.
 #include "crypt.h"
 
 
-class DlgConfig: public Window
+class DlgPreferences: public Window
 {
 public:
     
-	DlgConfig();
+	DlgPreferences();
     void init(HINSTANCE hInst, HWND parent);
     virtual void destroy() { ::DestroyWindow(_hSelf); };
-	static DlgConfig& Instance() { static DlgConfig single; return single; }
+	static DlgPreferences& Instance() { static DlgPreferences single; return single; }
    	bool doDialog();
 
 private:
 	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	DlgConfig(DlgConfig const&);
-	DlgConfig& operator=(DlgConfig const&);
+	DlgPreferences(DlgPreferences const&);
+	DlgPreferences& operator=(DlgPreferences const&);
 };
 
 

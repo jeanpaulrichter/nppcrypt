@@ -12,91 +12,76 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-
 #include "exception.h"
 
-static const TCHAR* error_msgs[] = { TEXT("Unexspected exception."), TEXT("Failed to encrypt."), TEXT("Failed to decrypt."), TEXT("Failed to read hex."), 
-									TEXT("File is empty."), TEXT("Failed to parse header."), TEXT("Data authentication failed."), TEXT("String-conversion to utf8 failed."),
-									TEXT("Sorry, this file is no longer supported.\nPlease download v1.009 at www.cerberus-design.de/downloads."), 
-									TEXT("Sorry, this file is no longer supported.\nPlease download v1.007 at www.cerberus-design.de/downloads.")};
+static const TCHAR* error_msgs[] = 
+{ 
+/* unexpected		*/	TEXT("Unexspected exception."), 
+/* encrypt			*/	TEXT("Failed to encrypt."),
+/* decrypt			*/	TEXT("Failed to decrypt."),
+/* decode_base16	*/	TEXT("Failed to decode base16."),
+/* decode_base64	*/	TEXT("Failed to decode base64."),
+/* file_empty		*/	TEXT("File is empty."),
+/* parse_header		*/	TEXT("Failed to parse header."),
+/* authentication	*/	TEXT("Data authentication failed."),
+/* utf8conversion	*/	TEXT("String-conversion to utf8 failed."),
+/* nppfile1009		*/	TEXT("Sorry, this file is no longer supported.\nPlease download v1.009 at www.cerberus-design.de/downloads."),
+/* nppfile1007		*/	TEXT("Sorry, this file is no longer supported.\nPlease download v1.007 at www.cerberus-design.de/downloads."),
+/* header_version	*/	TEXT("Header: version missing."),
+/* header_hmac_data */	TEXT("Header: hmac data corrupted."),
+/* header_hmac_hash */	TEXT("Header: invalid hmac-hash."),
+/* header_hmac_key	*/	TEXT("Header: invalid auth-key-id."),
+/* header_salt		*/	TEXT("Header: salt data corrupted."),
+/* header_iv		*/	TEXT("Header: iv data corrupted."),
+/* header_cipher	*/	TEXT("Header: invalid cipher."),
+/* header_mode		*/	TEXT("Header: invalid mode."),
+/* header_encoding	*/	TEXT("Header: invalid encoding."),
+/* header_tag		*/	TEXT("Header: tag data corrupted."),
+/* header_keyderi	*/	TEXT("Header: invalid key-derivation"),
+/* header_pbkdf2	*/	TEXT("Header: invalid options for pbkdf2."),
+/* header_bcrypt	*/	TEXT("Header: invalid options for bcrypt."),
+/* header_scrypt	*/	TEXT("Header: invalid options for scrypt."),
+/* decrypt_nosalt	*/	TEXT("Decryption: salt missing."),
+/* decrypt_badsalt	*/	TEXT("Decryption: salt corrupted."),
+/* decrypt_noiv		*/	TEXT("Decryption: iv missing."),
+/* decrypt_badiv	*/	TEXT("Decryption: iv corrupted."),
+/* decrypt_notag	*/	TEXT("Decryption: tag missing."),
+/* decrypt_badtag	*/	TEXT("Decryption: tag corrupted."),
+/* input_too_long	*/	TEXT("Input too long."),
+/* bcrypt_salt		*/	TEXT("Bcrypt only supports 16-byte salt.")
+};
 
 const TCHAR* CExc::getErrorMsg() const throw()
 {
-	if(msg.size())
-		return &msg[0];
+	if (msg.size())
+	{
+		return msg.c_str();
+	}
 	else
-		return error_msgs[code];
+	{
+		return error_msgs[unsigned(code)];
+	}
 }
 
 CExc::~CExc() throw()
 {
 }
 
-CExc::CExc(const TCHAR* what)
+CExc::CExc(Code err_code) : code(err_code)
 {
-	code = ErrCode::unexspected;
-	if(!what)
-		return;
-	size_t slen = lstrlen(what);
-	if(!slen)
-		return;
-	if(slen <= 128) {
-		msg.resize(slen+1);
-		lstrcpy(&msg[0], what);
-	} else {
-		msg.resize(129);
-		msg[128]=0;
-		memcpy(&msg[0], what, 128*sizeof(TCHAR));
-	}
 }
 
-CExc::CExc(ErrCode err_code)
+CExc::CExc(File file, int line, Code err_code)
 {
 	code = err_code;
-}
-
-CExc::CExc(File file, int line, const TCHAR* what)
-{
-	if(what) {
-		size_t slen = lstrlen(what);
-		if(slen) {
-			if(slen <= 118) {
-				msg.resize(slen+11);
-				lstrcpy(&msg[10], what);
-			} else {
-				msg.resize(129);
-				msg[128]=0;
-				memcpy(&msg[10], what, 118*sizeof(TCHAR));
-			}
-		}
-	}
-	if(!msg.size()) {
-		msg.resize(40);
-		lstrcpy(&msg[10],error_msgs[0]);
-		msg[32] = 0;
-	}
+	msg.resize(11+lstrlen(error_msgs[unsigned(code)]));
+	lstrcpy(&msg[10], error_msgs[unsigned(code)]);
 
 	msg[0] = '('; msg[3] = '/'; msg[8] = ')'; msg[9] = ' ';
-	msg[1] = 48+(file/10);
-	msg[2] = 48+(file%10);
-	msg[7] = (line % 10) + '0';  line /= 10;
-    msg[6] = (line % 10) + '0';  line /= 10;
-    msg[5] = (line % 10) + '0';  line /= 10;
-    msg[4] = (line % 10) + '0';
-}
-
-CExc::CExc(File file, int line, ErrCode err_code)
-{
-	msg.resize(11+lstrlen(error_msgs[err_code]));
-	lstrcpy(&msg[10], error_msgs[err_code]);
-
-	msg[0] = '('; msg[3] = '/'; msg[8] = ')'; msg[9] = ' ';
-	msg[1] = 48+(file/10);
-	msg[2] = 48+(file%10);
-	msg[7] = (line % 10) + '0';  line /= 10;
-    msg[6] = (line % 10) + '0';  line /= 10;
-    msg[5] = (line % 10) + '0';  line /= 10;
-    msg[4] = (line % 10) + '0';
-
-	code = err_code;
+	msg[1] = 48+(TCHAR(file)/10);
+	msg[2] = 48+(TCHAR(file)%10);
+	msg[7] = TCHAR(line % 10) + '0';  line /= 10;
+    msg[6] = TCHAR(line % 10) + '0';  line /= 10;
+    msg[5] = TCHAR(line % 10) + '0';  line /= 10;
+    msg[4] = TCHAR(line % 10) + '0';
 }

@@ -29,6 +29,7 @@
 #define IDC_CRYPT_ENC_HEX               1002
 #define IDC_RANDOM_R1                   1002
 #define IDC_PREF_FILES_ASK              1002
+#define IDC_COMBO1                      1002
 #define IDC_CRYPT_ENC_BASE64            1003
 #define IDC_HASH_ENC_HEX                1003
 #define IDC_RANDOM_R2                   1003
@@ -85,15 +86,16 @@
 #define IDC_CRYPT_IV_RANDOM             1032
 #define IDC_CRYPT_IV_KEY                1033
 #define IDC_CRYPT_IV_ZERO               1034
+#define IDC_ABOUT_TEXT                  1035
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        102
+#define _APS_NEXT_RESOURCE_VALUE        103
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NEXT_CONTROL_VALUE         1003
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

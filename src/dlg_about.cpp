@@ -13,6 +13,7 @@ GNU General Public License for more details.
 */
 
 #include "dlg_about.h"
+#include "mdef.h"
 #include "resource.h"
 
 
@@ -59,8 +60,11 @@ BOOL CALLBACK DlgAbout::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
         case WM_INITDIALOG :
 		{
+			SetDlgItemText(_hSelf, IDC_ABOUT_TEXT, TEXT(NPPC_ABOUT_TEXT));
+			SetDlgItemText(_hSelf, IDC_ABOUT_CERBERUS_URL, TEXT(NPPC_ABOUT_LINK));
+
             cerberus.init(_hInst, _hSelf);
-            cerberus.create(::GetDlgItem(_hSelf, IDC_ABOUT_CERBERUS_URL), TEXT("http://www.cerberus-design.de/nppcrypt/readme.v1010.txt"));
+            cerberus.create(::GetDlgItem(_hSelf, IDC_ABOUT_CERBERUS_URL), TEXT(NPPC_ABOUT_URL));
 
 			return TRUE;
 		}

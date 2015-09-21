@@ -17,6 +17,7 @@ GNU General Public License for more details.
 
 #include "npp/Window.h"
 #include "encoding.h"
+#include "mdef.h"
 
 class DlgAuth: public Window
 {
@@ -36,7 +37,7 @@ private:
 	DlgAuth& operator=(DlgAuth const&);
 
 	std::string			keystring;
-	const TCHAR*		filename;
+	string				caption;
 };
 
 

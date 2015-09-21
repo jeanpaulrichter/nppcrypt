@@ -29,7 +29,12 @@ void DlgAuth::init(HINSTANCE hInst, HWND parent)
 
 bool DlgAuth::doDialog(const TCHAR* filename)
 {
-	this->filename = filename;
+	if (filename == NULL) {
+		caption = TEXT("authentication");
+	}
+	else {
+		caption = TEXT("authentication (") + string(filename) + TEXT(")");
+	}
 	if(DialogBoxParam(_hInst, MAKEINTRESOURCE(IDD_AUTH), _hParent,  (DLGPROC)dlgProc, (LPARAM)this)==IDC_OK)
 		return true;
 	return false;
@@ -64,61 +69,57 @@ BOOL CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) 
 	{
-        case WM_INITDIALOG :
+	case WM_INITDIALOG:
+	{
+		SetWindowText(_hSelf, caption.c_str());
+		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, '*', 0);
+		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
+		PostMessage(_hSelf, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(_hSelf, IDC_AUTH_KEY), TRUE);
+		return TRUE;
+	} break;
+
+	case WM_COMMAND : 
+	{
+		switch (LOWORD(wParam))
 		{
-			if(filename) {
-				SetWindowText (_hSelf, filename);
-			} else {
-				SetWindowText (_hSelf, TEXT("authentication"));
+		case IDC_OK:
+		{
+			TCHAR temp_key[NPPC_HMAC_INPUT_MAX+1];
+			::GetDlgItemText(_hSelf, IDC_AUTH_KEY, temp_key, NPPC_HMAC_INPUT_MAX+1);
+
+			try {
+				#ifdef UNICODE
+				Encode::wchar_to_utf8(temp_key, -1, keystring);
+				#else
+				keystring.assign(temp_key);
+				#endif
+
+			} catch(CExc& exc) {
+				::MessageBox(_hSelf, exc.getErrorMsg(), TEXT("Error"), MB_OK);
+				break;
 			}
 
-			::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, '*', 0);
-			::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_LIMITTEXT, 32, 0);
-			PostMessage( _hSelf, WM_USER+1, 0, 0);
-			return true;
-		}
-		case WM_USER+1:
-			::SetFocus(::GetDlgItem(_hSelf, IDC_AUTH_KEY));
+			EndDialog(_hSelf, IDC_OK);
+			return TRUE;
+		} break;
+
+		case IDC_CANCEL:
+		{
+			EndDialog(_hSelf, IDC_CANCEL);
+			return TRUE;
+		} break;
+
+		case IDC_CRYPT_AUTH_KEY_SHOW:
+		{
+			char c = ::SendDlgItemMessage(_hSelf, IDC_AUTH_SHOW, BM_GETCHECK, 0, 0) ? 0 : '*';
+			::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, c, 0);
+			InvalidateRect(::GetDlgItem(_hSelf, IDC_AUTH_KEY), 0, TRUE);
+		} break;
+
+		default:
 			break;
-		case WM_COMMAND : 
-	    {
-			if(LOWORD(wParam) == IDC_AUTH_KEY) {
-				bool fuck = true;
-			}
-		    switch (LOWORD(wParam))
-		    {
-			case IDC_OK: {
-					TCHAR temp_key[33];
-					::GetDlgItemText(_hSelf, IDC_AUTH_KEY, temp_key, 33);		
-
-					try {
-						#ifdef UNICODE
-						Encode::wchar_to_utf8(temp_key, -1, keystring);
-						#else
-						keystring.assign(temp_key);
-						#endif
-
-					} catch(CExc& exc) {
-						::MessageBox(_hSelf, exc.getErrorMsg(), TEXT("Error"), MB_OK);
-						break;
-					}
-
-					EndDialog(_hSelf, IDC_OK);
-					return TRUE; }
-				case IDC_CANCEL :
-				    EndDialog(_hSelf, IDC_CANCEL);
-					return TRUE;
-
-				case IDC_CRYPT_AUTH_KEY_SHOW: {
-					char c = ::SendDlgItemMessage(_hSelf, IDC_AUTH_SHOW, BM_GETCHECK, 0, 0) ? 0 : '*';
-					::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, c, 0);
-					InvalidateRect(::GetDlgItem(_hSelf, IDC_AUTH_KEY), 0, TRUE);
-					break; }
-			    default :
-				    break;
-		    }
-		    break;
-	    }
+		}
+	} break;
 	}
 	return FALSE;
 }

@@ -14,54 +14,54 @@ GNU General Public License for more details.
 
 #include "encoding.h"
 #include "preferences.h"
-#include "dlg_config.h"
+#include "dlg_preferences.h"
 #include "resource.h"
 #include "commctrl.h"
 
 #include <openssl/rand.h>
 
-DlgConfig::DlgConfig(): Window()
+DlgPreferences::DlgPreferences(): Window()
 {
 };
 
-void DlgConfig::init(HINSTANCE hInst, HWND parent)
+void DlgPreferences::init(HINSTANCE hInst, HWND parent)
 {
 	Window::init(hInst, parent);
 };
 
-bool DlgConfig::doDialog()
+bool DlgPreferences::doDialog()
 {
 	if(DialogBoxParam(_hInst, MAKEINTRESOURCE(IDD_PREFERENCES), _hParent,  (DLGPROC)dlgProc, (LPARAM)this)==IDC_OK)
 		return true;
 	return false;
 }
 
-BOOL CALLBACK DlgConfig::dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
+BOOL CALLBACK DlgPreferences::dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
 	switch (Message) 
 	{
 		case WM_INITDIALOG :
 		{
-			DlgConfig *pDlgConfig = (DlgConfig *)(lParam);
-			pDlgConfig->_hSelf = hWnd;
+			DlgPreferences *pDlgPreferences = (DlgPreferences *)(lParam);
+			pDlgPreferences->_hSelf = hWnd;
 			::SetWindowLongPtr(hWnd, GWL_USERDATA, (long)lParam);
-			pDlgConfig->run_dlgProc(Message, wParam, lParam);
+			pDlgPreferences->run_dlgProc(Message, wParam, lParam);
 			return TRUE;
 		}
 
 		default :
 		{
-			DlgConfig *pDlgConfig = reinterpret_cast<DlgConfig *>(::GetWindowLong(hWnd, GWL_USERDATA));
-			if (!pDlgConfig)
+			DlgPreferences *pDlgPreferences = reinterpret_cast<DlgPreferences *>(::GetWindowLong(hWnd, GWL_USERDATA));
+			if (!pDlgPreferences)
 				return FALSE;
-			return pDlgConfig->run_dlgProc(Message, wParam, lParam);
+			return pDlgPreferences->run_dlgProc(Message, wParam, lParam);
 		}
 
 	}
 	return FALSE;
 }
 
-BOOL CALLBACK DlgConfig::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) 
 	{
@@ -82,8 +82,8 @@ BOOL CALLBACK DlgConfig::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			// nppcrypt-files:
 			::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ENABLE, BM_SETCHECK, preferences.files.enable, 0);
 			::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ASK, BM_SETCHECK, preferences.files.askonsave, 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_EXT, EM_LIMITTEXT, 30, 0);
-			::SetDlgItemText(_hSelf, IDC_PREF_FILES_EXT, preferences.files.extension);
+			::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_EXT, EM_LIMITTEXT, NPPC_FILE_EXT_MAXLENGTH, 0);
+			::SetDlgItemText(_hSelf, IDC_PREF_FILES_EXT, preferences.files.extension.c_str());
 			// key-presets:
 			::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_VALUE, EM_LIMITTEXT, 24, 0);
 			::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LABEL, EM_LIMITTEXT, 30, 0);
@@ -106,8 +106,10 @@ BOOL CALLBACK DlgConfig::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 					preferences.files.enable = !!::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ENABLE, BM_GETCHECK, 0, 0);
 					preferences.files.askonsave = !!::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ASK, BM_GETCHECK, 0, 0);
-					::GetDlgItemText(_hSelf, IDC_PREF_FILES_EXT, preferences.files.extension, 31);
-					preferences.files.ext_length = lstrlen(preferences.files.extension);
+
+					TCHAR tstr[NPPC_FILE_EXT_MAXLENGTH + 1];
+					::GetDlgItemText(_hSelf, IDC_PREF_FILES_EXT, tstr, NPPC_FILE_EXT_MAXLENGTH + 1);
+					preferences.files.extension.assign(tstr);
 
 					EndDialog(_hSelf, IDC_OK);
 					return TRUE; }

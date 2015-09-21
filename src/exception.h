@@ -20,48 +20,73 @@ GNU General Public License for more details.
 #include <tchar.h>
 #include <exception>
 #include <vector>
+#include "mdef.h"
 
 class CExc: public std::exception
 {
 public:
-	enum File {
+	enum class File : unsigned 
+	{
 		nppcrypt = 0,
 		crypt,
 		preferences,
+		header,
 		encoding,
 		dlg_about,
 		dlg_auth,
-		dlg_config,
+		dlg_preferences,
 		dlg_crypt,
 		dlg_hash,
 		dlg_random
 	};
 
-	enum ErrCode {
-		unexspected,
-		encrypt,
+	enum class Code : unsigned 
+	{
+		unexpected = 0,	
+		encrypt, 
 		decrypt,
-		readhex,
+		decode_base16,
+		decode_base64,
 		file_empty,
 		parse_header,
 		authentication,
 		utf8conversion,
 		nppfile1009,
-		nppfile1007
+		nppfile1007,
+		header_version,
+		header_hmac_data, 
+		header_hmac_hash, 
+		header_hmac_key, 
+		header_salt, 
+		header_iv, 
+		header_cipher, 
+		header_mode, 
+		header_encoding, 
+		header_tag, 
+		header_keyderi, 
+		header_pbkdf2, 
+		header_bcrypt, 
+		header_scrypt,
+		decrypt_nosalt,
+		decrypt_badsalt,
+		decrypt_noiv,
+		decrypt_badiv,
+		decrypt_notag,
+		decrypt_badtag,
+		input_too_long,
+		bcrypt_salt
 	};
 
-	CExc(const TCHAR* what);
-	CExc(ErrCode err_code=unexspected);
-	CExc(File file, int line, const TCHAR* what);
-	CExc(File file, int line, ErrCode err_code=unexspected);
+	CExc(Code err_code=Code::unexpected);
+	CExc(File file, int line, Code err_code=Code::unexpected);
 	~CExc() throw();
 
 	const char* what() const throw() { return NULL; };
 	const TCHAR* getErrorMsg() const throw();
 
 private:
-	ErrCode				code;
-	std::vector<TCHAR>	msg;
+	Code				code;
+	string				msg;
 };
 
 #endif

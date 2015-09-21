@@ -51,8 +51,6 @@ namespace Encode
 	/* decode data encoded in base64. returns number of bytes written. if char*dest=NULL the exspected buffersize is returned (0 on error). */
 	size_t base64_to_bin(const char* src, unsigned int len, unsigned char* dest=0);
 
-	const char* linebreak();
-
 	void wchar_to_utf8(const wchar_t* i, int i_len, std::string& o);
 	void utf8_to_wchar(const char* i, int i_len, std::wstring& o);
 }

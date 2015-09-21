@@ -32,11 +32,13 @@ class DlgCrypt : public Window
 {
 public:
 
+	enum { Encryption, Decryption };
+
 	DlgCrypt();
     void init(HINSTANCE hInst, HWND parent);
     virtual void destroy();
 	static DlgCrypt& Instance() { static DlgCrypt single; return single; }
-   	bool doDialog(Crypt::Operation op, Crypt::Options* opt, const TCHAR* filename=NULL);
+   	bool doDialog(int op, crypt::Options::Crypt* opt, bool no_ascii = false, const TCHAR* filename = NULL);
 
 private:
 	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
@@ -44,27 +46,33 @@ private:
 	DlgCrypt(DlgCrypt const&);
 	DlgCrypt& operator=(DlgCrypt const&);
 
+	void OnInitDialog();
+	bool OnClickOK();
+	void OnCipherChange();
+	void OnCipherModeChange();
 	void enableKeyDeriControls();
 	bool updateOptions();
 	
-	Crypt::Operation	operation;
-	Crypt::Options*		options;
+	int							operation;
+	crypt::Options::Crypt*		options;
 
-	const TCHAR*		filename;
-	bool				confirm_password;
+	string						filename;
+	bool						confirm_password;
+	bool						no_ascii;
 
-	struct {
-		Crypt::Cipher			cipher;
-		Crypt::KeyDerivation	key_derivation;
-		TCHAR					password[Crypt::Constants::pw_length_max+1];
+	struct 
+	{
+		crypt::Cipher			cipher;
+		crypt::KeyDerivation	key_derivation;
+		TCHAR					password[crypt::Constants::pw_length_max+1];
 	} temp;
 
-	HWND hwnd_basic;
-	HWND hwnd_auth;
-	HWND hwnd_key;
-	HWND hwnd_iv;
+	HWND						hwnd_basic;
+	HWND						hwnd_auth;
+	HWND						hwnd_key;
+	HWND						hwnd_iv;
 
-	HINSTANCE mHinstance;
+	HINSTANCE					mHinstance;
 };
 
 

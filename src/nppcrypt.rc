@@ -34,12 +34,12 @@ BEGIN
             VALUE "Comments", "Source code at http://www.cerberus-design.de/downloads.htm"
             VALUE "CompanyName", "Cerberus-Design.de"
             VALUE "FileDescription", "NppCrypt - Notepad++ Plugin"
-            VALUE "FileVersion", "1.0.1.0"
+            VALUE "FileVersion", "1.0.1.1"
             VALUE "InternalName", "NppCrypt"
             VALUE "LegalCopyright", "Copyright (C) 2014 cerberus-design"
             VALUE "OriginalFilename", "NppCrypt.dll"
             VALUE "ProductName", "NppCrypt"
-            VALUE "ProductVersion", "1.0.1.0"
+            VALUE "ProductVersion", "1.0.1.1"
             VALUE "SpecialBuild", "UNICODE"
         END
     END
@@ -63,10 +63,10 @@ BEGIN
     LTEXT           "algorithm:",IDC_STATIC,7,24,38,13
     LTEXT           "encoding:",IDC_STATIC,7,9,38,13
     CONTROL         "base64",IDC_HASH_ENC_BASE64,"Button",BS_AUTORADIOBUTTON,105,7,35,14
-    EDITTEXT        IDC_HASH_KEY,48,38,92,12,ES_AUTOHSCROLL
     CONTROL         "key:",IDC_HASH_USE_KEY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,38,26,11
     PUSHBUTTON      "OK",IDC_OK,33,57,42,14
     PUSHBUTTON      "Cancel",IDC_CANCEL,77,57,43,14
+    COMBOBOX        IDC_HASH_KEY,48,37,92,12,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_RANDOM DIALOGEX 0, 0, 109, 102
@@ -93,7 +93,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0x0
 BEGIN
     PUSHBUTTON      "Close",IDC_OK,73,41,50,14,BS_FLAT
     CTEXT           "www.cerberus-design.de/nppcrypt/readme.v1010.txt",IDC_ABOUT_CERBERUS_URL,11,25,176,8
-    CTEXT           "nppcrypt 1.0.1.0",IDC_STATIC,11,6,176,13,0,WS_EX_DLGMODALFRAME
+    CTEXT           "nppcrypt 1.0.1.0",IDC_ABOUT_TEXT,11,6,176,13,0,WS_EX_DLGMODALFRAME
 END
 
 IDD_PREFERENCES DIALOGEX 0, 0, 331, 166
@@ -150,15 +150,15 @@ IDD_CRYPT_BASIC DIALOGEX 0, 0, 226, 90
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    LTEXT           "encoding:",IDC_STATIC,2,10,31,10
+    EDITTEXT        IDC_CRYPT_PASSWORD,42,39,145,14,ES_AUTOHSCROLL
     CONTROL         "ascii",IDC_CRYPT_ENC_ASCII,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,41,10,27,12
     CONTROL         "hex",IDC_CRYPT_ENC_HEX,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,71,10,27,12
     CONTROL         "base64",IDC_CRYPT_ENC_BASE64,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,101,10,35,12
-    LTEXT           "cipher:",IDC_STATIC,2,25,29,11
     COMBOBOX        IDC_CRYPT_CIPHER,41,23,100,28,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     COMBOBOX        IDC_CRYPT_MODE,141,23,45,28,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "encoding:",IDC_STATIC,2,10,31,10
+    LTEXT           "cipher:",IDC_STATIC,2,25,29,11
     LTEXT           "password:",IDC_CRYPT_STATIC_PASSWORD,2,41,36,10
-    EDITTEXT        IDC_CRYPT_PASSWORD,42,39,145,14,ES_AUTOHSCROLL
 END
 
 IDD_CRYPT_AUTH DIALOGEX 0, 0, 212, 74
@@ -262,6 +262,14 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO
 BEGIN
+    IDD_HASH, DIALOG
+    BEGIN
+    END
+
+    IDD_CRYPT_BASIC, DIALOG
+    BEGIN
+    END
+
     IDD_CRYPT_AUTH, DIALOG
     BEGIN
     END
@@ -279,6 +287,16 @@ END
 //
 
 IDD_AUTH AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_CRYPT_BASIC AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_HASH AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

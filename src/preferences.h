@@ -16,37 +16,34 @@ GNU General Public License for more details.
 #define PREFERENCES_DEFINE_H
 
 #include "crypt.h"
+#include "mdef.h"
 
 class CPreferences 
 {
 public:
-	// nppcrypt-files:
-	struct {
-		bool	enable;
-		bool	askonsave;
-		TCHAR	extension[31];
-		int		ext_length;
-	} files;
-
-	bool no_ascii;
-
-	// key-presets:
-	struct KeyPreset {
+	struct KeyPreset
+	{
 		TCHAR			label[31];
 		unsigned char	data[16];
 	};
 
+	struct {
+		bool	enable;
+		bool	askonsave;
+		string	extension;
+	} files;
+
 	CPreferences();
 	static CPreferences& Instance() { static CPreferences single; return single; };
 
-	bool load(const TCHAR* path, Crypt::Options& crypt, Crypt::HashOptions& hash, Crypt::RandOptions& random);
-	bool save(Crypt::Options& crypt, Crypt::HashOptions& hash, Crypt::RandOptions& random);
+	bool load(const TCHAR* path, crypt::Options::Crypt& crypt, crypt::Options::Hash& hash, crypt::Options::Random& random);
+	bool save(crypt::Options::Crypt& crypt, crypt::Options::Hash& hash, crypt::Options::Random& random);
 
-	size_t  getKeyNum();
-	bool	addKey(const KeyPreset& key);
-	bool	delKey(size_t i);
-	const TCHAR* getKeyLabel(size_t i);
-	const unsigned char* getKey(size_t i);
+	size_t					getKeyNum();
+	bool					addKey(const KeyPreset& key);
+	bool					delKey(size_t i);
+	const TCHAR*			getKeyLabel(size_t i);
+	const unsigned char*	getKey(size_t i);
 private:
 	CPreferences(CPreferences const&);
 	CPreferences& operator=(CPreferences const&);

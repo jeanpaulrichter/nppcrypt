@@ -59,9 +59,6 @@
     <ClCompile Include="..\..\src\dlg_auth.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\dlg_config.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\dlg_crypt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -107,6 +104,12 @@
     <ClCompile Include="..\..\src\bcrypt\crypt_blowfish.cpp">
       <Filter>Source Files\bcrypt</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\dlg_preferences.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\header.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\crypt.h">
@@ -116,9 +119,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\dlg_auth.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\dlg_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\dlg_crypt.h">
@@ -192,6 +192,15 @@
     </ClInclude>
     <ClInclude Include="..\..\src\bcrypt\crypt_blowfish.h">
       <Filter>Header Files\bcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_preferences.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\header.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\mdef.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -17,23 +17,23 @@ GNU General Public License for more details.
 #include "commctrl.h"
 #include "preferences.h"
 
-DlgRandom::DlgRandom() : Window()
+DlgRandom::DlgRandom() : Window(), no_ascii(false)
 {};
 
 DlgRandom::~DlgRandom()
-{
-};
+{};
 
-void DlgRandom::init(HINSTANCE hInst, HWND parent, Crypt::RandOptions* opt)
+void DlgRandom::init(HINSTANCE hInst, HWND parent, crypt::Options::Random* opt)
 {
 	Window::init(hInst, parent);
 	options = opt;
 };
 
-bool DlgRandom::doDialog()
+bool DlgRandom::doDialog(bool no_ascii)
 {
 	if(!options)
 		return false;
+	this->no_ascii = no_ascii;
 	if(DialogBoxParam(_hInst, MAKEINTRESOURCE(IDD_RANDOM), _hParent,  (DLGPROC)dlgProc, (LPARAM)this)==IDC_OK)
 		return true;
 	return false;
@@ -70,24 +70,25 @@ BOOL CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
         case WM_INITDIALOG :
 		{
-			::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(Crypt::Constants::rand_char_max, 1));
+			::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(crypt::Constants::rand_char_max, 1));
 			::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf,IDC_RANDOM_EDIT), 0);		
-			if(options->length == 0 || options->length > Crypt::Constants::rand_char_max)
+			if(options->length == 0 || options->length > crypt::Constants::rand_char_max)
 				options->length = 16;
 			::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETPOS32, 0, options->length);
 
-			if(preferences.no_ascii) {
-				if(options->mode == Crypt::RandomMode::ascii) 
-					options->mode = Crypt::RandomMode::hex;
+			if(no_ascii)
+			{
+				if(options->mode == crypt::Random::ascii) 
+					options->mode = crypt::Random::base16;
 				::EnableWindow(::GetDlgItem(_hSelf,IDC_RANDOM_R3),false);
 			}
 
 			switch(options->mode) {
-			case Crypt::RandomMode::charnum: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R1, BM_SETCHECK, BST_CHECKED, 0); break;
-			case Crypt::RandomMode::specials: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R2, BM_SETCHECK, BST_CHECKED, 0); break;
-			case Crypt::RandomMode::ascii: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R3, BM_SETCHECK, BST_CHECKED, 0); break;
-			case Crypt::RandomMode::hex: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R4, BM_SETCHECK, BST_CHECKED, 0); break;
-			case Crypt::RandomMode::base64: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R5, BM_SETCHECK, BST_CHECKED, 0); break;
+			case crypt::Random::charnum: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R1, BM_SETCHECK, BST_CHECKED, 0); break;
+			case crypt::Random::specials: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R2, BM_SETCHECK, BST_CHECKED, 0); break;
+			case crypt::Random::ascii: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R3, BM_SETCHECK, BST_CHECKED, 0); break;
+			case crypt::Random::base16: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R4, BM_SETCHECK, BST_CHECKED, 0); break;
+			case crypt::Random::base64: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R5, BM_SETCHECK, BST_CHECKED, 0); break;
 			}
 
 			return TRUE;
@@ -99,15 +100,15 @@ BOOL CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 				case IDC_OK: 
 					{
 					if(::SendDlgItemMessage(_hSelf, IDC_RANDOM_R1, BM_GETCHECK, 0, 0)==BST_CHECKED)
-						options->mode = Crypt::RandomMode::charnum;
+						options->mode = crypt::Random::charnum;
 					else if(::SendDlgItemMessage(_hSelf, IDC_RANDOM_R2, BM_GETCHECK, 0, 0)==BST_CHECKED)
-						options->mode = Crypt::RandomMode::specials;
+						options->mode = crypt::Random::specials;
 					else if(::SendDlgItemMessage(_hSelf, IDC_RANDOM_R3, BM_GETCHECK, 0, 0)==BST_CHECKED)
-						options->mode = Crypt::RandomMode::ascii;
+						options->mode = crypt::Random::ascii;
 					else if(::SendDlgItemMessage(_hSelf, IDC_RANDOM_R4, BM_GETCHECK, 0, 0)==BST_CHECKED)
-						options->mode = Crypt::RandomMode::hex;
+						options->mode = crypt::Random::base16;
 					else
-						options->mode = Crypt::RandomMode::base64;
+						options->mode = crypt::Random::base64;
 
 					options->length = ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_GETPOS32, 0, 0);
 
