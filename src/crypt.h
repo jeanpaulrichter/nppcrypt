@@ -177,7 +177,9 @@ namespace crypt
 
 		static const TCHAR* getHelpURL(crypt::Encoding enc);
 		static const TCHAR* getHelpURL(crypt::Cipher cipher);
+		static const TCHAR* getHelpURL(crypt::Mode m);
 		static const TCHAR* getHelpURL(crypt::Hash h);
+		static const TCHAR* getHelpURL(crypt::KeyDerivation k);
 
 		// iteration through cipher/mode/hash-strings
 		class Iterator {

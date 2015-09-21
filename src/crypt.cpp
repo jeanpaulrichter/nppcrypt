@@ -64,8 +64,12 @@ static const char* random_mode_str_c[] = { "charnum", "specials", "ascii", "base
 
 static TCHAR help_url_wikipedia[100] = TEXT("https://en.wikipedia.org/wiki/");
 static const int help_url_wikipedia_len = 30;
+static const TCHAR* help_url_cipher[] = { TEXT("Data_Encryption_Standard"), TEXT("Data_Encryption_Standard"), TEXT("Data_Encryption_Standard"), TEXT("DES-X"), TEXT("RC2"), TEXT("RC4"), TEXT("RC5"), TEXT("International_Data_Encryption_Algorithm"), TEXT("Blowfish_(cipher)"), TEXT("CAST-128"), TEXT("Advanced_Encryption_Standard"), TEXT("Advanced_Encryption_Standard"), TEXT("Advanced_Encryption_Standard") };
+static const TCHAR* help_url_mode[] = { TEXT("Block_cipher_mode_of_operation"), TEXT("Block_cipher_mode_of_operation"), TEXT("Block_cipher_mode_of_operation"), TEXT("Block_cipher_mode_of_operation"), TEXT("Block_cipher_mode_of_operation"), TEXT("Disk_encryption_theory"), TEXT("CCM_mode"), TEXT("Galois/Counter_Mode") };
+
 static const TCHAR* help_url_encoding[] = { TEXT("ASCII"), TEXT("Hexadecimal"), TEXT("Base64") };
 static const TCHAR* help_url_hash[] = { TEXT("MD4"), TEXT("MD5"), TEXT("MDC-2"), TEXT("SHA-1"), TEXT("SHA-2"), TEXT("SHA-2"), TEXT("RIPEMD"), TEXT("Whirlpool_(cryptography)"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3") };
+static const TCHAR* help_url_keyderiv[] = { TEXT("PBKDF2"), TEXT("Bcrypt"), TEXT("Scrypt") };
 
 // ----------------------------- HELP FUNCTIONS --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1220,12 +1224,24 @@ const TCHAR* crypt::help::getHelpURL(crypt::Encoding enc)
 
 const TCHAR* crypt::help::getHelpURL(crypt::Cipher cipher)
 {
-	//lstrcpy(help_url_wikipedia + help_url_wikipedia_len, help_url_encoding[unsigned(enc)]);
+	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, help_url_cipher[unsigned(cipher)]);
 	return help_url_wikipedia;
 }
 
 const TCHAR* crypt::help::getHelpURL(crypt::Hash h)
 {
 	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, help_url_hash[unsigned(h)]);
+	return help_url_wikipedia;
+}
+
+const TCHAR* crypt::help::getHelpURL(crypt::KeyDerivation k)
+{
+	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, help_url_keyderiv[unsigned(k)]);
+	return help_url_wikipedia;
+}
+
+const TCHAR* crypt::help::getHelpURL(crypt::Mode m)
+{
+	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, help_url_mode[unsigned(m)]);
 	return help_url_wikipedia;
 }

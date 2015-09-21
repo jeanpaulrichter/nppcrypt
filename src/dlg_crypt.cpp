@@ -131,6 +131,20 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 				return TRUE;
 			} break;
 
+			// ---------------------- encoding changed
+			case IDC_CRYPT_ENC_ASCII:
+			{
+				url_help[(int)HelpURL::encoding].changeURL(crypt::help::getHelpURL(crypt::Encoding::ascii));
+			} break;
+			case IDC_CRYPT_ENC_HEX:
+			{
+				url_help[(int)HelpURL::encoding].changeURL(crypt::help::getHelpURL(crypt::Encoding::base16));
+			} break;
+			case IDC_CRYPT_ENC_BASE64:
+			{
+				url_help[(int)HelpURL::encoding].changeURL(crypt::help::getHelpURL(crypt::Encoding::base64));
+			} break;
+
 			// ---------------------- key-derivation changed
 			case IDC_CRYPT_KEY_PBKDF2: case IDC_CRYPT_KEY_BCRYPT: case IDC_CRYPT_KEY_SCRYPT:
 			{
@@ -336,6 +350,11 @@ void DlgCrypt::OnInitDialog()
 		::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_SETCURSEL, crypt::help::getIndexByMode(temp.cipher, options->mode), 0);
 	}
 
+	url_help[int(HelpURL::cipher)].init(_hInst, hwnd_basic);
+	url_help[int(HelpURL::cipher)].create(::GetDlgItem(hwnd_basic, IDC_CRYPT_HELP_CIPHER), crypt::help::getHelpURL(options->cipher));
+	url_help[int(HelpURL::mode)].init(_hInst, hwnd_basic);
+	url_help[int(HelpURL::mode)].create(::GetDlgItem(hwnd_basic, IDC_CRYPT_HELP_MODE), crypt::help::getHelpURL(options->mode));
+
 	// --------------------- Password --------------------------------------------------------------------------------------------
 	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD, EM_SETPASSWORDCHAR, '*', 0);
 	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD, EM_LIMITTEXT, crypt::Constants::pw_length_max, 0);
@@ -349,6 +368,9 @@ void DlgCrypt::OnInitDialog()
 	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_ENC_ASCII, BM_SETCHECK, (options->encoding == crypt::Encoding::ascii), 0);
 	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_ENC_HEX, BM_SETCHECK, (options->encoding == crypt::Encoding::base16), 0);
 	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_ENC_BASE64, BM_SETCHECK, (options->encoding == crypt::Encoding::base64), 0);
+
+	url_help[int(HelpURL::encoding)].init(_hInst, hwnd_basic);
+	url_help[int(HelpURL::encoding)].create(::GetDlgItem(hwnd_basic, IDC_CRYPT_HELP_ENC), crypt::help::getHelpURL(options->encoding));
 
 	// --------------------- Key-Derivation ----------------------------------------------------------------------------------------------------
 	// setups controls:
@@ -400,6 +422,15 @@ void DlgCrypt::OnInitDialog()
 	}
 	enableKeyDeriControls();
 
+	url_help[int(HelpURL::salt)].init(_hInst, hwnd_key);
+	url_help[int(HelpURL::salt)].create(::GetDlgItem(hwnd_key, IDC_CRYPT_HELP_SALT), TEXT(NPPC_CRYPT_SALT_HELP_URL));
+	url_help[int(HelpURL::pbkdf2)].init(_hInst, hwnd_key);
+	url_help[int(HelpURL::pbkdf2)].create(::GetDlgItem(hwnd_key, IDC_CRYPT_HELP_PBKDF2), crypt::help::getHelpURL(crypt::KeyDerivation::pbkdf2));
+	url_help[int(HelpURL::bcrypt)].init(_hInst, hwnd_key);
+	url_help[int(HelpURL::bcrypt)].create(::GetDlgItem(hwnd_key, IDC_CRYPT_HELP_BCRYPT), crypt::help::getHelpURL(crypt::KeyDerivation::bcrypt));
+	url_help[int(HelpURL::scrypt)].init(_hInst, hwnd_key);
+	url_help[int(HelpURL::scrypt)].create(::GetDlgItem(hwnd_key, IDC_CRYPT_HELP_SCRYPT), crypt::help::getHelpURL(crypt::KeyDerivation::scrypt));
+
 	// --------------------- IV ----------------------------------------------------------------------------------------------------------------
 	if (options->mode == crypt::Mode::gcm || options->mode == crypt::Mode::xts) {
 		if (options->iv == crypt::IV::zero)
@@ -409,6 +440,9 @@ void DlgCrypt::OnInitDialog()
 	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, (options->iv == crypt::IV::random), 0);
 	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_KEY, BM_SETCHECK, (options->iv == crypt::IV::keyderivation), 0);
 	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ZERO, BM_SETCHECK, (options->iv == crypt::IV::zero), 0);
+
+	url_help[int(HelpURL::iv)].init(_hInst, hwnd_iv);
+	url_help[int(HelpURL::iv)].create(::GetDlgItem(hwnd_iv, IDC_CRYPT_HELP_IV), TEXT(NPPC_CRYPT_IV_HELP_URL));
 
 	// --------------------- Auth --------------------------------------------------------------------------------------------------------------
 	::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_ENABLE, BM_SETCHECK, options->hmac.enable, 0);
@@ -455,6 +489,9 @@ void DlgCrypt::OnInitDialog()
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE), options->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW), options->hmac.enable);
 	}
+
+	url_help[int(HelpURL::hmac)].init(_hInst, hwnd_auth);
+	url_help[int(HelpURL::hmac)].create(::GetDlgItem(hwnd_auth, IDC_CRYPT_HELP_HMAC), TEXT(NPPC_CRYPT_HMAC_HELP_URL));
 
 	// --------------------- Show Basic Tab ----------------------------------------------------------------------------------------------------
 	ShowWindow(hwnd_basic, SW_SHOW);
@@ -536,11 +573,14 @@ void DlgCrypt::OnCipherChange()
 			::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_SETCURSEL, i, 0);
 		}
 		else {
+			crypt::Mode new_mode = crypt::help::getModeByIndex(temp.cipher, 0);
+			url_help[int(HelpURL::mode)].changeURL(crypt::help::getHelpURL(new_mode));
 			::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_MODE, CB_SETCURSEL, 0, 0);
 			if (old_mode == crypt::Mode::gcm || old_mode == crypt::Mode::xts)
 				::EnableWindow(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_ZERO), true);
 		}
 	}
+	url_help[int(HelpURL::cipher)].changeURL(crypt::help::getHelpURL(temp.cipher));
 }
 
 void DlgCrypt::OnCipherModeChange()
@@ -559,6 +599,7 @@ void DlgCrypt::OnCipherModeChange()
 	else {
 		::EnableWindow(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_ZERO), true);
 	}
+	url_help[int(HelpURL::mode)].changeURL(crypt::help::getHelpURL(tmode));
 }
 
 void DlgCrypt::enableKeyDeriControls()

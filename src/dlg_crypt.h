@@ -24,6 +24,7 @@ GNU General Public License for more details.
 
 #include "resource.h"
 #include "npp/Window.h"
+#include "npp/URLCtrl.h"
 #include "crypt.h"
 #include "encoding.h"
 
@@ -71,6 +72,10 @@ private:
 	HWND						hwnd_auth;
 	HWND						hwnd_key;
 	HWND						hwnd_iv;
+
+	enum HelpURL { encoding, cipher, mode, salt, pbkdf2, bcrypt, scrypt, hmac, iv };
+	URLCtrl						url_help[9];
+
 
 	HINSTANCE					mHinstance;
 };

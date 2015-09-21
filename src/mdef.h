@@ -34,8 +34,10 @@ const int	NPPCRYPT_VERSION = 1011;
 #define		NPPC_DEF_FILE_EXT		"nppcrypt"
 #define		NPPC_FILE_EXT_MAXLENGTH	32
 
-#define		NPPC_HASH_KEY_HELP_URL	"http://www.cerberus-design.de/nppcrypt/hashkey.txt"
-
+#define		NPPC_HASH_KEY_HELP_URL	"http://www.cerberus-design.de/nppcrypt/help/hash.key.txt"
+#define		NPPC_CRYPT_HMAC_HELP_URL "http://www.cerberus-design.de/nppcrypt/help/crypt.hmac.txt"
+#define		NPPC_CRYPT_IV_HELP_URL	"http://www.cerberus-design.de/nppcrypt/help/crypt.iv.txt"
+#define		NPPC_CRYPT_SALT_HELP_URL "https://en.wikipedia.org/wiki/Salt_%28cryptography%29"
 
 #ifdef UNICODE
 typedef std::wstring string;

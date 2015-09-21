@@ -60,11 +60,15 @@
 #define IDC_CRYPT_SALT_SPIN             1010
 #define IDC_PREF_BASE64_LV_SPIN         1010
 #define IDC_HASH_HELP_HASH              1010
+#define IDC_CRYPT_HELP_ENC              1010
 #define IDC_CRYPT_KEY_PBKDF2            1011
 #define IDC_PREF_HEX_SPACES             1011
 #define IDC_HASH_HELP_KEY               1011
+#define IDC_CRYPT_HELP_ENC2             1011
+#define IDC_CRYPT_HELP_CIPHER           1011
 #define IDC_CRYPT_KEY_BCRYPT            1012
 #define IDC_PREF_HEX_LOWERCASE          1012
+#define IDC_CRYPT_HELP_MODE             1012
 #define IDC_CRYPT_KEY_SCRYPT            1013
 #define IDC_PREF_HEX_UPPERCASE          1013
 #define IDC_CRYPT_PBKDF2_HASH           1014
@@ -84,13 +88,20 @@
 #define IDC_CRYPT_SCRYPT_P_SPIN         1023
 #define IDC_CRYPT_SCRYPT_N_SPIN         1024
 #define IDC_CRYPT_HMAC_ENABLE           1025
+#define IDC_CRYPT_HELP_SALT             1025
 #define IDC_CRYPT_HMAC_HASH             1026
+#define IDC_CRYPT_HELP_PBKDF2           1026
+#define IDC_CRYPT_HELP_IV               1026
 #define IDC_CRYPT_AUTH_KEY_LIST         1027
+#define IDC_CRYPT_HELP_BCRYPT           1027
 #define IDC_CRYPT_AUTH_KEY_PRESET       1028
+#define IDC_CRYPT_HELP_SALT2            1028
+#define IDC_CRYPT_HELP_SCRYPT           1028
 #define IDC_CRYPT_AUTH_KEY_CUSTOM       1029
 #define IDC_CRYPT_AUTH_KEY_VALUE        1030
 #define IDC_CRYPT_AUTH_KEY_SHOW         1031
 #define IDC_CRYPT_IV_RANDOM             1032
+#define IDC_CRYPT_HELP_HMAC             1032
 #define IDC_CRYPT_IV_KEY                1033
 #define IDC_CRYPT_IV_ZERO               1034
 #define IDC_ABOUT_TEXT                  1035
@@ -100,9 +111,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        103
+#define _APS_NEXT_RESOURCE_VALUE        108
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1010
+#define _APS_NEXT_CONTROL_VALUE         1033
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
