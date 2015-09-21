@@ -16,6 +16,7 @@ GNU General Public License for more details.
 #define DLG_HASH_DEFINE_H
 
 #include "npp/Window.h"
+#include "npp/URLCtrl.h"
 #include "exception.h"
 #include "crypt.h"
 #include "encoding.h"
@@ -40,8 +41,14 @@ private:
 	DlgHash(DlgHash const&);
 	DlgHash& operator=(DlgHash const&);
 
+	void enableKeyControls(bool v);
+
 	crypt::Options::Hash*	options;
-	bool no_ascii;
+	bool					no_ascii;
+
+	URLCtrl					url_help_enc;
+	URLCtrl					url_help_hash;
+	URLCtrl					url_help_key;
 };
 
 

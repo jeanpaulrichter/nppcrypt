@@ -173,6 +173,11 @@ namespace crypt
 		static crypt::Mode getModeByIndex(crypt::Cipher cipher, int index);
 		static int getIndexByMode(crypt::Cipher cipher, crypt::Mode mode);
 		static bool validCipherMode(crypt::Cipher cipher, crypt::Mode mode);
+		static bool IsOpenSSLHash(crypt::Hash h);
+
+		static const TCHAR* getHelpURL(crypt::Encoding enc);
+		static const TCHAR* getHelpURL(crypt::Cipher cipher);
+		static const TCHAR* getHelpURL(crypt::Hash h);
 
 		// iteration through cipher/mode/hash-strings
 		class Iterator {

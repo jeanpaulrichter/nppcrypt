@@ -28,6 +28,7 @@
 
 //#include "precompiledHeaders.h"
 #include "URLCtrl.h"
+#include <Commctrl.h>
 
 static BYTE XORMask[128] =
 {
@@ -105,7 +106,7 @@ static BYTE ANDMask[128] =
 
 
 
-void URLCtrl::create(HWND itemHandle, TCHAR * link, COLORREF linkColor)
+void URLCtrl::create(HWND itemHandle, const TCHAR * link, COLORREF linkColor, bool tooltip)
 {
 	// turn on notify style
     ::SetWindowLongPtr(itemHandle, GWL_STYLE, ::GetWindowLongPtr(itemHandle, GWL_STYLE) | SS_NOTIFY);
@@ -128,6 +129,27 @@ void URLCtrl::create(HWND itemHandle, TCHAR * link, COLORREF linkColor)
 
 	// save hwnd
 	_hSelf = itemHandle;
+
+	if (tooltip)
+	{
+		hwndTip = CreateWindowEx(NULL, TOOLTIPS_CLASS, NULL,
+			WS_POPUP | TTS_ALWAYSTIP | TTS_BALLOON,
+			CW_USEDEFAULT, CW_USEDEFAULT,
+			CW_USEDEFAULT, CW_USEDEFAULT,
+			_hSelf, NULL,
+			_hInst, NULL);
+
+		if (hwndTip)
+		{
+			TOOLINFO toolInfo = { 0 };
+			toolInfo.cbSize = sizeof(toolInfo);
+			toolInfo.hwnd = _hParent;
+			toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+			toolInfo.uId = (UINT_PTR)_hSelf;
+			toolInfo.lpszText = (PTSTR)_URL.c_str();
+			SendMessage(hwndTip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
+		}
+	}
 }
 void URLCtrl::create(HWND itemHandle, int cmd, HWND msgDest)
 {
@@ -149,6 +171,22 @@ void URLCtrl::create(HWND itemHandle, int cmd, HWND msgDest)
 	// save hwnd
 	_hSelf = itemHandle;
 }
+
+void URLCtrl::changeURL(const TCHAR* url)
+{
+	_URL = url;
+	_linkColor = RGB(0, 0, 255);
+	if (hwndTip) 
+	{
+		TOOLINFO toolInfo = { 0 };
+		toolInfo.cbSize = sizeof(toolInfo);
+		toolInfo.hwnd = _hParent;
+		toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+		toolInfo.uId = (UINT_PTR)_hSelf;
+		toolInfo.lpszText = (PTSTR)_URL.c_str();
+		SendMessage(hwndTip, TTM_UPDATETIPTEXT, 0, (LPARAM)&toolInfo);
+	}
+};
 
 void URLCtrl::destroy()
 {

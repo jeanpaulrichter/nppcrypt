@@ -62,6 +62,11 @@ static const char* encoding_str_c[] = { "ascii", "base16", "base64" };
 static const char* key_algo_str_c[] = { "pbkdf2", "bcrypt", "scrypt" };
 static const char* random_mode_str_c[] = { "charnum", "specials", "ascii", "base16" , "base64" };
 
+static TCHAR help_url_wikipedia[100] = TEXT("https://en.wikipedia.org/wiki/");
+static const int help_url_wikipedia_len = 30;
+static const TCHAR* help_url_encoding[] = { TEXT("ASCII"), TEXT("Hexadecimal"), TEXT("Base64") };
+static const TCHAR* help_url_hash[] = { TEXT("MD4"), TEXT("MD5"), TEXT("MDC-2"), TEXT("SHA-1"), TEXT("SHA-2"), TEXT("SHA-2"), TEXT("RIPEMD"), TEXT("Whirlpool_(cryptography)"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3") };
+
 // ----------------------------- HELP FUNCTIONS --------------------------------------------------------------------------------------------------------------------------------------------------
 
 const EVP_CIPHER* getEVPCipher(crypt::Cipher c, crypt::Mode m)
@@ -1200,4 +1205,27 @@ bool crypt::help::validCipherMode(crypt::Cipher cipher, crypt::Mode mode)
 		return true;
 	else
 		return false;
+}
+
+bool crypt::help::IsOpenSSLHash(crypt::Hash h)
+{
+	return (h < Hash::sha3_256);
+}
+
+const TCHAR* crypt::help::getHelpURL(crypt::Encoding enc)
+{
+	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, help_url_encoding[unsigned(enc)]);
+	return help_url_wikipedia;
+}
+
+const TCHAR* crypt::help::getHelpURL(crypt::Cipher cipher)
+{
+	//lstrcpy(help_url_wikipedia + help_url_wikipedia_len, help_url_encoding[unsigned(enc)]);
+	return help_url_wikipedia;
+}
+
+const TCHAR* crypt::help::getHelpURL(crypt::Hash h)
+{
+	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, help_url_hash[unsigned(h)]);
+	return help_url_wikipedia;
 }

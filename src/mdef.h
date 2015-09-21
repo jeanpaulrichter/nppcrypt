@@ -34,7 +34,7 @@ const int	NPPCRYPT_VERSION = 1011;
 #define		NPPC_DEF_FILE_EXT		"nppcrypt"
 #define		NPPC_FILE_EXT_MAXLENGTH	32
 
-
+#define		NPPC_HASH_KEY_HELP_URL	"http://www.cerberus-design.de/nppcrypt/hashkey.txt"
 
 
 #ifdef UNICODE
