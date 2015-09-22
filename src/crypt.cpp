@@ -283,7 +283,7 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::vector<unsigned
 		if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)options.key.option1, (const char*)ptSalt, 16, settings, 32) == NULL)
 			throw CExc(CExc::File::crypt, __LINE__);
 		memset(output, 0, sizeof(output));
-		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64, true) == NULL)
+		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL)
 			throw CExc(CExc::File::crypt, __LINE__);
 
 		shake128((unsigned char*)output, 24, &tKey[0], tKey.size());
@@ -510,7 +510,7 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::vector<unsigned
 		if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)options.key.option1, (const char*)ptSalt, 16, settings, 32) == NULL)
 			throw CExc(CExc::File::crypt, __LINE__);
 		memset(output, 0, sizeof(output));
-		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64, true) == NULL)
+		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL)
 			throw CExc(CExc::File::crypt, __LINE__);
 
 		shake128((unsigned char*)output, 24, &tKey[0], tKey.size());

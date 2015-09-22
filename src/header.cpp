@@ -1,3 +1,18 @@
+/*
+This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
+
+
 #include <sstream>
 #include "tinyxml2/tinyxml2.h"
 #include "encoding.h"
@@ -19,26 +34,19 @@ inline bool cmpchars(const char* s1, const char* s2, int len)
 
 // ======================================================================================================================================================================
 
-DataParser::DataParser(const unsigned char* in, size_t in_len, crypt::Options::Crypt& opt)
-	: pData(in), pHeader(NULL), pHeader_c(NULL), pCryptData(NULL), data_len(in_len), header_c_len(0), header_len(0), crypt_data_len(0), hmac_start(0), options(opt), version(NPPCRYPT_VERSION)
+bool HeaderReader::parse(const unsigned char* in, size_t in_len)
 {
-}
-
-// ======================================================================================================================================================================
-
-bool DataParser::readHeader()
-{
-	if(pData == NULL)
+	if(in == NULL)
 		throw CExc(CExc::File::header, __LINE__);
-	if (data_len < 9)
+	if (in_len < 9)
 		return false;
 	
-	if (!cmpchars((const char*)pData, "<nppcrypt", 9))
+	if (!cmpchars((const char*)in, "<nppcrypt", 9))
 	{
 		// header-version < 1010
-		if (cmpchars((const char*)pData, "nppcrypt", 8))
+		if (cmpchars((const char*)in, "nppcrypt", 8))
 		{
-			parse_old_headers();
+			parse_old(in, in_len);
 			return true;
 		}
 		else {
@@ -53,21 +61,21 @@ bool DataParser::readHeader()
 	crypt::Options::Crypt	t_options;
 
 	// find header body start:
-	while (offset < data_len - 11 && pData[offset] != '\n')
+	while (offset < in_len - 11 && in[offset] != '\n')
 		offset++;
 	body_start = offset + 1;
-	pHeader_c = (const char*)pData + body_start;
+	pContent = (const char*)in + body_start;
 
 	// find header end:
-	while (offset < data_len - 11 && !cmpchars((const char*)pData + offset, "</nppcrypt>", 11))
+	while (offset < in_len - 11 && !cmpchars((const char*)in + offset, "</nppcrypt>", 11))
 		offset++;
-	if (offset > data_len - 12) {
+	if (offset > in_len - 12) {
 		throw CExc(CExc::File::header, __LINE__, CExc::Code::parse_header);
 	}
-	header_c_len = offset - body_start;
+	content_len = offset - body_start;
 
 	// ------ parse header:
-	xml_err = xml_doc.Parse((const char*)pData, offset + 11);
+	xml_err = xml_doc.Parse((const char*)in, offset + 11);
 	if (xml_err != tinyxml2::XMLError::XML_NO_ERROR)
 		throw CExc(CExc::File::header, __LINE__, CExc::Code::parse_header);
 	tinyxml2::XMLElement* xml_nppcrypt = xml_doc.FirstChildElement();
@@ -206,31 +214,29 @@ bool DataParser::readHeader()
 	}
 
 	options = t_options;
-	if (pData[offset + 11] == '\r' && pData[offset + 12] == '\n')
+	if (in[offset + 11] == '\r' && in[offset + 12] == '\n')
 	{
-		pCryptData = pData + offset + 13;
-		crypt_data_len = data_len - offset - 13;
+		pCData = in + offset + 13;
+		cdata_len = in_len - offset - 13;
 	}
-	else if (pData[offset + 11] == '\n')
+	else if (in[offset + 11] == '\n')
 	{
-		pCryptData = pData + offset + 12;
-		crypt_data_len = data_len - offset - 12;
+		pCData = in + offset + 12;
+		cdata_len = in_len - offset - 12;
 	}
 	else
 	{
-		pCryptData = pData + offset + 11;
-		crypt_data_len = data_len - offset - 11;
+		pCData = in + offset + 11;
+		cdata_len = in_len - offset - 11;
 	}
-	pHeader = (const char*)pData;
-	header_len = data_len - crypt_data_len;
 	return true;
 }
 
 // ======================================================================================================================================================================
 
-void DataParser::parse_old_headers()
+void HeaderReader::parse_old(const unsigned char* in, size_t in_len)
 {
-	if (data_len > 16 && pData[8] == 1)
+	if (in_len > 16 && in[8] == 1)
 	{
 		// -------------------------- 1008/9 ----------------------------------------------------------------------------------------------------------------------------
 
@@ -238,15 +244,15 @@ void DataParser::parse_old_headers()
 			crypt::Cipher::aes256, crypt::Cipher::des_ede, crypt::Cipher::des_ede3, crypt::Cipher::desx, crypt::Cipher::rc4 };
 		crypt::Mode old_modes[] = { crypt::Mode::cbc, crypt::Mode::ecb, crypt::Mode::cfb, crypt::Mode::ofb, crypt::Mode::ctr };
 
-		if (pData[9] < 0 || pData[9] > 10)
+		if (in[9] < 0 || in[9] > 10)
 			throw CExc(CExc::File::header, __LINE__, CExc::Code::parse_header);
-		if (pData[10] < 0 || pData[10] > 4)
+		if (in[10] < 0 || in[10] > 4)
 			throw CExc(CExc::File::header, __LINE__, CExc::Code::parse_header);
-		options.cipher = old_ciphers[pData[9]];
-		options.mode = old_modes[pData[10]];
-		options.encoding = (pData[13] == 1) ? crypt::Encoding::base16 : crypt::Encoding::ascii;
+		options.cipher = old_ciphers[in[9]];
+		options.mode = old_modes[in[10]];
+		options.encoding = (in[13] == 1) ? crypt::Encoding::base16 : crypt::Encoding::ascii;
 
-		if (pData[12] == 0) {
+		if (in[12] == 0) {
 			options.key.algorithm = crypt::KeyDerivation::pbkdf2;
 			options.key.option1 = static_cast<int>(crypt::Hash::md5);
 			options.key.option2 = 1000;
@@ -256,36 +262,36 @@ void DataParser::parse_old_headers()
 		}
 
 		// default: no salt
-		header_len = 16;
-		pCryptData = pData + 16;
-		crypt_data_len = data_len - 16;
+		size_t header_len = 16;
+		pCData = in + 16;
+		cdata_len = in_len - 16;
 		options.key.salt_bytes = 0;
 
 		if (options.encoding == crypt::Encoding::ascii) {
-			if (data_len > 32 && cmpchars((const char*)pData + 16, "Salted__", 8)) {
+			if (in_len > 32 && cmpchars((const char*)in + 16, "Salted__", 8)) {
 				s_init.salt.resize(13);
 				s_init.salt[12] = 0;
-				Encode::bin_to_base64(pData + 24, 8, &s_init.salt[0], true);
+				Encode::bin_to_base64(in + 24, 8, &s_init.salt[0], true);
 				header_len = 32;
-				pCryptData = pData + 32;
-				crypt_data_len = data_len - 32;
+				pCData = in + 32;
+				cdata_len = in_len - 32;
 				options.key.salt_bytes = 8;
 			}
 		}
 		else {
 			unsigned char t[8];
-			if (data_len > 48 && cmpchars((const char*)pData + 16, "53616C7465645F5F", 16)) {
-				Encode::hex_to_bin((const char*)pData + 32, 16, t);
+			if (in_len > 48 && cmpchars((const char*)in + 16, "53616C7465645F5F", 16)) {
+				Encode::hex_to_bin((const char*)in + 32, 16, t);
 				header_len = 48;
-				pCryptData = pData + 48;
-				crypt_data_len = data_len - 48;
+				pCData = in + 48;
+				cdata_len = in_len - 48;
 				options.key.salt_bytes = 8;
 			}
-			else if (data_len > 64 && cmpchars((const char*)pData + 16, "53 61 6C 74 65 64 5F 5F ", 24)) {
-				Encode::hex_to_bin((const char*)pData + 40, 24, t);
+			else if (in_len > 64 && cmpchars((const char*)in + 16, "53 61 6C 74 65 64 5F 5F ", 24)) {
+				Encode::hex_to_bin((const char*)in + 40, 24, t);
 				header_len = 64;
-				pCryptData = pData + 64;
-				crypt_data_len = data_len - 64;
+				pCData = in + 64;
+				cdata_len = in_len - 64;
 				options.key.salt_bytes = 8;
 			}
 			if (options.key.salt_bytes == 8) {
@@ -295,9 +301,8 @@ void DataParser::parse_old_headers()
 			}
 		}
 
-		pHeader = (const char*)pData;
-		pHeader_c = pHeader;
-		header_c_len = header_len;
+		pContent = (const char*)in;
+		content_len = header_len;
 
 		options.hmac.enable = false;
 		options.iv = crypt::IV::keyderivation;
@@ -310,7 +315,14 @@ void DataParser::parse_old_headers()
 
 // ====================================================================================================================================================================
 
-void DataParser::setupHeader()
+bool HeaderReader::checkHMAC(const std::string& hmac)
+{
+	return (s_hmac.compare(hmac) == 0);
+};
+
+// ====================================================================================================================================================================
+
+void HeaderWriter::create()
 {
 	std::ostringstream	out;
 	size_t				body_start;
@@ -328,7 +340,7 @@ void DataParser::setupHeader()
 		if (options.hmac.key_id >= 0)
 			out << " auth-key=\"" << options.hmac.key_id << "\"";
 		out << " hmac-hash=\"" << crypt::help::getString(options.hmac.hash) << "\" hmac=\"";
-		hmac_start = static_cast<size_t>(out.tellp());
+		hmac_offset = static_cast<size_t>(out.tellp());
 		out << std::string(Encode::bin_to_base64(NULL, crypt::getHashLength(options.hmac.hash), NULL, true), ' ') << "\"";
 	}
 	out << ">" << linebreak;
@@ -362,39 +374,15 @@ void DataParser::setupHeader()
 	out << "</nppcrypt>" << linebreak;
 
 	s_header.assign(out.str());
-	pHeader_c = &s_header[body_start];
-	header_c_len = body_end - body_start;
-	pHeader = s_header.c_str();
-	header_len = s_header.size();
+	pContent = &s_header[body_start];
+	content_len = body_end - body_start;
 }
 
 // ====================================================================================================================================================================
 
-void DataParser::updateHMAC(const std::string& hmac)
+void HeaderWriter::updateHMAC(const std::string& hmac)
 {
-	std::copy(hmac.begin(), hmac.end(), s_header.begin() + hmac_start);
+	std::copy(hmac.begin(), hmac.end(), s_header.begin() + hmac_offset);
 }
 
-bool DataParser::checkHMAC(const std::string& hmac)
-{
-	return (s_hmac.compare(hmac) == 0);
-};
 
-int	DataParser::getVersion()
-{
-	return version;
-};
-
-// ====================================================================================================================================================================
-
-const char*	DataParser::header() { return pHeader; };
-const char*	DataParser::header_c() { return pHeader_c; };
-const unsigned char* DataParser::data() { return pData; };
-const unsigned char* DataParser::crypt_data() { return pCryptData; };
-
-size_t DataParser::header_length() { return header_len; };
-size_t DataParser::header_c_length() { return header_c_len; };
-size_t DataParser::data_length() { return data_len; };
-size_t DataParser::crypt_data_length() { return crypt_data_len; };
-
-crypt::InitStrings&	DataParser::init() { return s_init; };

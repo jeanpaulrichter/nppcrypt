@@ -18,50 +18,68 @@ GNU General Public License for more details.
 #include "crypt.h"
 #include "mdef.h"
 
-class DataParser
+class Header
 {
 public:
-	DataParser(const unsigned char* in, size_t in_len, crypt::Options::Crypt& opt);
+	Header() : version(NPPCRYPT_VERSION), pContent(NULL), content_len(0) {};
 
-	bool readHeader();
-	void setupHeader();
-	void updateHMAC(const std::string& hmac);
-	bool checkHMAC(const std::string& hmac);
-	int	getVersion();
+	int				getVersion() { return version; };
+	/* returns header-content (<nppcrypt>content</nppcrypt>) */
+	const char*		body() { return pContent; };
+	/* returns header-content length */
+	size_t			body_size() { return content_len; };
 
-	const char*				header();
-	const char*				header_c();
-	const unsigned char*	data();
-	const unsigned char*	crypt_data();
+protected:
+	crypt::InitStrings		s_init;
+	int						version;
+	const char*				pContent;
+	size_t					content_len;
+};
 
-	size_t					header_length();	
-	size_t					header_c_length();	
-	size_t					data_length();	
-	size_t					crypt_data_length();
 
-	crypt::InitStrings&		init();
+class HeaderReader : public Header
+{
+public:
+	HeaderReader(crypt::Options::Crypt& opt) : options(opt), pCData(NULL), cdata_len(0) {};
+
+	/* parses data for header and updates crypt::Options::Crypt, return true if header found */
+	bool	parse(const unsigned char* in, size_t in_len);
+	/* compares header-hmac with given hmac string, returns true if equal */
+	bool	checkHMAC(const std::string& hmac);
+	/* returns encrypted data */
+	const unsigned char*	cdata() { return pCData; };
+	/* returns encrypted data length */
+	size_t					cdata_size() { return cdata_len; };
+	const crypt::InitStrings&		init_strings() { return s_init; };
 
 private:
-	void					parse_old_headers();
+	void	parse_old(const unsigned char* in, size_t in_len);
 
 	crypt::Options::Crypt&		options;
+	std::string					s_hmac;
+	const unsigned char* 		pCData;
+	size_t						cdata_len;
+};
 
-	const unsigned char* const	pData;
-	const char*					pHeader;
-	const char*					pHeader_c;
-	const unsigned char* 		pCryptData;
+class HeaderWriter : public Header
+{
+public:
+	HeaderWriter(const crypt::Options::Crypt& opt) : options(opt), hmac_offset(0) {};
+	/* creates header string from given crypt::Options::Crypt */
+	void	create();
+	/* updates hmac-string of header */
+	void	updateHMAC(const std::string& hmac);
 
-	size_t					data_len;
-	size_t					header_len;
-	size_t					header_c_len;
-	size_t					crypt_data_len;
-	size_t					hmac_start;
+	/* returns header data */
+	const char*						c_str() { return s_header.c_str(); };
+	/* returns header length */
+	size_t							size() { return s_header.size(); };
+	crypt::InitStrings&				init_strings() { return s_init;	};
 
-	std::string				s_header;
-	crypt::InitStrings		s_init;
-	std::string				s_hmac;
-
-	int						version;
+private:
+	const crypt::Options::Crypt&	options;
+	std::string						s_header;
+	size_t							hmac_offset;
 };
 
 #endif

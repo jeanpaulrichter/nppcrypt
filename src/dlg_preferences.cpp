@@ -90,13 +90,19 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 			for (size_t i = 0; i< preferences.getKeyNum(); i++)
 				::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
 
+			url_help_files.init(_hInst, _hSelf);
+			url_help_files.create(::GetDlgItem(_hSelf, IDC_PREF_HELP_FILES), TEXT(NPPC_FILES_HELP_URL));
+			url_help_keys.init(_hInst, _hSelf);
+			url_help_keys.create(::GetDlgItem(_hSelf, IDC_PREF_HELP_KEYS), TEXT(NPPC_PREFKEYS_HELP_URL));
+
 			return TRUE;
 		}
 		case WM_COMMAND : 
 	    {
 		    switch (LOWORD(wParam))
 		    {
-				case IDC_PREF_OK: {
+				case IDC_PREF_OK: 
+				{
 					
 					Encode::Options::Common::eol = !!::SendDlgItemMessage(_hSelf, IDC_PREF_EOL_WINDOWS, BM_GETCHECK, 0, 0) ? Encode::Options::Common::EOL::windows : Encode::Options::Common::EOL::unix;
 					Encode::Options::Base16::spaces = !!::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_SPACES, BM_GETCHECK, 0, 0);
@@ -112,13 +118,16 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 					preferences.files.extension.assign(tstr);
 
 					EndDialog(_hSelf, IDC_OK);
-					return TRUE; }
+					return TRUE;
+				}
+
 				case IDC_CANCEL :
 				    EndDialog(_hSelf, IDC_CANCEL);
 					return TRUE;
 
 				case IDC_PREF_KEYS_ADD:
-					if(HIWORD( wParam ) == BN_CLICKED) {
+					if(HIWORD( wParam ) == BN_CLICKED)
+					{
 						if(preferences.getKeyNum() >= 20) {
 							::MessageBox(_hSelf, TEXT("20 presets should be enough..."), TEXT("Error"), MB_OK); break;
 						}
@@ -143,7 +152,8 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 					}
 					break;
 				case IDC_PREF_KEYS_DEL:
-					if(HIWORD( wParam ) == BN_CLICKED) {
+					if(HIWORD( wParam ) == BN_CLICKED)
+					{
 						int sel = ::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_GETCURSEL, 0, 0);
 						if(sel > 0 && preferences.delKey((size_t)sel)) {
 							::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_DELETESTRING, sel, 0);
@@ -153,7 +163,8 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 					}
 					break;
 				case IDC_PREF_KEYS_RANDOM:
-					if(HIWORD( wParam ) == BN_CLICKED) {
+					if(HIWORD( wParam ) == BN_CLICKED)
+					{
 						unsigned char t_rand[16];
 						if(RAND_bytes(t_rand, 16) == 1) {
 							TCHAR tvalue[25];
@@ -169,7 +180,8 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 					}
 					break;
 				case IDC_PREF_KEYS_LIST:
-					if(HIWORD( wParam ) == LBN_SELCHANGE) {
+					if(HIWORD( wParam ) == LBN_SELCHANGE)
+					{
 						int sel = ::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_GETCURSEL, 0, 0);
 						if(sel >= 0) {
 							char tstr[24];

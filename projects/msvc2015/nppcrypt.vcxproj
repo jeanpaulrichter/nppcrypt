@@ -40,6 +40,7 @@
     <ClCompile Include="..\..\src\npp\URLCtrl.cpp" />
     <ClCompile Include="..\..\src\preferences.cpp" />
     <ClCompile Include="..\..\src\scrypt\crypto_scrypt-ref.cpp" />
+    <ClCompile Include="..\..\src\scrypt\insecure_memzero.cpp" />
     <ClCompile Include="..\..\src\scrypt\sha256.cpp" />
     <ClCompile Include="..\..\src\tinyxml2\tinyxml2.cpp" />
   </ItemGroup>
@@ -70,6 +71,7 @@
     <ClInclude Include="..\..\src\resource.h" />
     <ClInclude Include="..\..\src\scrypt\config.h" />
     <ClInclude Include="..\..\src\scrypt\crypto_scrypt.h" />
+    <ClInclude Include="..\..\src\scrypt\insecure_memzero.h" />
     <ClInclude Include="..\..\src\scrypt\scrypt_platform.h" />
     <ClInclude Include="..\..\src\scrypt\sha256.h" />
     <ClInclude Include="..\..\src\scrypt\sysendian.h" />

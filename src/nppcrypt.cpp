@@ -165,9 +165,9 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 					NppCryptOptions	options;
 					unsigned char*	pData = (unsigned char*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
-					DataParser		data(pData, data_length, options);
+					HeaderReader	header(options);
 
-					if(!data.readHeader())
+					if(!header.parse(pData, data_length))
 						throw CExc(CExc::Code::parse_header);
 
 					// ------------ hmac check
@@ -179,10 +179,10 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 								return;
 							dlg_auth.getKeyString(options.hmac.key_input);
 						}
-						options.setupHMAC(data.getVersion());
+						options.setupHMAC(header.getVersion());
 						std::string s_hmac_cmp;
-						crypt::hmac_header(data.header_c(), data.header_c_length(), data.crypt_data(), data.crypt_data_length(), options.hmac.hash, &options.hmac.key[0], options.hmac.key.size(), s_hmac_cmp);
-						if(!data.checkHMAC(s_hmac_cmp))
+						crypt::hmac_header(header.body(), header.body_size(), header.cdata(), header.cdata_size(), options.hmac.hash, &options.hmac.key[0], options.hmac.key.size(), s_hmac_cmp);
+						if(!header.checkHMAC(s_hmac_cmp))
 							throw CExc(CExc::Code::authentication);
 					}
 
@@ -194,8 +194,8 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					{
 						// --------- decrypt data
 						std::vector<unsigned char> buffer;
-						options.setupPassword(data.getVersion());
-						crypt::decrypt(data.crypt_data(), data.crypt_data_length(), buffer, options, data.init());
+						options.setupPassword(header.getVersion());
+						crypt::decrypt(header.cdata(), header.cdata_size(), buffer, options, header.init_strings());
 
 						// --------- replace text with decrypted data
 						::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
@@ -265,7 +265,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						if(!pData)
 							throw CExc(CExc::File::nppcrypt, __LINE__);
 
-						DataParser data(pData, data_length, options);
+						HeaderWriter header(options);
 						std::vector<unsigned char>	buffer;
 
 						// --------------------------------- auto-encrypt is possible
@@ -285,16 +285,16 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 							if(autoencrypt)
 							{
-								options.setupPassword(data.getVersion());
-								crypt::encrypt(pData, data_length, buffer, options, data.init());
-								data.setupHeader();
+								options.setupPassword(NPPCRYPT_VERSION);
+								crypt::encrypt(pData, data_length, buffer, options, header.init_strings());
+								header.create();
 
 								if(options.hmac.enable)
 								{
 									std::string s_hmac;
-									options.setupHMAC(data.getVersion());
-									crypt::hmac_header(data.header_c(), data.header_c_length(), &buffer[0], buffer.size(), fiter->second.hmac.hash, &options.hmac.key[0], options.hmac.key.size(), s_hmac);
-									data.updateHMAC(s_hmac);
+									options.setupHMAC(NPPCRYPT_VERSION);
+									crypt::hmac_header(header.body(), header.body_size(), &buffer[0], buffer.size(), fiter->second.hmac.hash, &options.hmac.key[0], options.hmac.key.size(), s_hmac);
+									header.updateHMAC(s_hmac);
 								}
 							}
 						}						
@@ -308,16 +308,16 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 							if(dlg_crypt.doDialog(DlgCrypt::Encryption, &options, no_ascii, filename.c_str()))
 							{
 								// --------- encrypt data and setup header-string
-								options.setupPassword(data.getVersion());
-								crypt::encrypt(pData, data_length, buffer, options, data.init());
-								data.setupHeader();
+								options.setupPassword(NPPCRYPT_VERSION);
+								crypt::encrypt(pData, data_length, buffer, options, header.init_strings());
+								header.create();
 
 								// --------- if activated: create hmac and insert copy it into the header
 								if(options.hmac.enable) {
 									std::string s_hmac;
-									options.setupHMAC(data.getVersion());
-									crypt::hmac_header(data.header_c(), data.header_c_length(), &buffer[0], buffer.size(), options.hmac.hash, &options.hmac.key[0], options.hmac.key.size(), s_hmac);
-									data.updateHMAC(s_hmac);
+									options.setupHMAC(NPPCRYPT_VERSION);
+									crypt::hmac_header(header.body(), header.body_size(), &buffer[0], buffer.size(), options.hmac.hash, &options.hmac.key[0], options.hmac.key.size(), s_hmac);
+									header.updateHMAC(s_hmac);
 								}
 
 								// --------- update existing cryptoptions or save the current one as new
@@ -332,7 +332,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						// --------- replace text with headerinformation and encrypted data:
 						::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
 						::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
-						::SendMessage(hCurScintilla, SCI_APPENDTEXT, data.header_length(), (LPARAM)data.header());
+						::SendMessage(hCurScintilla, SCI_APPENDTEXT, header.size(), (LPARAM)header.c_str());
 						::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
 						::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
 
@@ -395,31 +395,32 @@ void EncryptDlg()
 		{
 			// --------- get pointer to selected data:
 			unsigned char* pData = (unsigned char*)::SendMessage(hCurScintilla, SCI_GETRANGEPOINTER , selStart, selEnd);
-			DataParser data(pData, data_length, current::crypt);
+			HeaderWriter header(current::crypt);
 			std::vector<unsigned char>	buffer;
 
 			// --------- encrypt data:
-			current::crypt.setupPassword(data.getVersion());
-			crypt::encrypt(pData, data_length, buffer, current::crypt, data.init());
+			current::crypt.setupPassword(NPPCRYPT_VERSION);
+			crypt::encrypt(pData, data_length, buffer, current::crypt, header.init_strings());
 
 			// --------- create header
-			data.setupHeader();
-			if(current::crypt.hmac.enable) {
+			header.create();
+			if(current::crypt.hmac.enable) 
+			{
 				// get hmac of header-body + encrypted data
-				current::crypt.setupHMAC(data.getVersion());
+				current::crypt.setupHMAC(NPPCRYPT_VERSION);
 				std::string s_hmac;
-				crypt::hmac_header(data.header_c(), data.header_c_length(), &buffer[0], buffer.size(), current::crypt.hmac.hash, &current::crypt.hmac.key[0], 16, s_hmac);
-				data.updateHMAC(s_hmac);
+				crypt::hmac_header(header.body(), header.body_size(), &buffer[0], buffer.size(), current::crypt.hmac.hash, &current::crypt.hmac.key[0], 16, s_hmac);
+				header.updateHMAC(s_hmac);
 			}
 
 			// --------- replace current selection with header and encrypted data:
 			::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
 			::SendMessage(hCurScintilla, SCI_TARGETFROMSELECTION, 0, 0);
-			::SendMessage(hCurScintilla, SCI_REPLACETARGET, data.header_length(), (LPARAM)data.header());
-			::SendMessage(hCurScintilla, SCI_SETSEL, selStart+ data.header_length(), selStart+ data.header_length());
+			::SendMessage(hCurScintilla, SCI_REPLACETARGET, header.size(), (LPARAM)header.c_str());
+			::SendMessage(hCurScintilla, SCI_SETSEL, selStart + header.size(), selStart + header.size());
 			::SendMessage(hCurScintilla, SCI_TARGETFROMSELECTION, 0, 0);
 			::SendMessage(hCurScintilla, SCI_REPLACETARGET, buffer.size(), (LPARAM)&buffer[0]);	
-			::SendMessage(hCurScintilla, SCI_SETSEL, selStart, selStart+ data.header_length() +buffer.size());
+			::SendMessage(hCurScintilla, SCI_SETSEL, selStart, selStart + header.size() +buffer.size());
 			::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
 
 			for(size_t i=0; i<current::crypt.password.size(); i++)
@@ -450,10 +451,11 @@ void DecryptDlg()
 	
 		// --------- get pointer to data
 		const unsigned char* pData = (unsigned char*)::SendMessage(hCurScintilla, SCI_GETRANGEPOINTER, selStart, selEnd);
-		DataParser data(pData, data_length, current::crypt);
+		HeaderReader header(current::crypt);
 
 		// --------- hmac-check if nessecary:
-		if(data.readHeader() && current::crypt.hmac.enable)
+		bool found_header = header.parse(pData, data_length);
+		if(found_header && current::crypt.hmac.enable)
 		{
 			if(current::crypt.hmac.key_id == -1)
 			{
@@ -461,10 +463,10 @@ void DecryptDlg()
 					return;
 				dlg_auth.getKeyString(current::crypt.hmac.key_input);
 			}
-			current::crypt.setupHMAC(data.getVersion());
+			current::crypt.setupHMAC(header.getVersion());
 			std::string s_hmac_cmp;
-			crypt::hmac_header((const char*)data.header_c(), data.header_c_length(), data.crypt_data(), data.crypt_data_length(), current::crypt.hmac.hash, &current::crypt.hmac.key[0], current::crypt.hmac.key.size(), s_hmac_cmp);
-			if(!data.checkHMAC(s_hmac_cmp))
+			crypt::hmac_header((const char*)header.body(), header.body_size(), header.cdata(), header.cdata_size(), current::crypt.hmac.hash, &current::crypt.hmac.key[0], current::crypt.hmac.key.size(), s_hmac_cmp);
+			if(!header.checkHMAC(s_hmac_cmp))
 				throw CExc(CExc::Code::authentication);
 		}
 
@@ -475,8 +477,8 @@ void DecryptDlg()
 		{
 			// --------- decrypt data
 			std::vector<unsigned char>	buffer;
-			current::crypt.setupPassword(data.getVersion());
-			crypt::decrypt(data.crypt_data(), data.crypt_data_length(), buffer, current::crypt, data.init());
+			current::crypt.setupPassword(header.getVersion());
+			crypt::decrypt(header.cdata(), header.cdata_size(), buffer, current::crypt, header.init_strings());
 
 			// --------- replace current selection with decrypted data
 			::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);

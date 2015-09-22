@@ -648,7 +648,7 @@ static const unsigned char flags_by_subtype[26] =
 
 static char *BF_crypt(const char *key, const char *setting,
 	char *output, int size,
-	BF_word min, bool raw_output=false)
+	BF_word min)
 {
 #if BF_ASM
 	extern void _BF_body_r(BF_ctx *ctx);
@@ -765,19 +765,15 @@ static char *BF_crypt(const char *key, const char *setting,
 		data.binary.output[i + 1] = R;
 	}
 
-	if(raw_output) {
-		memcpy(output, data.binary.output, 24);
-	} else {
-		memcpy(output, setting, 7 + 22 - 1);
-		output[7 + 22 - 1] = BF_itoa64[(int)
-			BF_atoi64[(int)setting[7 + 22 - 1] - 0x20] & 0x30];
+	memcpy(output, setting, 7 + 22 - 1);
+	output[7 + 22 - 1] = BF_itoa64[(int)
+		BF_atoi64[(int)setting[7 + 22 - 1] - 0x20] & 0x30];
 
-	/* This has to be bug-compatible with the original implementation, so
-	 * only encode 23 of the 24 bytes. :-) */
-		BF_swap(data.binary.output, 6);
-		BF_encode(&output[7 + 22], data.binary.output, 23);
-		output[7 + 22 + 31] = '\0';
-	}
+/* This has to be bug-compatible with the original implementation, so
+ * only encode 23 of the 24 bytes. :-) */
+	BF_swap(data.binary.output, 6);
+	BF_encode(&output[7 + 22], data.binary.output, 23);
+	output[7 + 22 + 31] = '\0';
 
 	return output;
 }
@@ -818,7 +814,7 @@ int _crypt_output_magic(const char *setting, char *output, int size)
  * setting.
  */
 char *_crypt_blowfish_rn(const char *key, const char *setting,
-	char *output, int size, bool raw_output)
+	char *output, int size)
 {
 	const char *test_key = "8b \xd0\xc1\xd2\xcf\xcc\xd8";
 	const char *test_setting = "$2a$00$abcdefghijklmnopqrstuu";
@@ -836,7 +832,7 @@ char *_crypt_blowfish_rn(const char *key, const char *setting,
 
 /* Hash the supplied password */
 	_crypt_output_magic(setting, output, size);
-	retval = BF_crypt(key, setting, output, size, 16, raw_output);
+	retval = BF_crypt(key, setting, output, size, 16);
 	save_errno = errno;
 
 /*
@@ -873,9 +869,8 @@ char *_crypt_blowfish_rn(const char *key, const char *setting,
 	}
 
 	__set_errno(save_errno);
-	if (ok) {
+	if (ok)
 		return retval;
-	}
 
 /* Should not happen */
 	_crypt_output_magic(setting, output, size);
@@ -901,8 +896,8 @@ char *_crypt_gensalt_blowfish_rn(const char *prefix, unsigned long count,
 	output[1] = '2';
 	output[2] = prefix[2];
 	output[3] = '$';
-	output[4] = '0' + count / 10;
-	output[5] = '0' + count % 10;
+	output[4] = '0' + char(count / 10);
+	output[5] = '0' + char(count % 10);
 	output[6] = '$';
 
 	BF_encode(&output[7], (const BF_word *)input, 16);

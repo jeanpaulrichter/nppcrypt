@@ -6,8 +6,10 @@
 #define IDD_ABOUT                       101
 #define IDD_HASH                        102
 #define IDD_RANDOM                      103
+#define IDI_ICON1                       103
 #define IDD_PREFERENCES                 104
 #define IDD_CRYPT                       105
+#define IDB_BITMAP1                     105
 #define IDD_CRYPT_BASIC                 106
 #define IDD_CRYPT_AUTH                  107
 #define IDD_CRYPT_KEY                   108
@@ -80,9 +82,12 @@
 #define IDC_CRYPT_BCRYPT_ITER           1017
 #define IDC_PREF_EOL_UNIX               1017
 #define IDC_CRYPT_BCRYPT_ITER_SPIN      1018
+#define IDC_PREF_HELP_FILES             1018
 #define IDC_CRYPT_SCRYPT_N              1019
 #define IDC_PREF_OK                     1019
 #define IDC_CRYPT_SCRYPT_R              1020
+#define IDC_PREF_HELP_FILES2            1020
+#define IDC_PREF_HELP_KEYS              1020
 #define IDC_CRYPT_SCRYPT_P              1021
 #define IDC_CRYPT_SCRYPT_R_SPIN         1022
 #define IDC_CRYPT_SCRYPT_P_SPIN         1023
@@ -111,9 +116,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        108
+#define _APS_NEXT_RESOURCE_VALUE        106
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1033
+#define _APS_NEXT_CONTROL_VALUE         1019
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

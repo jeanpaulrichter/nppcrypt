@@ -110,6 +110,9 @@
     <ClCompile Include="..\..\src\header.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\insecure_memzero.cpp">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\crypt.h">
@@ -201,6 +204,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\mdef.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\insecure_memzero.h">
+      <Filter>Header Files\scrypt</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

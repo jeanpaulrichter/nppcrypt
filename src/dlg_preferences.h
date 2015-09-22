@@ -17,6 +17,7 @@ GNU General Public License for more details.
 
 #include <vector>
 #include "npp/Window.h"
+#include "npp/URLCtrl.h"
 #include "crypt.h"
 
 
@@ -35,6 +36,9 @@ private:
 	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 	DlgPreferences(DlgPreferences const&);
 	DlgPreferences& operator=(DlgPreferences const&);
+
+	URLCtrl		url_help_files;
+	URLCtrl		url_help_keys;
 };
 
 
