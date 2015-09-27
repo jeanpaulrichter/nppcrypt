@@ -18,6 +18,14 @@ GNU General Public License for more details.
 #include "crypt.h"
 #include "mdef.h"
 
+struct CurrentOptions
+{
+	crypt::Options::Crypt	crypt;
+	crypt::Options::Hash	hash;
+	crypt::Options::Random	random;
+	crypt::Options::Convert	convert;
+};
+
 class CPreferences 
 {
 public:
@@ -36,8 +44,8 @@ public:
 	CPreferences();
 	static CPreferences& Instance() { static CPreferences single; return single; };
 
-	bool load(const TCHAR* path, crypt::Options::Crypt& crypt, crypt::Options::Hash& hash, crypt::Options::Random& random);
-	bool save(crypt::Options::Crypt& crypt, crypt::Options::Hash& hash, crypt::Options::Random& random);
+	bool load(const TCHAR* path, CurrentOptions& current);
+	bool save(CurrentOptions& current);
 
 	size_t					getKeyNum();
 	bool					addKey(const KeyPreset& key);
@@ -47,6 +55,8 @@ public:
 private:
 	CPreferences(CPreferences const&);
 	CPreferences& operator=(CPreferences const&);
+	void load_1010(std::ifstream& f, CurrentOptions& current);
+	void validate(CurrentOptions& current);
 
 	std::vector<KeyPreset>	keys;
 	std::string				filepath;

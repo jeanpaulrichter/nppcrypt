@@ -75,7 +75,7 @@ BOOL CALLBACK DlgAbout::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 				case IDC_OK: 
 					EndDialog(_hSelf, IDC_OK);
 				    return TRUE;
-				case IDC_CANCEL :
+				case IDC_CANCEL : case IDCANCEL:
 				    EndDialog(_hSelf, IDC_CANCEL);
 					return TRUE;
 			    default :

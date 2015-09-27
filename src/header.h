@@ -77,6 +77,8 @@ public:
 	crypt::InitStrings&				init_strings() { return s_init;	};
 
 private:
+	size_t			base64length(size_t bin_length, bool linebreaks=false, size_t line_length=0, bool windows=false);
+
 	const crypt::Options::Crypt&	options;
 	std::string						s_header;
 	size_t							hmac_offset;

@@ -77,11 +77,12 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_SETCHECK, (options->encoding == crypt::Encoding::ascii), 0);
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_SETCHECK, (options->encoding == crypt::Encoding::base16), 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_SETCHECK, (options->encoding == crypt::Encoding::base32), 0);
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE64, BM_SETCHECK, (options->encoding == crypt::Encoding::base64), 0);
 
-		crypt::help::Iterator::setup(crypt::help::Iterator::Hash);
-		while (crypt::help::Iterator::next()) {
-			::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)crypt::help::Iterator::getString());
+		crypt::help::Iter::setup_hash();
+		while (crypt::help::Iter::next()) {
+			::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)crypt::help::Iter::getString());
 		}
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_SETCURSEL, (int)options->algorithm, 0);
 			
@@ -98,12 +99,12 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 		else {
 			string tstr;
 			#ifdef UNICODE
-			Encode::utf8_to_wchar(options->key_input.c_str(), options->key_input.size(), tstr);
+			unicode::utf8_to_wchar(options->key_input.c_str(), options->key_input.size(), tstr);
 			#else
 			tstr.assign(options->key_input);
 			#endif
 			::SetDlgItemText(_hSelf, IDC_HASH_KEYEDIT, tstr.c_str());
-			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO1, BM_SETCHECK, true, 0);
+			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_SETCHECK, true, 0);
 		}
 		if (!crypt::help::IsOpenSSLHash(options->algorithm))
 		{
@@ -115,12 +116,8 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			enableKeyControls(options->use_key);
 		}
 
-		url_help_enc.init(_hInst, _hSelf);
-		url_help_enc.create(::GetDlgItem(_hSelf, IDC_HASH_HELP_ENC), crypt::help::getHelpURL(options->encoding));
 		url_help_hash.init(_hInst, _hSelf);
 		url_help_hash.create(::GetDlgItem(_hSelf, IDC_HASH_HELP_HASH), crypt::help::getHelpURL(options->algorithm));
-		url_help_key.init(_hInst, _hSelf);
-		url_help_key.create(::GetDlgItem(_hSelf, IDC_HASH_HELP_KEY), TEXT(NPPC_HASH_KEY_HELP_URL));
 
 		return TRUE;
 	} break;
@@ -140,23 +137,24 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 					options->encoding = crypt::Encoding::ascii;
 				else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_GETCHECK, 0, 0))
 					options->encoding = crypt::Encoding::base16;
+				else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_GETCHECK, 0, 0))
+					options->encoding = crypt::Encoding::base32;
 				else
 					options->encoding = crypt::Encoding::base64;
 				if (IsWindowEnabled(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY)))
 				{
 					options->use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
-					options->key_id = ::SendDlgItemMessage(_hSelf, IDC_HASH_KEY, CB_GETCURSEL, 0, 0);
 				}
 				else {
 					options->use_key = false;
-				}				
+				}
 
 				if (options->use_key)
 				{
-					if (options->key_id < 0)
+					if (!!::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_GETCHECK, 0, 0))
 					{
 						TCHAR temp_key[NPPC_HMAC_INPUT_MAX + 1];
-						::GetDlgItemText(_hSelf, IDC_HASH_KEY, temp_key, NPPC_HMAC_INPUT_MAX + 1);
+						::GetDlgItemText(_hSelf, IDC_HASH_KEYEDIT, temp_key, NPPC_HMAC_INPUT_MAX + 1);
 						if (!lstrlen(temp_key))
 						{
 							::MessageBox(_hSelf, TEXT("Please enter a key."), TEXT("Error"), MB_OK);
@@ -164,7 +162,7 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 						}
 						try {
 							#ifdef UNICODE
-							Encode::wchar_to_utf8(temp_key, -1, options->key_input);
+							unicode::wchar_to_utf8(temp_key, -1, options->key_input);
 							#else
 							options->key.assign(temp_key);
 							#endif
@@ -173,6 +171,10 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 							::MessageBox(_hSelf, exc.getErrorMsg(), TEXT("Error"), MB_OK);
 							return false;
 						}
+						options->key_id = -1;
+					}
+					else {
+						options->key_id = ::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_GETCURSEL, 0, 0);
 					}
 				}
 
@@ -180,7 +182,7 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 				return TRUE;
 			} break;
 
-			case IDC_CANCEL:
+			case IDC_CANCEL: case IDCANCEL:
 			{
 				EndDialog(_hSelf, IDC_CANCEL);
 				return TRUE;
@@ -190,21 +192,6 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				bool use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
 				enableKeyControls(use_key);
-			} break;
-
-			case IDC_HASH_ENC_ASCII:
-			{
-				url_help_enc.changeURL(crypt::help::getHelpURL(crypt::Encoding::ascii));
-			} break;
-
-			case IDC_HASH_ENC_BASE16:
-			{
-				url_help_enc.changeURL(crypt::help::getHelpURL(crypt::Encoding::base16));
-			} break;
-
-			case IDC_HASH_ENC_BASE64:
-			{
-				url_help_enc.changeURL(crypt::help::getHelpURL(crypt::Encoding::base64));
 			} break;
 
 			default:

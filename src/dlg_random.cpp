@@ -88,7 +88,8 @@ BOOL CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			case crypt::Random::specials: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R2, BM_SETCHECK, BST_CHECKED, 0); break;
 			case crypt::Random::ascii: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R3, BM_SETCHECK, BST_CHECKED, 0); break;
 			case crypt::Random::base16: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R4, BM_SETCHECK, BST_CHECKED, 0); break;
-			case crypt::Random::base64: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R5, BM_SETCHECK, BST_CHECKED, 0); break;
+			case crypt::Random::base32: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R5, BM_SETCHECK, BST_CHECKED, 0); break;
+			case crypt::Random::base64: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R6, BM_SETCHECK, BST_CHECKED, 0); break;
 			}
 
 			return TRUE;
@@ -107,6 +108,8 @@ BOOL CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 						options->mode = crypt::Random::ascii;
 					else if(::SendDlgItemMessage(_hSelf, IDC_RANDOM_R4, BM_GETCHECK, 0, 0)==BST_CHECKED)
 						options->mode = crypt::Random::base16;
+					else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R5, BM_GETCHECK, 0, 0) == BST_CHECKED)
+						options->mode = crypt::Random::base32;
 					else
 						options->mode = crypt::Random::base64;
 
@@ -115,7 +118,7 @@ BOOL CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 					EndDialog(_hSelf, IDC_OK);
 				    return TRUE;
 					}
-				case IDC_CANCEL :
+				case IDC_CANCEL : case IDCANCEL:
 				    EndDialog(_hSelf, IDC_CANCEL);
 					return TRUE;
 			    default :

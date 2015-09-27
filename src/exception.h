@@ -20,7 +20,7 @@ GNU General Public License for more details.
 #include <tchar.h>
 #include <exception>
 #include <vector>
-#include "mdef.h"
+#include "unicode.h"
 
 class CExc: public std::exception
 {

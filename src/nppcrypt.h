@@ -23,7 +23,7 @@ GNU General Public License for more details.
 #include "npp/PluginInterface.h"
 
 #include "exception.h"
-#include "encoding.h"
+#include "unicode.h"
 #include "preferences.h"
 #include "crypt.h"
 #include "dlg_crypt.h"
@@ -32,6 +32,7 @@ GNU General Public License for more details.
 #include "dlg_about.h"
 #include "dlg_preferences.h"
 #include "dlg_auth.h"
+#include "dlg_convert.h"
 
 // -------------------------------------------------------
 
@@ -49,18 +50,14 @@ void EncryptDlg();
 void DecryptDlg();
 void HashDlg();
 void RandomDlg();
+void ConvertDlg();
 void PreferencesDlg();
 void AboutDlg();
 
 // -------------------------------------------------------
 
-
-struct NppCryptOptions : public crypt::Options::Crypt
-{
-public:
-	void setupHMAC(int header_version);
-	void setupPassword(int header_version);
-};
+void prepareHMAC(crypt::Options::Crypt::HMAC& hmac, int header_version);
+void preparePassword(std::string& password, int header_version);
 
 // -------------------------------------------------------
 

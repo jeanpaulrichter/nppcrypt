@@ -26,7 +26,7 @@ GNU General Public License for more details.
 #include "npp/Window.h"
 #include "npp/URLCtrl.h"
 #include "crypt.h"
-#include "encoding.h"
+#include "unicode.h"
 
 
 class DlgCrypt : public Window
@@ -50,9 +50,11 @@ private:
 	void OnInitDialog();
 	bool OnClickOK();
 	void OnCipherChange();
-	void OnCipherModeChange();
 	void enableKeyDeriControls();
 	bool updateOptions();
+	void OnCipherCategoryChange(int category, bool change_cipher=false);
+	void OnEncodingChange(crypt::Encoding enc);
+	void SetCipherInfo(crypt::Cipher cipher, crypt::Mode mode);
 	
 	int							operation;
 	crypt::Options::Crypt*		options;
@@ -65,16 +67,17 @@ private:
 	{
 		crypt::Cipher			cipher;
 		crypt::KeyDerivation	key_derivation;
-		TCHAR					password[crypt::Constants::pw_length_max+1];
+		string					password;
 	} temp;
 
 	HWND						hwnd_basic;
 	HWND						hwnd_auth;
 	HWND						hwnd_key;
 	HWND						hwnd_iv;
+	HWND						hwnd_encoding;
 
-	enum HelpURL { encoding, cipher, mode, salt, pbkdf2, bcrypt, scrypt, hmac, iv };
-	URLCtrl						url_help[9];
+	enum HelpURL { encoding, cipher, mode, salt, keyalgo, hmac, iv };
+	URLCtrl						url_help[7];
 
 
 	HINSTANCE					mHinstance;

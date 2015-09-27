@@ -19,7 +19,7 @@ GNU General Public License for more details.
 #include "npp/URLCtrl.h"
 #include "exception.h"
 #include "crypt.h"
-#include "encoding.h"
+#include "unicode.h"
 
 class DlgHash : public Window
 {
@@ -46,9 +46,7 @@ private:
 	crypt::Options::Hash*	options;
 	bool					no_ascii;
 
-	URLCtrl					url_help_enc;
 	URLCtrl					url_help_hash;
-	URLCtrl					url_help_key;
 };
 
 

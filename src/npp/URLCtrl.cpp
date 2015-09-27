@@ -174,17 +174,23 @@ void URLCtrl::create(HWND itemHandle, int cmd, HWND msgDest)
 
 void URLCtrl::changeURL(const TCHAR* url)
 {
-	_URL = url;
+	_URL = url ? url : TEXT("");
 	_linkColor = RGB(0, 0, 255);
 	if (hwndTip) 
 	{
-		TOOLINFO toolInfo = { 0 };
-		toolInfo.cbSize = sizeof(toolInfo);
-		toolInfo.hwnd = _hParent;
-		toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
-		toolInfo.uId = (UINT_PTR)_hSelf;
-		toolInfo.lpszText = (PTSTR)_URL.c_str();
-		SendMessage(hwndTip, TTM_UPDATETIPTEXT, 0, (LPARAM)&toolInfo);
+		if (_URL != TEXT("")) {
+			TOOLINFO toolInfo = { 0 };
+			toolInfo.cbSize = sizeof(toolInfo);
+			toolInfo.hwnd = _hParent;
+			toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+			toolInfo.uId = (UINT_PTR)_hSelf;
+			toolInfo.lpszText = (PTSTR)_URL.c_str();
+			SendMessage(hwndTip, TTM_UPDATETIPTEXT, 0, (LPARAM)&toolInfo);
+			SendMessage(hwndTip, TTM_ACTIVATE, (WPARAM)TRUE, 0);
+		}
+		else {
+			SendMessage(hwndTip, TTM_ACTIVATE, (WPARAM)FALSE, 0);
+		}
 	}
 };
 
@@ -215,9 +221,9 @@ void URLCtrl::action()
 		}
 		else
 		{
-			TCHAR szWinText[MAX_PATH];
-			::GetWindowText(_hSelf, szWinText, MAX_PATH);
-			::ShellExecute(NULL, TEXT("open"), szWinText, NULL, NULL, SW_SHOWNORMAL);
+			//TCHAR szWinText[MAX_PATH];
+			//::GetWindowText(_hSelf, szWinText, MAX_PATH);
+			//::ShellExecute(NULL, TEXT("open"), szWinText, NULL, NULL, SW_SHOWNORMAL);
 		}
 	}
 }

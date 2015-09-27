@@ -12,10 +12,11 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-
+#include <cryptopp/base64.h>
+#include <cryptopp/hex.h>
 #include <sstream>
 #include "tinyxml2/tinyxml2.h"
-#include "encoding.h"
+#include "unicode.h"
 #include "exception.h"
 #include "preferences.h"
 #include "header.h"
@@ -58,7 +59,7 @@ bool HeaderReader::parse(const unsigned char* in, size_t in_len)
 	size_t					body_start;
 	tinyxml2::XMLError		xml_err;
 	tinyxml2::XMLDocument	xml_doc;
-	crypt::Options::Crypt	t_options;
+	crypt::Options::Crypt	t_options = options;
 
 	// find header body start:
 	while (offset < in_len - 11 && in[offset] != '\n')
@@ -114,11 +115,19 @@ bool HeaderReader::parse(const unsigned char* in, size_t in_len)
 	if (xml_random) {
 		const char* pSalt = xml_random->Attribute("salt");
 		if (pSalt) {
-			if (strlen(pSalt) > 2 * crypt::Constants::salt_bytes_max)
+			if (strlen(pSalt) > 2 * crypt::Constants::salt_max)
 				throw CExc(CExc::Code::header_salt);
 			s_init.salt = std::string(pSalt);
-			t_options.key.salt_bytes = Encode::base64_to_bin(s_init.salt.c_str(), s_init.salt.size());
-			if (t_options.key.salt_bytes < 1 || t_options.key.salt_bytes > crypt::Constants::salt_bytes_max)
+			try {
+				std::string tsalt;
+				CryptoPP::StringSource(s_init.salt, true, new CryptoPP::Base64Decoder(new CryptoPP::StringSink(tsalt)));
+				t_options.key.salt_bytes = tsalt.size();
+			}
+			catch (CryptoPP::Exception&)
+			{
+				throw CExc(CExc::Code::header_salt);
+			}
+			if (t_options.key.salt_bytes < 1 || t_options.key.salt_bytes > crypt::Constants::salt_max)
 				throw CExc(CExc::Code::header_salt);
 		}
 		const char* pIV = xml_random->Attribute("iv");
@@ -139,7 +148,7 @@ bool HeaderReader::parse(const unsigned char* in, size_t in_len)
 		if (!crypt::help::getCipherMode(t, t_options.mode))
 			throw CExc(CExc::Code::header_mode);
 		t = xml_crypt->Attribute("encoding");
-		if (!crypt::help::getEncoding(t, t_options.encoding))
+		if (!crypt::help::getEncoding(t, t_options.encoding.enc))
 			throw CExc(CExc::Code::header_mode);
 		if ((t = xml_crypt->Attribute("tag")) != NULL) {
 			if (strlen(t) != 24)
@@ -240,8 +249,8 @@ void HeaderReader::parse_old(const unsigned char* in, size_t in_len)
 	{
 		// -------------------------- 1008/9 ----------------------------------------------------------------------------------------------------------------------------
 
-		crypt::Cipher old_ciphers[] = { crypt::Cipher::blowfish, crypt::Cipher::des, crypt::Cipher::rc2, crypt::Cipher::idea, crypt::Cipher::cast5, crypt::Cipher::aes128,
-			crypt::Cipher::aes256, crypt::Cipher::des_ede, crypt::Cipher::des_ede3, crypt::Cipher::desx, crypt::Cipher::rc4 };
+		crypt::Cipher old_ciphers[] = { crypt::Cipher::blowfish, crypt::Cipher::des, crypt::Cipher::rc2, crypt::Cipher::idea, crypt::Cipher::cast128, crypt::Cipher::rijndael128,
+			crypt::Cipher::rijndael256, crypt::Cipher::des_ede, crypt::Cipher::des_ede3, crypt::Cipher::desx, crypt::Cipher::rc4 };
 		crypt::Mode old_modes[] = { crypt::Mode::cbc, crypt::Mode::ecb, crypt::Mode::cfb, crypt::Mode::ofb, crypt::Mode::ctr };
 
 		if (in[9] < 0 || in[9] > 10)
@@ -250,7 +259,7 @@ void HeaderReader::parse_old(const unsigned char* in, size_t in_len)
 			throw CExc(CExc::File::header, __LINE__, CExc::Code::parse_header);
 		options.cipher = old_ciphers[in[9]];
 		options.mode = old_modes[in[10]];
-		options.encoding = (in[13] == 1) ? crypt::Encoding::base16 : crypt::Encoding::ascii;
+		options.encoding.enc = (in[13] == 1) ? crypt::Encoding::base16 : crypt::Encoding::ascii;
 
 		if (in[12] == 0) {
 			options.key.algorithm = crypt::KeyDerivation::pbkdf2;
@@ -267,38 +276,45 @@ void HeaderReader::parse_old(const unsigned char* in, size_t in_len)
 		cdata_len = in_len - 16;
 		options.key.salt_bytes = 0;
 
-		if (options.encoding == crypt::Encoding::ascii) {
-			if (in_len > 32 && cmpchars((const char*)in + 16, "Salted__", 8)) {
-				s_init.salt.resize(13);
-				s_init.salt[12] = 0;
-				Encode::bin_to_base64(in + 24, 8, &s_init.salt[0], true);
-				header_len = 32;
-				pCData = in + 32;
-				cdata_len = in_len - 32;
-				options.key.salt_bytes = 8;
+		try
+		{
+			if (options.encoding.enc == crypt::Encoding::ascii) {
+				if (in_len > 32 && cmpchars((const char*)in + 16, "Salted__", 8))
+				{
+					CryptoPP::StringSource(in + 24, 8, true, new CryptoPP::Base64Encoder(new CryptoPP::StringSink(s_init.salt), false));
+					header_len = 32;
+					pCData = in + 32;
+					cdata_len = in_len - 32;
+					options.key.salt_bytes = 8;
+				}
+			}
+			else {
+				unsigned char t[8];
+				if (in_len > 48 && cmpchars((const char*)in + 16, "53616C7465645F5F", 16))
+				{
+					CryptoPP::StringSource(in + 32, 16, true, new CryptoPP::HexDecoder(new CryptoPP::ArraySink(t, 8)));
+					header_len = 48;
+					pCData = in + 48;
+					cdata_len = in_len - 48;
+					options.key.salt_bytes = 8;
+				}
+				else if (in_len > 64 && cmpchars((const char*)in + 16, "53 61 6C 74 65 64 5F 5F ", 24))
+				{
+					CryptoPP::StringSource(in + 40, 24, true, new CryptoPP::HexDecoder(new CryptoPP::ArraySink(t, 8)));
+					header_len = 64;
+					pCData = in + 64;
+					cdata_len = in_len - 64;
+					options.key.salt_bytes = 8;
+				}
+				if (options.key.salt_bytes == 8)
+				{
+					CryptoPP::StringSource(t, 8, true, new CryptoPP::Base64Encoder(new CryptoPP::StringSink(s_init.salt), false));
+				}
 			}
 		}
-		else {
-			unsigned char t[8];
-			if (in_len > 48 && cmpchars((const char*)in + 16, "53616C7465645F5F", 16)) {
-				Encode::hex_to_bin((const char*)in + 32, 16, t);
-				header_len = 48;
-				pCData = in + 48;
-				cdata_len = in_len - 48;
-				options.key.salt_bytes = 8;
-			}
-			else if (in_len > 64 && cmpchars((const char*)in + 16, "53 61 6C 74 65 64 5F 5F ", 24)) {
-				Encode::hex_to_bin((const char*)in + 40, 24, t);
-				header_len = 64;
-				pCData = in + 64;
-				cdata_len = in_len - 64;
-				options.key.salt_bytes = 8;
-			}
-			if (options.key.salt_bytes == 8) {
-				s_init.salt.resize(13);
-				s_init.salt[12] = 0;
-				Encode::bin_to_base64(t, 8, &s_init.salt[0], true);
-			}
+		catch (CryptoPP::Exception&)
+		{
+			throw CExc(CExc::Code::header_salt);
 		}
 
 		pContent = (const char*)in;
@@ -330,7 +346,7 @@ void HeaderWriter::create()
 
 	static const char win[] = { '\r', '\n', 0 };
 	const char* linebreak;
-	if (Encode::Options::Common::eol == Encode::Options::Common::EOL::windows)
+	if (options.encoding.windows)
 		linebreak = win;
 	else
 		linebreak = &win[1];
@@ -341,12 +357,12 @@ void HeaderWriter::create()
 			out << " auth-key=\"" << options.hmac.key_id << "\"";
 		out << " hmac-hash=\"" << crypt::help::getString(options.hmac.hash) << "\" hmac=\"";
 		hmac_offset = static_cast<size_t>(out.tellp());
-		out << std::string(Encode::bin_to_base64(NULL, crypt::getHashLength(options.hmac.hash), NULL, true), ' ') << "\"";
+		out << std::string(base64length(crypt::getHashLength(options.hmac.hash)), ' ') << "\"";
 	}
 	out << ">" << linebreak;
 	body_start = static_cast<size_t>(out.tellp());
 	out << "<encryption cipher=\"" << crypt::help::getString(options.cipher) << "\" mode=\"" << crypt::help::getString(options.mode)
-		<< "\" encoding=\"" << crypt::help::getString(options.encoding) << "\" ";
+		<< "\" encoding=\"" << crypt::help::getString(options.encoding.enc) << "\" ";
 	if (s_init.tag.size()) { out << "tag=\"" << s_init.tag << "\" "; }
 	out << "/>" << linebreak;
 	if ((options.iv == crypt::IV::random && s_init.iv.size()>0) || options.key.salt_bytes > 0) {
@@ -385,4 +401,19 @@ void HeaderWriter::updateHMAC(const std::string& hmac)
 	std::copy(hmac.begin(), hmac.end(), s_header.begin() + hmac_offset);
 }
 
+size_t HeaderWriter::base64length(size_t bin_length, bool linebreaks, size_t line_length, bool windows)
+{
+	if (bin_length == 0)
+		return 0;
 
+	unsigned int chars = 4 * (bin_length + 2 - ((bin_length + 2) % 3)) / 3;
+	if (linebreaks) {
+		if (windows)
+			return chars + (((chars - 1) / line_length + 1) - 1) * 2;
+		else
+			return chars + (((chars - 1) / line_length + 1) - 1);
+	}
+	else {
+		return chars;
+	}
+}

@@ -37,8 +37,7 @@ private:
 	DlgPreferences(DlgPreferences const&);
 	DlgPreferences& operator=(DlgPreferences const&);
 
-	URLCtrl		url_help_files;
-	URLCtrl		url_help_keys;
+	URLCtrl		url_help;
 };
 
 

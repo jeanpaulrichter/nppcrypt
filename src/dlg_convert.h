@@ -12,32 +12,30 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef DLG_AUTH_DEFINE_H
-#define DLG_AUTH_DEFINE_H
+#ifndef DLG_CONVERT_DEFINE_H
+#define DLG_CONVERT_DEFINE_H
 
 #include "npp/Window.h"
-#include "unicode.h"
 #include "mdef.h"
+#include "crypt.h"
 
-class DlgAuth: public Window
+class DlgConvert : public Window
 {
 public:
-    
-	DlgAuth();
-    void init(HINSTANCE hInst, HWND parent);
-    virtual void destroy() { ::DestroyWindow(_hSelf); };
-	static DlgAuth& Instance() { static DlgAuth single; return single; }
-   	bool doDialog(const TCHAR* filename=NULL);
-	void getKeyString(std::string& s);
+	DlgConvert(crypt::Options::Convert& opt);
+	void init(HINSTANCE hInst, HWND parent);
+	bool doDialog(bool no_ascii);
+	virtual void destroy() { ::DestroyWindow(_hSelf); };
 
 private:
 	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	DlgAuth(DlgAuth const&);
-	DlgAuth& operator=(DlgAuth const&);
 
-	std::string			keystring;
-	string				caption;
+	void OnFromChanged(crypt::Encoding enc);
+	void enableOptions(bool v);
+
+	crypt::Options::Convert&	options;
+	bool						no_ascii;
 };
 
 

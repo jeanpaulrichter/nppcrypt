@@ -11,14 +11,13 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
-
-#include "encoding.h"
+#include <cryptopp/osrng.h>
+#include <cryptopp/base64.h>
+#include "unicode.h"
 #include "preferences.h"
 #include "dlg_preferences.h"
 #include "resource.h"
 #include "commctrl.h"
-
-#include <openssl/rand.h>
 
 DlgPreferences::DlgPreferences(): Window()
 {
@@ -67,18 +66,6 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 	{
         case WM_INITDIALOG :
 		{
-			// output/encoding-options:
-			::SendDlgItemMessage(_hSelf, IDC_PREF_EOL_WINDOWS, BM_SETCHECK, (Encode::Options::Common::eol == Encode::Options::Common::EOL::windows), 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_EOL_UNIX, BM_SETCHECK, (Encode::Options::Common::eol == Encode::Options::Common::EOL::unix), 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_SPACES, BM_SETCHECK, Encode::Options::Base16::spaces, 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LOWERCASE, BM_SETCHECK, (Encode::Options::Base16::letter_case == Encode::Options::Base16::Case::lower), 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_UPPERCASE, BM_SETCHECK, (Encode::Options::Base16::letter_case == Encode::Options::Base16::Case::upper), 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(9999, 0));
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf, IDC_PREF_HEX_LV), 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_SETPOS32, 0, Encode::Options::Base16::vpl);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(9999, 0));
-			::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf, IDC_PREF_BASE64_LV), 0);
-			::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_SETPOS32, 0, Encode::Options::Base64::cpl);
 			// nppcrypt-files:
 			::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ENABLE, BM_SETCHECK, preferences.files.enable, 0);
 			::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ASK, BM_SETCHECK, preferences.files.askonsave, 0);
@@ -90,10 +77,8 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 			for (size_t i = 0; i< preferences.getKeyNum(); i++)
 				::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
 
-			url_help_files.init(_hInst, _hSelf);
-			url_help_files.create(::GetDlgItem(_hSelf, IDC_PREF_HELP_FILES), TEXT(NPPC_FILES_HELP_URL));
-			url_help_keys.init(_hInst, _hSelf);
-			url_help_keys.create(::GetDlgItem(_hSelf, IDC_PREF_HELP_KEYS), TEXT(NPPC_PREFKEYS_HELP_URL));
+			url_help.init(_hInst, _hSelf);
+			url_help.create(::GetDlgItem(_hSelf, IDC_PREF_HELP), TEXT(NPPC_PREFERENCES_HELP_URL));
 
 			return TRUE;
 		}
@@ -103,13 +88,6 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 		    {
 				case IDC_PREF_OK: 
 				{
-					
-					Encode::Options::Common::eol = !!::SendDlgItemMessage(_hSelf, IDC_PREF_EOL_WINDOWS, BM_GETCHECK, 0, 0) ? Encode::Options::Common::EOL::windows : Encode::Options::Common::EOL::unix;
-					Encode::Options::Base16::spaces = !!::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_SPACES, BM_GETCHECK, 0, 0);
-					Encode::Options::Base16::letter_case = !!::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LOWERCASE, BM_GETCHECK, 0, 0) ? Encode::Options::Base16::Case::lower : Encode::Options::Base16::Case::upper;
-					Encode::Options::Base16::vpl = ::SendDlgItemMessage(_hSelf, IDC_PREF_HEX_LV_SPIN, UDM_GETPOS32, 0, 0);
-					Encode::Options::Base64::cpl = ::SendDlgItemMessage(_hSelf, IDC_PREF_BASE64_LV_SPIN, UDM_GETPOS32, 0, 0);
-
 					preferences.files.enable = !!::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ENABLE, BM_GETCHECK, 0, 0);
 					preferences.files.askonsave = !!::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ASK, BM_GETCHECK, 0, 0);
 
@@ -121,7 +99,7 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 					return TRUE;
 				}
 
-				case IDC_CANCEL :
+				case IDC_CANCEL : case IDCANCEL:
 				    EndDialog(_hSelf, IDC_CANCEL);
 					return TRUE;
 
@@ -136,19 +114,27 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 						if(!lstrlen(temp.label)) {
 							::MessageBox(_hSelf, TEXT("Please enter key-label."), TEXT("Error"), MB_OK); break;
 						}
-						TCHAR tvalue[25];
-						char  tstr[24];
+						TCHAR	tvalue[25];
+						byte	tstr[24];
+						size_t	i;
+						memset(temp.data, 0, 16);
 						::GetDlgItemText(_hSelf, IDC_PREF_KEYS_VALUE, tvalue, 25);
-						for(size_t i=0; i<24; i++)
+						for(i=0; i<24; i++)
 							tstr[i] = static_cast<char>(tvalue[i]);
-						if(Encode::base64_to_bin(tstr,24,NULL) != 16) {
+
+						using namespace CryptoPP;
+						StringSource((const byte*)tstr, 24, true, new Base64Decoder(new ArraySink(temp.data, 16)));
+
+						for (i = 0; i < 16; i++)
+							if (temp.data[i] != 0)
+								break;
+						if (i == 16) {
 							::MessageBox(_hSelf, TEXT("The key value must be 16 bytes encoded as base64."), TEXT("Error"), MB_OK); break;
-						} else {
-							Encode::base64_to_bin(tstr,24,temp.data);
-							preferences.addKey(temp);
-							::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_ADDSTRING, 0, (LPARAM)temp.label);
-							::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_SETCURSEL, preferences.getKeyNum()-1, 0);
 						}
+
+						preferences.addKey(temp);
+						::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_ADDSTRING, 0, (LPARAM)temp.label);
+						::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_SETCURSEL, preferences.getKeyNum()-1, 0);
 					}
 					break;
 				case IDC_PREF_KEYS_DEL:
@@ -165,28 +151,28 @@ BOOL CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 				case IDC_PREF_KEYS_RANDOM:
 					if(HIWORD( wParam ) == BN_CLICKED)
 					{
+						using namespace CryptoPP;
 						unsigned char t_rand[16];
-						if(RAND_bytes(t_rand, 16) == 1) {
-							TCHAR tvalue[25];
-							char t_rand_s[24];
-							Encode::bin_to_base64(t_rand, 16, t_rand_s, true);
-							for(size_t i=0; i<24; i++)
-								tvalue[i] = t_rand_s[i];
-							tvalue[24]=0;
-							::SetDlgItemText(_hSelf, IDC_PREF_KEYS_VALUE, tvalue);
-						} else {
-							::MessageBox(_hSelf, TEXT("Failed to generate random bytes!"), TEXT("Error"), MB_OK);
-						}
+						OS_GenerateRandomBlock(true, t_rand, 16);
+						TCHAR tvalue[25];
+						char t_rand_s[24];
+						ArraySource(t_rand, 16, true, new Base64Encoder(new ArraySink((byte*)t_rand_s, 24)));
+						for(size_t i=0; i<24; i++)
+							tvalue[i] = t_rand_s[i];
+						tvalue[24]=0;
+						::SetDlgItemText(_hSelf, IDC_PREF_KEYS_VALUE, tvalue);
 					}
 					break;
 				case IDC_PREF_KEYS_LIST:
 					if(HIWORD( wParam ) == LBN_SELCHANGE)
 					{
 						int sel = ::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_GETCURSEL, 0, 0);
-						if(sel >= 0) {
+						if(sel >= 0)
+						{
+							using namespace CryptoPP;
 							char tstr[24];
 							TCHAR tvalue[25];
-							Encode::bin_to_base64(preferences.getKey((size_t)sel), 16, tstr, true);
+							ArraySource(preferences.getKey((size_t)sel), 16, true, new Base64Encoder(new ArraySink((byte*)tstr, 24)));
 							for(size_t i=0; i<24; i++)
 								tvalue[i] = tstr[i];
 							tvalue[24]=0;

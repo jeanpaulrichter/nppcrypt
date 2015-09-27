@@ -16,37 +16,36 @@ GNU General Public License for more details.
 #define MDEF_DEFINE_H
 
 #include <Windows.h>
-
+#include <string>
 
 
 const TCHAR NPP_PLUGIN_NAME[] = TEXT("NppCrypt");
-const int	NPPCRYPT_VERSION = 1011;
+const int	NPPCRYPT_VERSION = 1012;
 
-#define		NPPC_ABOUT_TEXT				"nppcrypt v1.0.1.1"
+#define		NPPC_ABOUT_TEXT				"nppcrypt v1.0.1.2"
 #define		NPPC_ABOUT_LINK				"www.cerberus-design.de/nppcrypt/readme"
-#define		NPPC_ABOUT_URL				"http://www.cerberus-design.de/nppcrypt/readme.v1011.txt"
+#define		NPPC_ABOUT_URL				"http://www.cerberus-design.de/nppcrypt/readme.1012.htm"
+
+#define		NPPC_PREFFILE_HEADER		"nppcrypt.config.v1012"
+#define		NPPC_PREFFILE_HEADER_1010	"nppcrypt.config.v1010"
+#define		NPPC_PREFFILE_HEADER_LEN	21
 
 #define		NPPC_DEF_HMAC_KEY			"bJmX/AokoOlC}my."
 #define		NPPC_DEF_HMAC_LABEL			"nppcrypt default"
 
-#define		NPPC_HMAC_INPUT_MAX			32
+#define		NPPC_HMAC_MAX_KEYS			20
+#define		NPPC_HMAC_INPUT_MAX			256
+
+#define		NPPC_MAX_LINE_LENGTH		9999
 
 #define		NPPC_DEF_FILE_EXT			"nppcrypt"
 #define		NPPC_FILE_EXT_MAXLENGTH		32
 
-#define		NPPC_HASH_KEY_HELP_URL		"http://www.cerberus-design.de/nppcrypt/help/hash.key.txt"
-#define		NPPC_CRYPT_HMAC_HELP_URL	"http://www.cerberus-design.de/nppcrypt/help/crypt.hmac.txt"
-#define		NPPC_CRYPT_IV_HELP_URL		"http://www.cerberus-design.de/nppcrypt/help/crypt.iv.txt"
+#define		NPPC_CRYPT_HMAC_HELP_URL	"https://en.wikipedia.org/wiki/Hash-based_message_authentication_code"
+#define		NPPC_CRYPT_IV_HELP_URL		"https://en.wikipedia.org/wiki/Initialization_vector"
 #define		NPPC_CRYPT_SALT_HELP_URL	"https://en.wikipedia.org/wiki/Salt_%28cryptography%29"
-#define		NPPC_FILES_HELP_URL			"http://www.cerberus-design.de/nppcrypt/help/files.txt"
-#define		NPPC_PREFKEYS_HELP_URL		"http://www.cerberus-design.de/nppcrypt/help/keys.txt"
+#define		NPPC_PREFERENCES_HELP_URL	"http://www.cerberus-design.de/nppcrypt/readme.1012.htm"
 
 
-
-#ifdef UNICODE
-typedef std::wstring string;
-#else
-typedef std::string string;
-#endif
 
 #endif

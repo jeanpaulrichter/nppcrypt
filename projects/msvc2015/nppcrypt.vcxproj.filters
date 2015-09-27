@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx</Extensions>
     </Filter>
-    <Filter Include="Header Files\keccak">
-      <UniqueIdentifier>{48312962-9421-48ec-88dd-b3e26d43cbfc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\keccak">
-      <UniqueIdentifier>{10e42b03-528e-4490-b63f-109a20d4c6de}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\tinyxml2">
       <UniqueIdentifier>{2e715d60-a061-4c7b-8200-d58c3b79fb73}</UniqueIdentifier>
     </Filter>
@@ -42,6 +36,12 @@
     </Filter>
     <Filter Include="Header Files\notepad++">
       <UniqueIdentifier>{25756e2a-5214-4efc-a6aa-2140efda214a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\keccak">
+      <UniqueIdentifier>{0207c31a-32b7-4b16-ac32-11fef7f65a51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\keccak">
+      <UniqueIdentifier>{4b64f114-6c57-4fd8-9a9d-17c9c56654c0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -68,9 +68,6 @@
     <ClCompile Include="..\..\src\dlg_random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\encoding.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\exception.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -92,15 +89,6 @@
     <ClCompile Include="..\..\src\npp\URLCtrl.cpp">
       <Filter>Source Files\notepad++</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\keccak\KeccakF-1600-inplace32BI.cpp">
-      <Filter>Source Files\keccak</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\keccak\KeccakHash.cpp">
-      <Filter>Source Files\keccak</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\keccak\KeccakSponge.cpp">
-      <Filter>Source Files\keccak</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\bcrypt\crypt_blowfish.cpp">
       <Filter>Source Files\bcrypt</Filter>
     </ClCompile>
@@ -112,6 +100,21 @@
     </ClCompile>
     <ClCompile Include="..\..\src\scrypt\insecure_memzero.cpp">
       <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dlg_convert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\unicode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\keccak\KeccakF-1600-inplace32BI.cpp">
+      <Filter>Source Files\keccak</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\keccak\KeccakHash.cpp">
+      <Filter>Source Files\keccak</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\keccak\KeccakSponge.cpp">
+      <Filter>Source Files\keccak</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -131,9 +134,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\dlg_random.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\encoding.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\exception.h">
@@ -181,18 +181,6 @@
     <ClInclude Include="..\..\src\npp\Window.h">
       <Filter>Header Files\notepad++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\keccak\brg_endian.h">
-      <Filter>Header Files\keccak</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\keccak\KeccakF-1600-interface.h">
-      <Filter>Header Files\keccak</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\keccak\KeccakHash.h">
-      <Filter>Header Files\keccak</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\keccak\KeccakSponge.h">
-      <Filter>Header Files\keccak</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\bcrypt\crypt_blowfish.h">
       <Filter>Header Files\bcrypt</Filter>
     </ClInclude>
@@ -207,6 +195,24 @@
     </ClInclude>
     <ClInclude Include="..\..\src\scrypt\insecure_memzero.h">
       <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_convert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\unicode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\brg_endian.h">
+      <Filter>Header Files\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\KeccakF-1600-interface.h">
+      <Filter>Header Files\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\KeccakHash.h">
+      <Filter>Header Files\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\KeccakSponge.h">
+      <Filter>Header Files\keccak</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

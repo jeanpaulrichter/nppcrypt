@@ -89,7 +89,7 @@ BOOL CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 			try {
 				#ifdef UNICODE
-				Encode::wchar_to_utf8(temp_key, -1, keystring);
+				unicode::wchar_to_utf8(temp_key, -1, keystring);
 				#else
 				keystring.assign(temp_key);
 				#endif
@@ -103,13 +103,13 @@ BOOL CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			return TRUE;
 		} break;
 
-		case IDC_CANCEL:
+		case IDC_CANCEL: case IDCANCEL:
 		{
 			EndDialog(_hSelf, IDC_CANCEL);
 			return TRUE;
 		} break;
 
-		case IDC_CRYPT_AUTH_KEY_SHOW:
+		case IDC_AUTH_SHOW:
 		{
 			char c = ::SendDlgItemMessage(_hSelf, IDC_AUTH_SHOW, BM_GETCHECK, 0, 0) ? 0 : '*';
 			::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, c, 0);
