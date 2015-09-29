@@ -40,7 +40,11 @@ bool HeaderReader::parse(const unsigned char* in, size_t in_len)
 	if(in == NULL)
 		throw CExc(CExc::File::header, __LINE__);
 	if (in_len < 9)
+	{
+		pCData = in;
+		cdata_len = in_len;
 		return false;
+	}		
 	
 	if (!cmpchars((const char*)in, "<nppcrypt", 9))
 	{
@@ -51,6 +55,8 @@ bool HeaderReader::parse(const unsigned char* in, size_t in_len)
 			return true;
 		}
 		else {
+			pCData = in;
+			cdata_len = in_len;
 			return false;
 		}
 	}
@@ -59,7 +65,9 @@ bool HeaderReader::parse(const unsigned char* in, size_t in_len)
 	size_t					body_start;
 	tinyxml2::XMLError		xml_err;
 	tinyxml2::XMLDocument	xml_doc;
-	crypt::Options::Crypt	t_options = options;
+	crypt::Options::Crypt	t_options;
+
+	t_options.encoding = options.encoding;
 
 	// find header body start:
 	while (offset < in_len - 11 && in[offset] != '\n')
@@ -351,7 +359,7 @@ void HeaderWriter::create()
 	else
 		linebreak = &win[1];
 
-	out << "<nppcrypt version=\"" << NPPCRYPT_VERSION << "\"";
+	out << "<nppcrypt version=\"" << NPPC_VERSION << "\"";
 	if (options.hmac.enable) {
 		if (options.hmac.key_id >= 0)
 			out << " auth-key=\"" << options.hmac.key_id << "\"";

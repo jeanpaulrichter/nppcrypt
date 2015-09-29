@@ -25,15 +25,12 @@ public:
     
 	DlgAbout(): Window() {};
     void init(HINSTANCE hInst, HWND parent);
-    virtual void destroy() { ::DestroyWindow(_hSelf); };
-	static DlgAbout& Instance() { static DlgAbout single; return single; }
+    void destroy() { ::DestroyWindow(_hSelf); };
    	bool doDialog();
 
 private:
 	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	DlgAbout(DlgAbout const&);
-	DlgAbout& operator=(DlgAbout const&);
 
 	URLCtrl		cerberus;
 };

@@ -86,7 +86,7 @@ BOOL CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 
 		::SendDlgItemMessage(_hSelf, IDC_CONVERT_UPPERCASE, BM_SETCHECK, options.uppercase, 0);
 		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINEBREAKS, BM_SETCHECK, options.linebreaks, 0);
-		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(9999, 1));
+		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETRANGE32, 1, NPPC_MAX_LINE_LENGTH);
 		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf, IDC_CONVERT_LINELEN), 0);
 		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETPOS32, 0, options.linelength);
 		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_WINDOWS, BM_SETCHECK, options.windows, 0);
@@ -171,6 +171,30 @@ BOOL CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 
 			default:
 				break;
+			}
+		} break;
+
+		case EN_CHANGE:
+		{
+			if (LOWORD(wParam) == IDC_CONVERT_LINELEN)
+			{
+				int temp;
+				int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_CONVERT_LINELEN));
+				if (len > 0)
+				{
+					std::vector<TCHAR> tstr(len + 1);
+					::GetDlgItemText(_hSelf, IDC_CONVERT_LINELEN, tstr.data(), tstr.size());
+					#ifdef UNICODE
+					temp = std::stoi(tstr.data());
+					#else
+					temp = std::atoi(str.data());
+					#endif
+					if (temp > NPPC_MAX_LINE_LENGTH)
+						::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETPOS32, 0, NPPC_MAX_LINE_LENGTH);
+				}
+				else {
+					::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETPOS32, 0, 1);
+				}
 			}
 		} break;
 

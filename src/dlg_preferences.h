@@ -15,7 +15,6 @@ GNU General Public License for more details.
 #ifndef DLG_CONFIG_DEFINE_H
 #define DLG_CONFIG_DEFINE_H
 
-#include <vector>
 #include "npp/Window.h"
 #include "npp/URLCtrl.h"
 #include "crypt.h"
@@ -27,15 +26,12 @@ public:
     
 	DlgPreferences();
     void init(HINSTANCE hInst, HWND parent);
-    virtual void destroy() { ::DestroyWindow(_hSelf); };
-	static DlgPreferences& Instance() { static DlgPreferences single; return single; }
+    void destroy() { ::DestroyWindow(_hSelf); };
    	bool doDialog();
 
 private:
 	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	DlgPreferences(DlgPreferences const&);
-	DlgPreferences& operator=(DlgPreferences const&);
 
 	URLCtrl		url_help;
 };

@@ -15,6 +15,9 @@ GNU General Public License for more details.
 #include "nppcrypt.h"
 #include "header.h"
 
+const TCHAR NPP_PLUGIN_NAME[] = TEXT(NPPC_NAME);
+const int	NPPCRYPT_VERSION = NPPC_VERSION;
+
 const int				funcItemCount = 9;
 FuncItem				funcItem[funcItemCount];
 NppData					nppData;
@@ -25,12 +28,13 @@ CurrentOptions			current;
 
 // dialog-objects:
 DlgCrypt&				dlg_crypt = DlgCrypt::Instance();
-DlgHash&				dlg_hash = DlgHash::Instance();
-DlgRandom&				dlg_random = DlgRandom::Instance();
-DlgAuth&				dlg_auth = DlgAuth::Instance();
-DlgPreferences&			dlg_preferences = DlgPreferences::Instance();
-DlgAbout&				dlg_about = DlgAbout::Instance();
+DlgHash					dlg_hash(current.hash);
+DlgRandom				dlg_random(current.random);
+DlgAuth					dlg_auth;
+DlgPreferences			dlg_preferences;
+DlgAbout				dlg_about;
 DlgConvert				dlg_convert(current.convert);
+DlgInitdata				dlg_initdata;
 
 // map to store information about opened nppcrypt-files. (to allow saving without user input):
 std::map<string , crypt::Options::Crypt> crypt_files;
@@ -68,6 +72,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 			dlg_preferences.destroy();
 			dlg_auth.destroy();
 			dlg_convert.destroy();
+			dlg_initdata.destroy();
 			break;
 
 		case DLL_THREAD_ATTACH:
@@ -98,13 +103,14 @@ extern "C" __declspec(dllexport) void setInfo(NppData notpadPlusData)
 	help::setCommand(8, TEXT("About"), AboutDlg, NULL, false);
 
 	// initialize dialogs
-	dlg_random.init(m_hInstance, nppData._nppHandle, &current.random);
-	dlg_hash.init(m_hInstance, nppData._nppHandle, &current.hash);
+	dlg_random.init(m_hInstance, nppData._nppHandle);
+	dlg_hash.init(m_hInstance, nppData._nppHandle);
 	dlg_crypt.init(m_hInstance, nppData._nppHandle);
 	dlg_about.init(m_hInstance, nppData._nppHandle);
 	dlg_preferences.init(m_hInstance, nppData._nppHandle);
 	dlg_auth.init(m_hInstance, nppData._nppHandle);
 	dlg_convert.init(m_hInstance, nppData._nppHandle);
+	dlg_initdata.init(m_hInstance, nppData._nppHandle);
 
 	// get path of config-file and load preferances
 	// (no error-msg on fail because it could be the first start)
@@ -477,10 +483,22 @@ void DecryptDlg()
 
 		if(dlg_crypt.doDialog(DlgCrypt::Decryption, &current.crypt, no_ascii))
 		{
+			using namespace crypt;
+			crypt::InitStrings& s_init = header.init_strings();
+			bool need_salt = (current.crypt.key.salt_bytes > 0 && s_init.salt.size() == 0);
+			bool need_iv = (current.crypt.iv == IV::random && s_init.iv.size() == 0);
+			bool need_tag = ((current.crypt.mode == Mode::gcm || current.crypt.mode == Mode::ccm || current.crypt.mode == Mode::eax) && s_init.tag.size() == 0);
+
+			if (need_salt || need_iv || need_tag)
+			{
+				if (!dlg_initdata.doDialog(&s_init, need_salt, need_iv, need_tag))
+					return;
+			}
+
 			// --------- decrypt data
 			std::basic_string<byte>	buffer;
 			preparePassword(current.crypt.password, header.getVersion());
-			crypt::decrypt(header.cdata(), header.cdata_size(), buffer, current.crypt, header.init_strings());
+			decrypt(header.cdata(), header.cdata_size(), buffer, current.crypt, header.init_strings());
 
 			// --------- replace current selection with decrypted data
 			::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);

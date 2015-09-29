@@ -25,12 +25,11 @@ class DlgHash : public Window
 {
 public:
 
-	DlgHash();
+	DlgHash(crypt::Options::Hash& opt);
 	~DlgHash();
     
-    void init(HINSTANCE hInst, HWND parent, crypt::Options::Hash* opt);
+    void init(HINSTANCE hInst, HWND parent);
     virtual void destroy() { ::DestroyWindow(_hSelf); };
-	static DlgHash& Instance() { static DlgHash single; return single; }
 
    	bool doDialog(bool no_ascii);
 
@@ -43,7 +42,7 @@ private:
 
 	void enableKeyControls(bool v);
 
-	crypt::Options::Hash*	options;
+	crypt::Options::Hash&	options;
 	bool					no_ascii;
 
 	URLCtrl					url_help_hash;

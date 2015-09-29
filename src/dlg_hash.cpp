@@ -16,22 +16,19 @@ GNU General Public License for more details.
 #include "dlg_hash.h"
 #include "preferences.h"
 
-DlgHash::DlgHash() : Window(), no_ascii(false)
+DlgHash::DlgHash(crypt::Options::Hash& opt) : Window(), no_ascii(false), options(opt)
 {}
 
 DlgHash::~DlgHash()
 {}
 
-void DlgHash::init(HINSTANCE hInst, HWND parent, crypt::Options::Hash* opt)
+void DlgHash::init(HINSTANCE hInst, HWND parent)
 {
 	Window::init(hInst, parent);
-	options = opt;
 };
 
 bool DlgHash::doDialog(bool no_ascii)
 {
-	if(!options)
-		return false;
 	this->no_ascii = no_ascii;
 	if(DialogBoxParam(_hInst, MAKEINTRESOURCE(IDD_HASH), _hParent,  (DLGPROC)dlgProc, (LPARAM)this)==IDC_OK)
 		return true;
@@ -71,53 +68,53 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		if(no_ascii)
 		{
-			if(options->encoding == crypt::Encoding::ascii) 
-				options->encoding = crypt::Encoding::base16;
+			if(options.encoding == crypt::Encoding::ascii) 
+				options.encoding = crypt::Encoding::base16;
 			::EnableWindow(::GetDlgItem(_hSelf,IDC_HASH_ENC_ASCII),false);
 		}
-		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_SETCHECK, (options->encoding == crypt::Encoding::ascii), 0);
-		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_SETCHECK, (options->encoding == crypt::Encoding::base16), 0);
-		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_SETCHECK, (options->encoding == crypt::Encoding::base32), 0);
-		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE64, BM_SETCHECK, (options->encoding == crypt::Encoding::base64), 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_SETCHECK, (options.encoding == crypt::Encoding::ascii), 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_SETCHECK, (options.encoding == crypt::Encoding::base16), 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_SETCHECK, (options.encoding == crypt::Encoding::base32), 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE64, BM_SETCHECK, (options.encoding == crypt::Encoding::base64), 0);
 
 		crypt::help::Iter::setup_hash();
 		while (crypt::help::Iter::next()) {
 			::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)crypt::help::Iter::getString());
 		}
-		::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_SETCURSEL, (int)options->algorithm, 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_SETCURSEL, (int)options.algorithm, 0);
 			
-		::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_SETCHECK, options->use_key, 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_SETCHECK, options.use_key, 0);
 		::SendDlgItemMessage(_hSelf, IDC_HASH_KEYEDIT, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
 
 		for (size_t i = 0; i < preferences.getKeyNum(); i++) {
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
 		}			
-		if (options->key_id >= 0) {
-			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_SETCURSEL, options->key_id, 0);
+		if (options.key_id >= 0) {
+			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_SETCURSEL, options.key_id, 0);
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO1, BM_SETCHECK, true, 0);
 		}
 		else {
 			string tstr;
 			#ifdef UNICODE
-			unicode::utf8_to_wchar(options->key_input.c_str(), options->key_input.size(), tstr);
+			unicode::utf8_to_wchar(options.key_input.c_str(), options.key_input.size(), tstr);
 			#else
-			tstr.assign(options->key_input);
+			tstr.assign(options.key_input);
 			#endif
 			::SetDlgItemText(_hSelf, IDC_HASH_KEYEDIT, tstr.c_str());
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_SETCHECK, true, 0);
 		}
-		if (!crypt::help::IsOpenSSLHash(options->algorithm))
+		if (!crypt::help::IsOpenSSLHash(options.algorithm))
 		{
 			enableKeyControls(false);
 			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
 		}
 		else {
 			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), true);
-			enableKeyControls(options->use_key);
+			enableKeyControls(options.use_key);
 		}
 
 		url_help_hash.init(_hInst, _hSelf);
-		url_help_hash.create(::GetDlgItem(_hSelf, IDC_HASH_HELP_HASH), crypt::help::getHelpURL(options->algorithm));
+		url_help_hash.create(::GetDlgItem(_hSelf, IDC_HASH_HELP_HASH), crypt::help::getHelpURL(options.algorithm));
 
 		return TRUE;
 	} break;
@@ -132,24 +129,24 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			{
 			case IDC_OK:
 			{
-				options->algorithm = (crypt::Hash)::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
+				options.algorithm = (crypt::Hash)::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
 				if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_GETCHECK, 0, 0))
-					options->encoding = crypt::Encoding::ascii;
+					options.encoding = crypt::Encoding::ascii;
 				else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_GETCHECK, 0, 0))
-					options->encoding = crypt::Encoding::base16;
+					options.encoding = crypt::Encoding::base16;
 				else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_GETCHECK, 0, 0))
-					options->encoding = crypt::Encoding::base32;
+					options.encoding = crypt::Encoding::base32;
 				else
-					options->encoding = crypt::Encoding::base64;
+					options.encoding = crypt::Encoding::base64;
 				if (IsWindowEnabled(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY)))
 				{
-					options->use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
+					options.use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
 				}
 				else {
-					options->use_key = false;
+					options.use_key = false;
 				}
 
-				if (options->use_key)
+				if (options.use_key)
 				{
 					if (!!::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_GETCHECK, 0, 0))
 					{
@@ -162,19 +159,19 @@ BOOL CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 						}
 						try {
 							#ifdef UNICODE
-							unicode::wchar_to_utf8(temp_key, -1, options->key_input);
+							unicode::wchar_to_utf8(temp_key, -1, options.key_input);
 							#else
-							options->key.assign(temp_key);
+							options.key.assign(temp_key);
 							#endif
 						}
 						catch (CExc& exc) {
 							::MessageBox(_hSelf, exc.getErrorMsg(), TEXT("Error"), MB_OK);
 							return false;
 						}
-						options->key_id = -1;
+						options.key_id = -1;
 					}
 					else {
-						options->key_id = ::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_GETCURSEL, 0, 0);
+						options.key_id = ::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_GETCURSEL, 0, 0);
 					}
 				}
 

@@ -25,16 +25,13 @@ public:
     
 	DlgAuth();
     void init(HINSTANCE hInst, HWND parent);
-    virtual void destroy() { ::DestroyWindow(_hSelf); };
-	static DlgAuth& Instance() { static DlgAuth single; return single; }
+    void destroy() { ::DestroyWindow(_hSelf); };
    	bool doDialog(const TCHAR* filename=NULL);
 	void getKeyString(std::string& s);
 
 private:
 	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	DlgAuth(DlgAuth const&);
-	DlgAuth& operator=(DlgAuth const&);
 
 	std::string			keystring;
 	string				caption;

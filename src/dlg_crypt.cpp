@@ -272,6 +272,73 @@ BOOL CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			} break;
 			}
 		} break;
+
+		case EN_CHANGE:
+		{
+			int		edit_id = -1;
+			int		spin_id, min, max;
+			HWND	hwnd;
+
+			switch (LOWORD(wParam))
+			{
+			case IDC_CRYPT_ENC_LINELEN:
+				edit_id = IDC_CRYPT_ENC_LINELEN; spin_id = IDC_CRYPT_ENC_LINELEN_SPIN; 
+				min = 1; max = NPPC_MAX_LINE_LENGTH; 
+				hwnd = hwnd_encoding;
+				break;
+			case IDC_CRYPT_SALT_BYTES:
+				edit_id = IDC_CRYPT_SALT_BYTES; spin_id = IDC_CRYPT_SALT_SPIN;
+				min = 1; max = crypt::Constants::salt_max;
+				hwnd = hwnd_key;
+				break;
+			case IDC_CRYPT_PBKDF2_ITER:
+				edit_id = IDC_CRYPT_PBKDF2_ITER; spin_id = IDC_CRYPT_PBKDF2_ITER_SPIN;
+				min = crypt::Constants::pbkdf2_iter_min; max = crypt::Constants::pbkdf2_iter_max;
+				hwnd = hwnd_key;
+				break;
+			case IDC_CRYPT_BCRYPT_ITER:
+				edit_id = IDC_CRYPT_BCRYPT_ITER; spin_id = IDC_CRYPT_BCRYPT_ITER_SPIN;
+				min = crypt::Constants::bcrypt_iter_min; max = crypt::Constants::bcrypt_iter_max;
+				hwnd = hwnd_key;
+				break;
+			case IDC_CRYPT_SCRYPT_N:
+				edit_id = IDC_CRYPT_SCRYPT_N; spin_id = IDC_CRYPT_SCRYPT_N_SPIN;
+				min = crypt::Constants::scrypt_N_min; max = crypt::Constants::scrypt_N_max;
+				hwnd = hwnd_key;
+				break;
+			case IDC_CRYPT_SCRYPT_R:
+				edit_id = IDC_CRYPT_SCRYPT_R; spin_id = IDC_CRYPT_SCRYPT_R_SPIN;
+				min = crypt::Constants::scrypt_r_min; max = crypt::Constants::scrypt_r_max;
+				hwnd = hwnd_key;
+				break;
+			case IDC_CRYPT_SCRYPT_P:
+				edit_id = IDC_CRYPT_SCRYPT_P; spin_id = IDC_CRYPT_SCRYPT_P_SPIN;
+				min = crypt::Constants::scrypt_p_min; max = crypt::Constants::scrypt_p_max;
+				hwnd = hwnd_key;
+				break;
+			}
+			if (edit_id != -1)
+			{
+				int temp;
+				int len = GetWindowTextLength(::GetDlgItem(hwnd, edit_id));
+				if (len > 0)
+				{
+					std::vector<TCHAR> tstr(len + 1);
+					::GetDlgItemText(hwnd, edit_id, tstr.data(), tstr.size());
+					#ifdef UNICODE
+					temp = std::stoi(tstr.data());
+					#else
+					temp = std::atoi(str.data());
+					#endif
+					if (temp > max)
+						::SendDlgItemMessage(hwnd, spin_id, UDM_SETPOS32, 0, max);
+				}
+				else {
+					::SendDlgItemMessage(hwnd, spin_id, UDM_SETPOS32, 0, min);
+				}
+			}
+		} break;
+
 		default:
 			break;
 		} break;
@@ -441,7 +508,7 @@ void DlgCrypt::OnInitDialog()
 	::SendDlgItemMessage(hwnd_encoding, IDC_CRYPT_ENC_LB_UNIX, BM_SETCHECK, !options->encoding.windows, 0);
 	::SendDlgItemMessage(hwnd_encoding, IDC_CRYPT_ENC_UPPERCASE, BM_SETCHECK, options->encoding.uppercase, 0);
 
-	::SendDlgItemMessage(hwnd_encoding, IDC_CRYPT_ENC_LINELEN_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(9999, 1));
+	::SendDlgItemMessage(hwnd_encoding, IDC_CRYPT_ENC_LINELEN_SPIN, UDM_SETRANGE32, 1, NPPC_MAX_LINE_LENGTH);
 	::SendDlgItemMessage(hwnd_encoding, IDC_CRYPT_ENC_LINELEN_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_LINELEN), 0);
 	::SendDlgItemMessage(hwnd_encoding, IDC_CRYPT_ENC_LINELEN_SPIN, UDM_SETPOS32, 0, options->encoding.linelength);
 
@@ -463,7 +530,7 @@ void DlgCrypt::OnInitDialog()
 
 	// --------------------- Key-Derivation ----------------------------------------------------------------------------------------------------
 	// setups controls:
-	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(crypt::Constants::salt_max, 1));
+	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT_SPIN, UDM_SETRANGE32, 1, crypt::Constants::salt_max);
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwnd_key, IDC_CRYPT_SALT_BYTES), 0);
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT_SPIN, UDM_SETPOS32, 0, options->key.salt_bytes);
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_SETCHECK, (options->key.salt_bytes > 0), 0);
@@ -473,13 +540,13 @@ void DlgCrypt::OnInitDialog()
 	}
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETRANGE32, crypt::Constants::pbkdf2_iter_min, crypt::Constants::pbkdf2_iter_max);
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_ITER), 0);
-	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(crypt::Constants::bcrypt_iter_max, crypt::Constants::bcrypt_iter_min));
+	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_SETRANGE32, crypt::Constants::bcrypt_iter_min, crypt::Constants::bcrypt_iter_max);
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_ITER), 0);
-	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(crypt::Constants::scrypt_N_max, crypt::Constants::scrypt_N_min));
+	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_SETRANGE32, crypt::Constants::scrypt_N_min, crypt::Constants::scrypt_N_max);
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_N), 0);
-	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(crypt::Constants::scrypt_r_max, crypt::Constants::scrypt_r_min));
+	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_SETRANGE32, crypt::Constants::scrypt_r_min, crypt::Constants::scrypt_r_max);
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_R), 0);
-	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(crypt::Constants::scrypt_p_max, crypt::Constants::scrypt_p_min));
+	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_SETRANGE32, crypt::Constants::scrypt_p_min, crypt::Constants::scrypt_p_max);
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_P), 0);
 
 	// default values:

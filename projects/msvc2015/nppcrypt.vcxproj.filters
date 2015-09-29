@@ -116,6 +116,9 @@
     <ClCompile Include="..\..\src\keccak\KeccakSponge.cpp">
       <Filter>Source Files\keccak</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\dlg_initdata.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\crypt.h">
@@ -213,6 +216,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\keccak\KeccakSponge.h">
       <Filter>Header Files\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_initdata.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -17,6 +17,7 @@
 #define IDD_AUTH                        110
 #define IDD_CONVERT                     111
 #define IDD_CRYPT_ENCODING              112
+#define IDD_INITDATA                    113
 #define IDC_OK                          998
 #define IDC_CANCEL                      999
 #define IDC_CRYPT_TAB                   1000
@@ -65,6 +66,7 @@
 #define IDC_PREF_BASE64_LV              1009
 #define IDC_HASH_HELP_ENC               1009
 #define IDC_PREF_BASE64_LINELEN         1009
+#define IDC_CRYPT_STATIC_PASSWORD2      1009
 #define IDC_CRYPT_SALT_SPIN             1010
 #define IDC_PREF_BASE64_LV_SPIN         1010
 #define IDC_HASH_HELP_HASH              1010
@@ -141,12 +143,16 @@
 #define IDC_CONVERT_LINELENGTH          1032
 #define IDC_CONVERT_LINELEN             1032
 #define IDC_CRYPT_ENC_LINELEN           1032
+#define IDC_INITDATA_SALT               1032
 #define IDC_CRYPT_IV_KEY                1033
 #define IDC_SPIN1                       1033
 #define IDC_CONVERT_LINELEN_SPIN        1033
 #define IDC_CRYPT_ENC_LINELEN_SPIN      1033
+#define IDC_INITDATA_IV                 1033
 #define IDC_CRYPT_IV_ZERO               1034
 #define IDC_CONVERT_LB_WINDOWS          1034
+#define IDC_EDIT3                       1034
+#define IDC_INITDATA_TAG                1034
 #define IDC_ABOUT_TEXT                  1035
 #define IDC_CONVERT_LB_UNIX             1035
 #define IDC_CONVERT_UPPERCASE           1036
@@ -159,6 +165,8 @@
 #define IDC_CRYPT_ENC_UPPERCASE         1044
 #define IDC_CRYPT_HELP_KEYALGO          1045
 #define IDC_HASH_ENC_BASE32             1046
+#define IDC_CHECK2                      1047
+#define IDC_CRYPT_ADDHEADER             1047
 #define IDC_CRYPT_AUTH_KEY_SHOW         1051
 #define IDC_STATIC                      -1
 
@@ -168,7 +176,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        117
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1047
+#define _APS_NEXT_CONTROL_VALUE         1048
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -15,12 +15,8 @@ GNU General Public License for more details.
 #ifndef MDEF_DEFINE_H
 #define MDEF_DEFINE_H
 
-#include <Windows.h>
-#include <string>
-
-
-const TCHAR NPP_PLUGIN_NAME[] = TEXT("NppCrypt");
-const int	NPPCRYPT_VERSION = 1012;
+#define		NPPC_NAME					"NppCrypt"
+#define		NPPC_VERSION				1012
 
 #define		NPPC_ABOUT_TEXT				"nppcrypt v1.0.1.2"
 #define		NPPC_ABOUT_LINK				"www.cerberus-design.de/nppcrypt/readme"

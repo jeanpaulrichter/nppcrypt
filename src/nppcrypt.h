@@ -33,6 +33,7 @@ GNU General Public License for more details.
 #include "dlg_preferences.h"
 #include "dlg_auth.h"
 #include "dlg_convert.h"
+#include "dlg_initdata.h"
 
 // -------------------------------------------------------
 

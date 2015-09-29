@@ -21,7 +21,7 @@ GNU General Public License for more details.
 class Header
 {
 public:
-	Header() : version(NPPCRYPT_VERSION), pContent(NULL), content_len(0) {};
+	Header() : version(NPPC_VERSION), pContent(NULL), content_len(0) {};
 
 	int				getVersion() { return version; };
 	/* returns header-content (<nppcrypt>content</nppcrypt>) */
@@ -50,7 +50,7 @@ public:
 	const unsigned char*	cdata() { return pCData; };
 	/* returns encrypted data length */
 	size_t					cdata_size() { return cdata_len; };
-	const crypt::InitStrings&		init_strings() { return s_init; };
+	crypt::InitStrings&		init_strings() { return s_init; };
 
 private:
 	void	parse_old(const unsigned char* in, size_t in_len);
