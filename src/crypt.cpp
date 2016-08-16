@@ -843,7 +843,7 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 			}
 		}
 	}
-	catch (Exception& e)
+	catch (Exception& )
 	{
 		throw CExc(CExc::File::crypt, __LINE__);
 	}
@@ -1564,7 +1564,7 @@ void crypt::hash(const unsigned char* in, size_t in_len, std::basic_string<byte>
 		} break;
 		}
 	}
-	catch (std::exception& exc) {
+	catch (std::exception& ) {
 		throw CExc(CExc::File::crypt, __LINE__);
 	}
 }
@@ -1613,7 +1613,7 @@ void crypt::hmac_header(const char* a, size_t a_len, const byte* b, size_t b_len
 		f.Put(b, b_len);
 		f.MessageEnd();
 	}
-	catch (std::exception& exc) {
+	catch (std::exception& ) {
 		throw CExc(CExc::File::crypt, __LINE__);
 	}
 }

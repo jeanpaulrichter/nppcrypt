@@ -145,14 +145,108 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 {
 	switch (notifyCode->nmhdr.code) 
 	{
-		// ------------------------------------------------------------------------------------------------------------------------------------------------------------
-		// ------------------------------------------------------------------------------------------------------------------------------------------------------------
-		case NPPN_FILEOPENED:
+	// ------------------------------------------------------------------------------------------------------------------------------------------------------------
+	// ------------------------------------------------------------------------------------------------------------------------------------------------------------
+	case NPPN_FILEOPENED:
+	{
+		if(!preferences.files.enable)
+			return;
+
+		try 
 		{
-			if(!preferences.files.enable)
+			string path;
+			string filename;
+			string extension;
+
+			help::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
+
+			if(preferences.files.extension.compare(extension) == 0) 
+			{
+				::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
+				HWND hCurScintilla = help::getCurScintilla();
+
+				int data_length = ::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
+				if(!data_length)
+					throw CExc(CExc::Code::file_empty);
+
+				crypt::Options::Crypt	options;
+				unsigned char*	pData = (unsigned char*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
+				HeaderReader	header(options);
+
+				if(!header.parse(pData, data_length))
+					throw CExc(CExc::Code::parse_header);
+
+				// ------------ hmac check
+				if(options.hmac.enable) 
+				{
+					crypt::Options::Crypt::HMAC hmac = options.hmac;
+					if (hmac.key_id == -1)
+					{
+						if (!dlg_auth.doDialog())
+							return;
+						dlg_auth.getKeyString(hmac.key_input);
+					}
+					prepareHMAC(hmac, header.getVersion());
+					std::string s_hmac_cmp;
+					crypt::hmac_header(header.body(), header.body_size(), header.cdata(), header.cdata_size(), hmac, s_hmac_cmp);
+					if(!header.checkHMAC(s_hmac_cmp))
+						throw CExc(CExc::Code::authentication);
+				}
+
+				int encoding = ::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
+				bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
+
+				// ------------ dialog
+				if(dlg_crypt.doDialog(DlgCrypt::Decryption, &options, no_ascii, filename.c_str()))
+				{
+					// --------- decrypt data
+					std::basic_string<byte> buffer;
+					preparePassword(options.password, header.getVersion());
+					crypt::decrypt(header.cdata(), header.cdata_size(), buffer, options, header.init_strings());
+
+					// --------- replace text with decrypted data
+					::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
+					::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
+					::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
+					::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
+					::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
+
+					// --------- save current NppOptions for automatic save without user input.
+					crypt_files.insert(std::pair<string, crypt::Options::Crypt>(path, options));
+				}
+			}
+		} catch(CExc& exc) {
+			::MessageBox(nppData._nppHandle, exc.getErrorMsg(), TEXT("Error"), MB_OK);
+		} catch(...) {
+			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+		}
+	} break;
+
+	// ------------------------------------------------------------------------------------------------------------------------------------------------------------
+	// ------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+	/* Why NPPN_FILESAVED instead of NPPN_FILEBEFORESAVE thus effectivly saving the file twice? 
+		Because if the user chooses "save as" there is no way of knowing the new filename in NPPN_FILEBEFORESAVE 
+		Btw: "Save a Copy as..." does trigger neither NPPN_FILESAVED nor NPPN_FILEBEFORESAVE. same goes for automatic backup saves.*/
+
+	case NPPN_FILESAVED: case NPPN_FILERENAMED:
+	{				
+		try
+		{
+			if (!preferences.files.enable)
 				return;
 
-			try 
+			if (UndoFileEncryption) 
+			{
+				// --------- after the encrypted file was saved: undo everthing. (maybe SCI_EMPTYUNDOBUFFER should be optional)
+				HWND hCurScintilla = help::getCurScintilla();
+				::SendMessage(hCurScintilla, SCI_UNDO, 0, 0);
+				::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
+				::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
+				::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
+				UndoFileEncryption = false;
+			}
+			else 
 			{
 				string path;
 				string filename;
@@ -160,8 +254,12 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 				help::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
 
-				if(preferences.files.extension.compare(extension) == 0) 
+				if (preferences.files.extension.compare(extension) == 0)
 				{
+					std::map<string, crypt::Options::Crypt>::iterator fiter = crypt_files.find(path);
+					crypt::Options::Crypt& options = (fiter != crypt_files.end()) ? fiter->second : current.crypt;
+
+					// --------- switch to file and get scintilla-handle
 					::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
 					HWND hCurScintilla = help::getCurScintilla();
 
@@ -169,194 +267,96 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					if(!data_length)
 						throw CExc(CExc::Code::file_empty);
 
-					crypt::Options::Crypt	options;
-					unsigned char*	pData = (unsigned char*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
-					HeaderReader	header(options);
+					// --------- get pointer to data
+					unsigned char* pData = (unsigned char*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
+					if(!pData)
+						throw CExc(CExc::File::nppcrypt, __LINE__);
 
-					if(!header.parse(pData, data_length))
-						throw CExc(CExc::Code::parse_header);
+					HeaderWriter header(options);
+					std::basic_string<byte>	buffer;
 
-					// ------------ hmac check
-					if(options.hmac.enable) 
+					// --------------------------------- auto-encrypt is possible
+					if(fiter != crypt_files.end()) 
 					{
-						crypt::Options::Crypt::HMAC hmac = options.hmac;
-						if (hmac.key_id == -1)
+						bool autoencrypt=false;
+
+						if(preferences.files.askonsave)
 						{
-							if (!dlg_auth.doDialog())
-								return;
-							dlg_auth.getKeyString(hmac.key_input);
-						}
-						prepareHMAC(hmac, header.getVersion());
-						std::string s_hmac_cmp;
-						crypt::hmac_header(header.body(), header.body_size(), header.cdata(), header.cdata_size(), hmac, s_hmac_cmp);
-						if(!header.checkHMAC(s_hmac_cmp))
-							throw CExc(CExc::Code::authentication);
-					}
+							string msg = TEXT("change encryption of ") + filename + TEXT("?");
 
-					int encoding = ::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
-					bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
-
-					// ------------ dialog
-					if(dlg_crypt.doDialog(DlgCrypt::Decryption, &options, no_ascii, filename.c_str()))
-					{
-						// --------- decrypt data
-						std::basic_string<byte> buffer;
-						preparePassword(options.password, header.getVersion());
-						crypt::decrypt(header.cdata(), header.cdata_size(), buffer, options, header.init_strings());
-
-						// --------- replace text with decrypted data
-						::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
-						::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
-						::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
-						::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
-						::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
-
-						// --------- save current NppOptions for automatic save without user input.
-						crypt_files.insert(std::pair<string, crypt::Options::Crypt>(path, options));
-					}
-				}
-			} catch(CExc& exc) {
-				::MessageBox(nppData._nppHandle, exc.getErrorMsg(), TEXT("Error"), MB_OK);
-			} catch(...) {
-				::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
-			}
-		} break;
-
-		// ------------------------------------------------------------------------------------------------------------------------------------------------------------
-		// ------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-		/* Why NPPN_FILESAVED instead of NPPN_FILEBEFORESAVE thus effectivly saving the file twice? 
-		   Because if the user chooses "save as" there is no way of knowing the new filename in NPPN_FILEBEFORESAVE 
-		   Btw: "Save a Copy as..." does trigger neither NPPN_FILESAVED nor NPPN_FILEBEFORESAVE. same goes for automatic backup saves.*/
-
-		case NPPN_FILESAVED: 
-		{				
-			try
-			{
-				if (!preferences.files.enable)
-					return;
-
-				if (UndoFileEncryption) 
-				{
-					// --------- after the encrypted file was saved: undo everthing. (maybe SCI_EMPTYUNDOBUFFER should be optional)
-					HWND hCurScintilla = help::getCurScintilla();
-					::SendMessage(hCurScintilla, SCI_UNDO, 0, 0);
-					::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
-					::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
-					::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
-					UndoFileEncryption = false;
-				}
-				else 
-				{
-					string path;
-					string filename;
-					string extension;
-
-					help::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
-
-					if (preferences.files.extension.compare(extension) == 0)
-					{
-						std::map<string, crypt::Options::Crypt>::iterator fiter = crypt_files.find(path);
-						crypt::Options::Crypt& options = (fiter != crypt_files.end()) ? fiter->second : current.crypt;
-
-						// --------- switch to file and get scintilla-handle
-						::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
-						HWND hCurScintilla = help::getCurScintilla();
-
-						int data_length = ::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
-						if(!data_length)
-							throw CExc(CExc::Code::file_empty);
-
-						// --------- get pointer to data
-						unsigned char* pData = (unsigned char*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
-						if(!pData)
-							throw CExc(CExc::File::nppcrypt, __LINE__);
-
-						HeaderWriter header(options);
-						std::basic_string<byte>	buffer;
-
-						// --------------------------------- auto-encrypt is possible
-						if(fiter != crypt_files.end()) 
-						{
-							bool autoencrypt=false;
-
-							if(preferences.files.askonsave)
-							{
-								string msg = TEXT("change encryption of ") + filename + TEXT("?");
-
-								if(::MessageBox(nppData._nppHandle, msg.c_str(), TEXT("nppcrypt"), MB_YESNO|MB_ICONQUESTION)!=IDYES)
-									autoencrypt = true;
-							} else {
+							if(::MessageBox(nppData._nppHandle, msg.c_str(), TEXT("nppcrypt"), MB_YESNO|MB_ICONQUESTION)!=IDYES)
 								autoencrypt = true;
-							}
-
-							if(autoencrypt)
-							{
-								preparePassword(options.password, NPPCRYPT_VERSION);
-								crypt::encrypt(pData, data_length, buffer, options, header.init_strings());
-								header.create();
-
-								if(options.hmac.enable)
-								{
-									std::string s_hmac;
-									prepareHMAC(options.hmac, NPPCRYPT_VERSION);
-									crypt::hmac_header(header.body(), header.body_size(), &buffer[0], buffer.size(), options.hmac, s_hmac);
-									header.updateHMAC(s_hmac);
-								}
-							}
-						}						
-						
-						// --------- no encrypted data yet therefore crypt dialog is needed:
-						if(!buffer.size())
-						{
-							int encoding = ::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
-							bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
-
-							if(dlg_crypt.doDialog(DlgCrypt::Encryption, &options, no_ascii, filename.c_str()))
-							{
-								// --------- encrypt data and setup header-string
-								preparePassword(options.password, NPPCRYPT_VERSION);
-								crypt::encrypt(pData, data_length, buffer, options, header.init_strings());
-								header.create();
-
-								// --------- if activated: create hmac and insert copy it into the header
-								if(options.hmac.enable) {
-									std::string s_hmac;
-									prepareHMAC(options.hmac, NPPCRYPT_VERSION);
-									crypt::hmac_header(header.body(), header.body_size(), &buffer[0], buffer.size(), options.hmac, s_hmac);
-									header.updateHMAC(s_hmac);
-								}
-
-								// --------- update existing cryptoptions or save the current one as new
-								if(fiter!=crypt_files.end()) {
-									crypt_files.insert(std::pair<string, crypt::Options::Crypt>(path, current.crypt));
-								}
-							} else {
-								return;
-							}
+						} else {
+							autoencrypt = true;
 						}
 
-						// --------- replace text with headerinformation and encrypted data:
-						::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
-						::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
-						::SendMessage(hCurScintilla, SCI_APPENDTEXT, header.size(), (LPARAM)header.c_str());
-						::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
-						::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
+						if(autoencrypt)
+						{
+							preparePassword(options.password, NPPCRYPT_VERSION);
+							crypt::encrypt(pData, data_length, buffer, options, header.init_strings());
+							header.create();
 
-						// --------- save file again:
-						UndoFileEncryption = true;
-						::SendMessage(nppData._nppHandle, NPPM_SAVECURRENTFILE, 0, 0);
+							if(options.hmac.enable)
+							{
+								std::string s_hmac;
+								prepareHMAC(options.hmac, NPPCRYPT_VERSION);
+								crypt::hmac_header(header.body(), header.body_size(), &buffer[0], buffer.size(), options.hmac, s_hmac);
+								header.updateHMAC(s_hmac);
+							}
+						}
+					}						
+						
+					// --------- no encrypted data yet therefore crypt dialog is needed:
+					if(!buffer.size())
+					{
+						int encoding = ::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
+						bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
+
+						if(dlg_crypt.doDialog(DlgCrypt::Encryption, &options, no_ascii, filename.c_str()))
+						{
+							// --------- encrypt data and setup header-string
+							preparePassword(options.password, NPPCRYPT_VERSION);
+							crypt::encrypt(pData, data_length, buffer, options, header.init_strings());
+							header.create();
+
+							// --------- if activated: create hmac and insert copy it into the header
+							if(options.hmac.enable) {
+								std::string s_hmac;
+								prepareHMAC(options.hmac, NPPCRYPT_VERSION);
+								crypt::hmac_header(header.body(), header.body_size(), &buffer[0], buffer.size(), options.hmac, s_hmac);
+								header.updateHMAC(s_hmac);
+							}
+
+							// --------- update existing cryptoptions or save the current one as new
+							if(fiter!=crypt_files.end()) {
+								crypt_files.insert(std::pair<string, crypt::Options::Crypt>(path, current.crypt));
+							}
+						} else {
+							return;
+						}
 					}
+
+					// --------- replace text with headerinformation and encrypted data:
+					::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
+					::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
+					::SendMessage(hCurScintilla, SCI_APPENDTEXT, header.size(), (LPARAM)header.c_str());
+					::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
+					::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
+
+					// --------- save file again:
+					UndoFileEncryption = true;
+					::SendMessage(nppData._nppHandle, NPPM_SAVECURRENTFILE, 0, 0);
 				}
-			} catch(CExc& exc) {
-				::MessageBox(nppData._nppHandle, exc.getErrorMsg(), TEXT("Error"), MB_OK);
-			} catch(...) {
-				::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 			}
-		} break;
+		} catch(CExc& exc) {
+			::MessageBox(nppData._nppHandle, exc.getErrorMsg(), TEXT("Error"), MB_OK);
+		} catch(...) {
+			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+		}
+	} break;
 			
-		default:
-			return;
+	default:
+		return;
 	}
 }
 

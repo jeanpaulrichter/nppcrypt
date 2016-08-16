@@ -246,6 +246,44 @@ bool HeaderReader::parse(const unsigned char* in, size_t in_len)
 		pCData = in + offset + 11;
 		cdata_len = in_len - offset - 11;
 	}
+
+	// ------ read encoding line-length:
+
+	for (size_t i = 1; i < cdata_len - 1; i++)
+	{
+		if (pCData[i] == '\r' && pCData[i + 1] == '\n')
+		{
+			options.encoding.linebreaks = true;
+			options.encoding.linelength = i;
+			options.encoding.windows = true;
+			break;
+		}
+		else if (pCData[i] == '\n')
+		{
+			options.encoding.linebreaks = true;
+			options.encoding.linelength = i;
+			options.encoding.windows = false;
+			break;
+		}
+	}
+
+	// ------ read encoding case:
+
+	if (options.encoding.enc == crypt::Encoding::base16 || options.encoding.enc == crypt::Encoding::base32)
+	{
+		for (size_t i = 0; i < cdata_len - 1; i++)
+		{
+			if (std::isalpha(*pCData + i)) {
+				options.encoding.uppercase = (bool)std::isupper(*pCData + i);
+				break;
+			}
+		}
+	}
+	else
+	{
+		options.encoding.uppercase = false;
+	}
+
 	return true;
 }
 
