@@ -1,22 +1,10 @@
-// Microsoft Visual C++ generated resource script.
-//
+
 #include "resource.h"
 #include "winres.h"
-/////////////////////////////////////////////////////////////////////////////
-// Deutsch (Deutschland) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
-LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
-#pragma code_page(1252)
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Version
-//
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,1,2
- PRODUCTVERSION 1,0,1,2
+ FILEVERSION 1,0,1,3
+ PRODUCTVERSION 1,0,1,3
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -34,26 +22,20 @@ BEGIN
             VALUE "Comments", "Source code at http://www.cerberus-design.de/downloads.htm"
             VALUE "CompanyName", "Cerberus-Design.de"
             VALUE "FileDescription", "NppCrypt - Notepad++ Plugin"
-            VALUE "FileVersion", "1.0.1.2"
+            VALUE "FileVersion", "1.0.1.3"
             VALUE "InternalName", "NppCrypt"
             VALUE "LegalCopyright", "Copyright (C) 2015 cerberus-design"
             VALUE "OriginalFilename", "NppCrypt.dll"
             VALUE "ProductName", "NppCrypt"
-            VALUE "ProductVersion", "1.0.1.2"
+            VALUE "ProductVersion", "1.0.1.3"
         END
     END
 END
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
 IDD_HASH DIALOGEX 0, 0, 175, 98
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
-CAPTION "nppcrypt - hash"
+CAPTION "nppcrypt::hash"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     GROUPBOX        "",IDC_STATIC,3,0,169,23
@@ -72,17 +54,18 @@ BEGIN
     CONTROL         "",IDC_HASH_KEYRADIO1,"Button",BS_AUTORADIOBUTTON,37,46,9,10
     CONTROL         "",IDC_HASH_KEYRADIO2,"Button",BS_AUTORADIOBUTTON,37,61,9,10
     GROUPBOX        "",IDC_STATIC,3,74,169,23
-    PUSHBUTTON      "OK",IDC_OK,73,80,42,14
-    PUSHBUTTON      "Cancel",IDC_CANCEL,117,80,43,14
+    PUSHBUTTON      "Insert",IDC_OK,45,80,43,14
+    PUSHBUTTON      "Copy",IDC_COPY,89,80,43,14
 END
 
 IDD_RANDOM DIALOGEX 0, 0, 109, 124
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
-CAPTION "nppcrypt - random"
+CAPTION "nppcrypt::random"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK",IDC_OK,34,105,39,14
+    PUSHBUTTON      "Insert",IDC_OK,16,105,39,14
+	PUSHBUTTON      "Copy", IDC_COPY,56,105,39,14
     LTEXT           "Bytes",IDC_STATIC,50,9,20,9
     EDITTEXT        IDC_RANDOM_EDIT,10,7,33,13,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "",IDC_RANDOM_SPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS,44,8,11,13
@@ -98,17 +81,19 @@ END
 
 IDD_ABOUT DIALOGEX 0, 0, 199, 62
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_BORDER | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "nppcrypt::about"
 FONT 8, "MS Shell Dlg", 400, 0, 0x0
 BEGIN
     PUSHBUTTON      "Close",IDC_OK,73,41,50,14,BS_FLAT
-    CTEXT           "www.cerberus-design.de/nppcrypt/readme.v1010.txt",IDC_ABOUT_CERBERUS_URL,11,25,176,8
-    CTEXT           "nppcrypt 1.0.1.0",IDC_ABOUT_TEXT,11,6,176,13,0,WS_EX_DLGMODALFRAME
+    CTEXT           "www.cerberus-design.de/nppcrypt/readme.v1013.txt",IDC_ABOUT_CERBERUS_URL,11,25,176,8
+    CTEXT           "nppcrypt 1.0.1.3",IDC_ABOUT_TEXT,11,6,176,13,0,WS_EX_DLGMODALFRAME
 END
 
 IDD_PREFERENCES DIALOGEX 0, 0, 161, 170
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
-CAPTION "NppCrypt - Preferences"
+CAPTION "nppcrypt::preferences"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     PUSHBUTTON      "OK",IDC_PREF_OK,95,149,58,14
@@ -134,7 +119,7 @@ END
 IDD_CRYPT DIALOGEX 0, 0, 195, 113
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
-CAPTION "Encryption"
+CAPTION "nppcrypt::encryption"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "OK",IDC_OK,93,98,50,14
@@ -223,7 +208,7 @@ END
 IDD_AUTH DIALOGEX 0, 0, 177, 47
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
-CAPTION "authentication"
+CAPTION "nppcrypt::authentication"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     EDITTEXT        IDC_AUTH_KEY,5,15,137,12,ES_AUTOHSCROLL
@@ -236,7 +221,7 @@ END
 IDD_CONVERT DIALOGEX 0, 0, 129, 147
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
-CAPTION "Convert Encoding"
+CAPTION "nppcrypt::convert"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     GROUPBOX        "from",IDC_STATIC,2,0,60,68
@@ -257,8 +242,8 @@ BEGIN
     EDITTEXT        IDC_CONVERT_LINELEN,63,91,35,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "",IDC_CONVERT_LINELEN_SPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS | UDS_NOTHOUSANDS,98,91,11,12
     GROUPBOX        "",IDC_STATIC,2,120,124,25
-    DEFPUSHBUTTON   "OK",998,13,127,46,14
-    PUSHBUTTON      "Cancel",999,63,127,47,14
+    DEFPUSHBUTTON	"Convert",IDC_OK,13,127,46,14
+    PUSHBUTTON      "Copy",IDC_COPY,63,127,47,14
     CONTROL         "uppercase",IDC_CONVERT_UPPERCASE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,106,76,9
 END
 
@@ -285,7 +270,7 @@ END
 IDD_INITDATA DIALOGEX 0, 0, 223, 92
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
-CAPTION "init data"
+CAPTION "nppcrypt::init-data"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     EDITTEXT        IDC_INITDATA_SALT,29,20,183,12,ES_AUTOHSCROLL
@@ -301,174 +286,4 @@ BEGIN
     LTEXT           "tag:",IDC_STATIC,9,50,18,9
 END
 
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE 
-BEGIN
-    "\0"
-END
-
-3 TEXTINCLUDE 
-BEGIN
-    "\r\n"
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO
-BEGIN
-    IDD_HASH, DIALOG
-    BEGIN
-        RIGHTMARGIN, 171
-    END
-
-    IDD_RANDOM, DIALOG
-    BEGIN
-    END
-
-    IDD_ABOUT, DIALOG
-    BEGIN
-    END
-
-    IDD_PREFERENCES, DIALOG
-    BEGIN
-        BOTTOMMARGIN, 169
-    END
-
-    IDD_CRYPT, DIALOG
-    BEGIN
-        BOTTOMMARGIN, 107
-    END
-
-    IDD_CRYPT_BASIC, DIALOG
-    BEGIN
-    END
-
-    IDD_CRYPT_AUTH, DIALOG
-    BEGIN
-    END
-
-    IDD_CRYPT_KEY, DIALOG
-    BEGIN
-    END
-
-    IDD_CRYPT_IV, DIALOG
-    BEGIN
-    END
-
-    IDD_AUTH, DIALOG
-    BEGIN
-    END
-
-    IDD_CONVERT, DIALOG
-    BEGIN
-        LEFTMARGIN, 2
-        BOTTOMMARGIN, 145
-    END
-
-    IDD_CRYPT_ENCODING, DIALOG
-    BEGIN
-    END
-
-    IDD_INITDATA, DIALOG
-    BEGIN
-        LEFTMARGIN, 2
-        RIGHTMARGIN, 219
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// AFX_DIALOG_LAYOUT
-//
-
-IDD_PREFERENCES AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-IDD_CRYPT_BASIC AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-IDD_CONVERT AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-IDD_CRYPT_ENCODING AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-IDD_CRYPT AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-IDD_CRYPT_KEY AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-IDD_AUTH AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-IDD_HASH AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-IDD_RANDOM AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-IDD_INITDATA AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-IDD_CRYPT_AUTH AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-#endif    // Deutsch (Deutschland) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-
-#ifndef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 3 resource.
-//
-
-
-/////////////////////////////////////////////////////////////////////////////
-#endif    // not APSTUDIO_INVOKED
 

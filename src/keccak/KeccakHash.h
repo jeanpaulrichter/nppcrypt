@@ -18,7 +18,7 @@ http://creativecommons.org/publicdomain/zero/1.0/
 
 typedef unsigned char BitSequence;
 typedef unsigned long long DataLength;
-typedef enum { SUCCESS = 0, FAIL = 1, BAD_HASHLEN = 2 };
+enum { SUCCESS = 0, FAIL = 1, BAD_HASHLEN = 2 };
 
 typedef struct {
     Keccak_SpongeInstance sponge;

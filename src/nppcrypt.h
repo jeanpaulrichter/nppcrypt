@@ -12,40 +12,19 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef NPPCRYPT_DEFINE_H
-#define NPPCRYPT_DEFINE_H
+#ifndef NPPCRYPT_H_DEF
+#define NPPCRYPT_H_DEF
 
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <map>
-
+#include "mdef.h"
 #include "npp/PluginInterface.h"
 
-#include "exception.h"
-#include "unicode.h"
-#include "preferences.h"
-#include "crypt.h"
-#include "dlg_crypt.h"
-#include "dlg_hash.h"
-#include "dlg_random.h"
-#include "dlg_about.h"
-#include "dlg_preferences.h"
-#include "dlg_auth.h"
-#include "dlg_convert.h"
-#include "dlg_initdata.h"
-
-// -------------------------------------------------------
-
-BOOL APIENTRY DllMain( HANDLE hModule, DWORD  reasonForCall, LPVOID lpReserved );
-extern "C" __declspec(dllexport) void setInfo(NppData notpadPlusData);
-extern "C" __declspec(dllexport) const TCHAR * getName();
-extern "C" __declspec(dllexport) FuncItem * getFuncsArray(int *nbF);
-extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode);
-extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam, LPARAM lParam);
-extern "C" __declspec(dllexport) BOOL isUnicode();
-
-// ---- menu-functions -----------------------------------
+BOOL APIENTRY									DllMain( HANDLE hModule, DWORD  reasonForCall, LPVOID lpReserved );
+extern "C" __declspec(dllexport) void			setInfo(NppData notpadPlusData);
+extern "C" __declspec(dllexport) BOOL			isUnicode();
+extern "C" __declspec(dllexport) const TCHAR *	getName();
+extern "C" __declspec(dllexport) FuncItem *		getFuncsArray(int *nbF);
+extern "C" __declspec(dllexport) LRESULT		messageProc(UINT Message, WPARAM wParam, LPARAM lParam);
+extern "C" __declspec(dllexport) void			beNotified(SCNotification *notifyCode);
 
 void EncryptDlg();
 void DecryptDlg();
@@ -54,18 +33,5 @@ void RandomDlg();
 void ConvertDlg();
 void PreferencesDlg();
 void AboutDlg();
-
-// -------------------------------------------------------
-
-void prepareHMAC(crypt::Options::Crypt::HMAC& hmac, int header_version);
-void preparePassword(std::string& password, int header_version);
-
-// -------------------------------------------------------
-
-namespace help {
-	bool setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *sk = NULL, bool check0nInit = false);
-	HWND getCurScintilla();
-	void getPath(int bufferid, string& path, string& filename, string& extension);
-};
 
 #endif

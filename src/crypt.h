@@ -12,15 +12,12 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-
-#ifndef CRYPT_DEFINE_H
-#define CRYPT_DEFINE_H
+#ifndef CRYPT_H_DEF
+#define CRYPT_H_DEF
 
 #include <string>
 #include <vector>
 #include "exception.h"
-
-// -------------------------------------------------------------------------------------------------------------------------
 
 namespace crypt
 {
@@ -76,9 +73,9 @@ namespace crypt
 		const int ccm_iv_length =		8;				// IV-Length for ccm mode (aes), possible values: 7-13
 		const int rand_char_max =		4096;			// max number of random chars [getRandom()]
 		const int rand_char_bufsize =	1024;			// buffersize of getRandom()
-		const int gcm_tag_size = 16;
-		const int ccm_tag_size = 16;
-		const int eax_tag_size = 16;
+		const int gcm_tag_size =		16;
+		const int ccm_tag_size =		16;
+		const int eax_tag_size =		16;
 	};
 
 	namespace Options
@@ -191,29 +188,29 @@ namespace crypt
 	public:
 		enum CipherCat { aes, other, stream, weak, all };
 
-		static const char* getString(crypt::Cipher cipher);
-		static const char* getString(crypt::Mode mode);
-		static const char* getString(crypt::Encoding enc);
-		static const char* getString(crypt::KeyDerivation k);
-		static const char* getString(crypt::IV iv);
-		static const char* getString(crypt::Hash h);
-		static const char* getString(crypt::Random mode);
+		static const char*	getString(crypt::Cipher cipher);
+		static const char*	getString(crypt::Mode mode);
+		static const char*	getString(crypt::Encoding enc);
+		static const char*	getString(crypt::KeyDerivation k);
+		static const char*	getString(crypt::IV iv);
+		static const char*	getString(crypt::Hash h);
+		static const char*	getString(crypt::Random mode);
 
-		static bool getCipher(const char* s, crypt::Cipher& c);
-		static bool getCipherMode(const char* s, crypt::Mode& m);
-		static bool getKeyDerivation(const char*s, crypt::KeyDerivation& v);
-		static bool getEncoding(const char* s, crypt::Encoding& e);
-		static bool getIVMode(const char* s, crypt::IV& iv);
-		static bool getHash(const char* s, crypt::Hash& h, bool only_openssl = false);
-		static bool getRandomMode(const char* s, crypt::Random& m);
+		static bool			getCipher(const char* s, crypt::Cipher& c);
+		static bool			getCipherMode(const char* s, crypt::Mode& m);
+		static bool			getKeyDerivation(const char*s, crypt::KeyDerivation& v);
+		static bool			getEncoding(const char* s, crypt::Encoding& e);
+		static bool			getIVMode(const char* s, crypt::IV& iv);
+		static bool			getHash(const char* s, crypt::Hash& h, bool only_openssl = false);
+		static bool			getRandomMode(const char* s, crypt::Random& m);
 
-		static crypt::Mode getModeByIndex(crypt::Cipher cipher, int index);
-		static int getIndexByMode(crypt::Cipher cipher, crypt::Mode mode);
-		static bool validCipherMode(crypt::Cipher cipher, crypt::Mode mode);
-		static bool IsOpenSSLHash(crypt::Hash h);
-		static int getCipherCategory(Cipher cipher);
-		static Cipher getCipherByIndex(CipherCat category, int index);
-		static int getCipherIndex(Cipher cipher);
+		static crypt::Mode	getModeByIndex(crypt::Cipher cipher, int index);
+		static int			getIndexByMode(crypt::Cipher cipher, crypt::Mode mode);
+		static bool			validCipherMode(crypt::Cipher cipher, crypt::Mode mode);
+		static bool			canCalcHMAC(crypt::Hash h);
+		static int			getCipherCategory(Cipher cipher);
+		static Cipher		getCipherByIndex(CipherCat category, int index);
+		static int			getCipherIndex(Cipher cipher);
 
 		static const TCHAR* getHelpURL(crypt::Encoding enc);
 		static const TCHAR* getHelpURL(crypt::Cipher cipher);
@@ -237,7 +234,5 @@ namespace crypt
 		};
 	};
 };
-
-
 
 #endif

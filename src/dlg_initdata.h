@@ -12,28 +12,20 @@
  GNU General Public License for more details.
  */
 
-#ifndef DLG_INITDATA_DEFINE_H
-#define DLG_INITDATA_DEFINE_H
+#ifndef DLG_INITDATA_H_DEF
+#define DLG_INITDATA_H_DEF
 
-#include "npp/Window.h"
-#include "unicode.h"
-#include "mdef.h"
+#include "npp/ModalDialog.h"
 #include "crypt.h"
 
-
-class DlgInitdata : public Window
+class DlgInitdata : public ModalDialog
 {
 public:
-
-	DlgInitdata();
-	void init(HINSTANCE hInst, HWND parent);
-	virtual void destroy() { ::DestroyWindow(_hSelf); };
-
-	bool doDialog(crypt::InitStrings* data, bool salt, bool iv, bool tag);
+						DlgInitdata();
+	bool				doDialog(crypt::InitStrings* data, bool salt, bool iv, bool tag);
 
 private:
-	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
-	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
 	crypt::InitStrings* _data;
 	bool				_salt;

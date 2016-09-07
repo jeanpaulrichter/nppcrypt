@@ -12,30 +12,21 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef DLG_CONFIG_DEFINE_H
-#define DLG_CONFIG_DEFINE_H
+#ifndef DLG_PREFERENCES_H_DEF
+#define DLG_PREFERENCES_H_DEF
 
-#include "npp/Window.h"
+#include "npp/ModalDialog.h"
 #include "npp/URLCtrl.h"
-#include "crypt.h"
 
-
-class DlgPreferences: public Window
+class DlgPreferences: public ModalDialog
 {
 public:
-    
-	DlgPreferences();
-    void init(HINSTANCE hInst, HWND parent);
-    void destroy() { ::DestroyWindow(_hSelf); };
-   	bool doDialog();
+						DlgPreferences() : ModalDialog() {};
 
 private:
-	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
-	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	URLCtrl		url_help;
+	URLCtrl				url_help;
 };
-
-
 
 #endif

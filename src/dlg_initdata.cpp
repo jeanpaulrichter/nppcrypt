@@ -15,14 +15,10 @@ GNU General Public License for more details.
 #include "dlg_initdata.h"
 #include "exception.h"
 #include "resource.h"
+#include "unicode.h"
 
-DlgInitdata::DlgInitdata() : Window()
+DlgInitdata::DlgInitdata() : ModalDialog()
 {
-};
-
-void DlgInitdata::init(HINSTANCE hInst, HWND parent)
-{
-	Window::init(hInst, parent);
 };
 
 bool DlgInitdata::doDialog(crypt::InitStrings* data, bool salt, bool iv, bool tag)
@@ -31,39 +27,13 @@ bool DlgInitdata::doDialog(crypt::InitStrings* data, bool salt, bool iv, bool ta
 	_salt = salt;
 	_iv = iv;
 	_tag = tag;
-	if (!_data)
+	if (!_data) {
 		return false;
-	if (DialogBoxParam(_hInst, MAKEINTRESOURCE(IDD_INITDATA), _hParent, (DLGPROC)dlgProc, (LPARAM)this) == IDC_OK)
-		return true;
-	return false;
+	}
+	return ModalDialog::doDialog();
 }
 
-BOOL CALLBACK DlgInitdata::dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
-{
-	switch (Message)
-	{
-	case WM_INITDIALOG:
-	{
-		DlgInitdata *pDlgInitdata = (DlgInitdata *)(lParam);
-		pDlgInitdata->_hSelf = hWnd;
-		::SetWindowLongPtr(hWnd, GWL_USERDATA, (long)lParam);
-		pDlgInitdata->run_dlgProc(Message, wParam, lParam);
-		return TRUE;
-	}
-
-	default:
-	{
-		DlgInitdata *pDlgInitdata = reinterpret_cast<DlgInitdata *>(::GetWindowLong(hWnd, GWL_USERDATA));
-		if (!pDlgInitdata)
-			return FALSE;
-		return pDlgInitdata->run_dlgProc(Message, wParam, lParam);
-	}
-
-	}
-	return FALSE;
-}
-
-BOOL CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
@@ -75,17 +45,17 @@ BOOL CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_SALT), _salt);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_IV), _iv);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_TAG), _tag);
-		return TRUE;
-	} break;
 
+		goToCenter();
+		return TRUE;
+	}
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam))
 		{
 		case IDC_OK:
 		{
-			if (_salt)
-			{
+			if (_salt) {
 				int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_INITDATA_SALT));
 				if (len <= 0) {
 					::MessageBox(_hSelf, TEXT("Please enter a salt-value!"), TEXT("Error"), MB_OK); break;
@@ -93,13 +63,12 @@ BOOL CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				}
 				else {
 					std::vector<TCHAR> tstr(len + 1);
-					::GetDlgItemText(_hSelf, IDC_INITDATA_SALT, tstr.data(), tstr.size());
+					::GetDlgItemText(_hSelf, IDC_INITDATA_SALT, tstr.data(), (int)tstr.size());
 					tstr.pop_back();
-					unicode::wchar_to_utf8(tstr.data(), tstr.size(), _data->salt);
+					unicode::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->salt);
 				}
 			}
-			if (_iv)
-			{
+			if (_iv) {
 				int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_INITDATA_IV));
 				if (len <= 0) {
 					::MessageBox(_hSelf, TEXT("Please enter a iv-value!"), TEXT("Error"), MB_OK); break;
@@ -107,13 +76,12 @@ BOOL CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				}
 				else {
 					std::vector<TCHAR> tstr(len + 1);
-					::GetDlgItemText(_hSelf, IDC_INITDATA_IV, tstr.data(), tstr.size());
+					::GetDlgItemText(_hSelf, IDC_INITDATA_IV, tstr.data(), (int)tstr.size());
 					tstr.pop_back();
-					unicode::wchar_to_utf8(tstr.data(), tstr.size(), _data->iv);
+					unicode::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->iv);
 				}
 			}
-			if (_tag)
-			{
+			if (_tag) {
 				int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_INITDATA_TAG));
 				if (len <= 0) {
 					::MessageBox(_hSelf, TEXT("Please enter a tag-value!"), TEXT("Error"), MB_OK); break;
@@ -121,25 +89,22 @@ BOOL CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				}
 				else {
 					std::vector<TCHAR> tstr(len + 1);
-					::GetDlgItemText(_hSelf, IDC_INITDATA_TAG, tstr.data(), tstr.size());
+					::GetDlgItemText(_hSelf, IDC_INITDATA_TAG, tstr.data(), (int)tstr.size());
 					tstr.pop_back();
-					unicode::wchar_to_utf8(tstr.data(), tstr.size(), _data->tag);
+					unicode::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->tag);
 				}
 			}
 			EndDialog(_hSelf, IDC_OK);
 			return TRUE;
-		} break;
-
+		}
 		case IDC_CANCEL: case IDCANCEL:
 		{
 			EndDialog(_hSelf, IDC_CANCEL);
 			return TRUE;
-		} break;
-
-		default:
-			break;
 		}
-	} break;
+		}
+		break;
+	}
 	}
 	return FALSE;
 }

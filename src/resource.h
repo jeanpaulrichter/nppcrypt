@@ -1,7 +1,4 @@
-//{{NO_DEPENDENCIES}}
-// Von Microsoft Visual C++ generierte Includedatei.
-// Verwendet durch nppcrypt.rc
-//
+
 #define VS_VERSION_INFO                 1
 #define IDD_ABOUT                       101
 #define IDD_HASH                        102
@@ -168,6 +165,7 @@
 #define IDC_CHECK2                      1047
 #define IDC_CRYPT_ADDHEADER             1047
 #define IDC_CRYPT_AUTH_KEY_SHOW         1051
+#define IDC_COPY						1052
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

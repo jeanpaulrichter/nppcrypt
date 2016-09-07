@@ -12,75 +12,62 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef DLG_CRYPT_DEFINE_H
-#define DLG_CRYPT_DEFINE_H
+#ifndef DLG_CRYPT_H_DEF
+#define DLG_CRYPT_H_DEF
 
 #ifndef _WIN32_IE
 #define _WIN32_IE 0x0500
 #endif
 #include <windows.h>
 #include <commctrl.h>
-#include <vector>
 
-#include "resource.h"
-#include "npp/Window.h"
+#include "npp/ModalDialog.h"
 #include "npp/URLCtrl.h"
 #include "crypt.h"
 #include "unicode.h"
 
-
-class DlgCrypt : public Window
+class DlgCrypt : public ModalDialog
 {
 public:
+	enum class Operation { Enc, Dec };
 
-	enum { Encryption, Decryption };
-
-	DlgCrypt();
-    void init(HINSTANCE hInst, HWND parent);
-    virtual void destroy();
-	static DlgCrypt& Instance() { static DlgCrypt single; return single; }
-   	bool doDialog(int op, crypt::Options::Crypt* opt, bool no_ascii = false, const TCHAR* filename = NULL);
+						DlgCrypt();
+    void				destroy();
+	bool				doDialog(Operation operation, crypt::Options::Crypt* options, bool no_bin_output = false, const string* filename = NULL);
 
 private:
-	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
-	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	DlgCrypt(DlgCrypt const&);
-	DlgCrypt& operator=(DlgCrypt const&);
+	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	void OnInitDialog();
-	bool OnClickOK();
-	void OnCipherChange();
-	void enableKeyDeriControls();
-	bool updateOptions();
-	void OnCipherCategoryChange(int category, bool change_cipher=false);
-	void OnEncodingChange(crypt::Encoding enc);
-	void SetCipherInfo(crypt::Cipher cipher, crypt::Mode mode);
+	void				initDialog();
+	void				checkSpinControlValue(int ctrlID);
+	void				changeActiveTab(int id);	
+	void				setCipherInfo(crypt::Cipher cipher, crypt::Mode mode);
+	void				enableKeyDeriControls();
+	bool				updateOptions();
+	bool				OnClickOK();
+	void				OnCipherChange();	
+	void				OnCipherCategoryChange(int category, bool change_cipher=false);
+	void				OnEncodingChange(crypt::Encoding enc);
 	
-	int							operation;
-	crypt::Options::Crypt*		options;
+	
+	Operation				operation;
+	const string*			filename;
+	bool					no_bin_output;
+	crypt::Options::Crypt*	options;
 
-	string						filename;
-	bool						confirm_password;
-	bool						no_ascii;
+	bool					confirm_password;	
+	crypt::Cipher			t_cipher;
+	crypt::KeyDerivation	t_key_derivation;
+	string					t_password;
 
-	struct 
-	{
-		crypt::Cipher			cipher;
-		crypt::KeyDerivation	key_derivation;
-		string					password;
-	} temp;
+	HWND					hwnd_basic;
+	HWND					hwnd_auth;
+	HWND					hwnd_key;
+	HWND					hwnd_iv;
+	HWND					hwnd_encoding;
 
-	HWND						hwnd_basic;
-	HWND						hwnd_auth;
-	HWND						hwnd_key;
-	HWND						hwnd_iv;
-	HWND						hwnd_encoding;
-
+	URLCtrl					url_help[7];
 	enum HelpURL { encoding, cipher, mode, salt, keyalgo, hmac, iv };
-	URLCtrl						url_help[7];
-
-
-	HINSTANCE					mHinstance;
 };
 
 

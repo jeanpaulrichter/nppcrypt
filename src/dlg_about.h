@@ -12,27 +12,21 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef DLG_ABOUT_DEFINE_H
-#define DLG_ABOUT_DEFINE_H
+#ifndef DLG_ABOUT_H_DEF
+#define DLG_ABOUT_H_DEF
 
-
-#include "npp/Window.h"
+#include "npp/ModalDialog.h"
 #include "npp/URLCtrl.h"
 
-class DlgAbout : public Window
+class DlgAbout : public ModalDialog
 {
 public:
-    
-	DlgAbout(): Window() {};
-    void init(HINSTANCE hInst, HWND parent);
-    void destroy() { ::DestroyWindow(_hSelf); };
-   	bool doDialog();
+						DlgAbout(): ModalDialog() {};
 
 private:
-	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
-	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	URLCtrl		cerberus;
+	URLCtrl				cerberus;
 };
 
 #endif

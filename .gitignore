@@ -6,6 +6,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+nppcrypt.VC.db
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -168,10 +169,10 @@ ClientBin/
 ~$*
 *~
 *.dbmdl
+*.VC.db
 *.dbproj.schemaview
 *.pfx
 *.publishsettings
-node_modules/
 orleans.codegen.cs
 
 # RIA/Silverlight projects

@@ -95,9 +95,6 @@
     <ClCompile Include="..\..\src\dlg_preferences.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\header.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\scrypt\insecure_memzero.cpp">
       <Filter>Source Files\scrypt</Filter>
     </ClCompile>
@@ -117,6 +114,18 @@
       <Filter>Source Files\keccak</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\dlg_initdata.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\npp\StaticDialog.cpp">
+      <Filter>Source Files\notepad++</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\npp\ModalDialog.cpp">
+      <Filter>Source Files\notepad++</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\help.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptheader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -190,9 +199,6 @@
     <ClInclude Include="..\..\src\dlg_preferences.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\header.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\mdef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -218,6 +224,30 @@
       <Filter>Header Files\keccak</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\dlg_initdata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\StaticDialog.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\ModalDialog.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\Docking.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\DockingDlgInterface.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\dockingResource.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\Definitions.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\help.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptheader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

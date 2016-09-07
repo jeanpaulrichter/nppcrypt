@@ -12,26 +12,21 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef DLG_AUTH_DEFINE_H
-#define DLG_AUTH_DEFINE_H
+#ifndef DLG_AUTH_H_DEF
+#define DLG_AUTH_H_DEF
 
-#include "npp/Window.h"
+#include "npp/ModalDialog.h"
 #include "unicode.h"
-#include "mdef.h"
 
-class DlgAuth: public Window
+class DlgAuth: public ModalDialog
 {
-public:
-    
-	DlgAuth();
-    void init(HINSTANCE hInst, HWND parent);
-    void destroy() { ::DestroyWindow(_hSelf); };
-   	bool doDialog(const TCHAR* filename=NULL);
-	void getKeyString(std::string& s);
+public:    
+						DlgAuth() : ModalDialog() {};
+   	bool				doDialog(const TCHAR* filename=NULL);
+	void				getKeyString(std::string& out);
 
 private:
-	static BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
-	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
 	std::string			keystring;
 	string				caption;

@@ -48,17 +48,16 @@ static const TCHAR* error_msgs[] =
 /* decrypt_notag	*/	TEXT("Decryption: tag missing."),
 /* decrypt_badtag	*/	TEXT("Decryption: tag corrupted."),
 /* input_too_long	*/	TEXT("Input too long."),
-/* bcrypt_salt		*/	TEXT("Bcrypt only supports 16-byte salt.")
+/* bcrypt_salt		*/	TEXT("Bcrypt only supports 16-byte salt."),
+/* preffile_missing	*/	TEXT("Cannot open preferences-file."),
+/* preffile_corrupted*/	TEXT("Preferences file corrupted.")
 };
 
-const TCHAR* CExc::getErrorMsg() const throw()
+const TCHAR* CExc::getMsg() const throw()
 {
-	if (msg.size())
-	{
+	if (msg.size())	{
 		return msg.c_str();
-	}
-	else
-	{
+	} else {
 		return error_msgs[unsigned(code)];
 	}
 }

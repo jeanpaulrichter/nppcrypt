@@ -12,8 +12,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef EXCEPTION_DEFINE_H
-#define EXCEPTION_DEFINE_H
+#ifndef EXCEPTION_H_DEF
+#define EXCEPTION_H_DEF
 
 #include <windows.h>
 #include <string.h>
@@ -29,14 +29,17 @@ public:
 	{
 		nppcrypt = 0,
 		crypt,
+		cryptheader,
+		help,
+		unicode,
 		preferences,
-		header,
-		encoding,
 		dlg_about,
 		dlg_auth,
-		dlg_preferences,
+		dlg_convert,
 		dlg_crypt,
 		dlg_hash,
+		dlg_initdata,
+		dlg_preferences,
 		dlg_random
 	};
 
@@ -74,15 +77,18 @@ public:
 		decrypt_notag,
 		decrypt_badtag,
 		input_too_long,
-		bcrypt_salt
+		bcrypt_salt,
+		preffile_missing,
+		preffile_corrupted
 	};
 
 	CExc(Code err_code=Code::unexpected);
 	CExc(File file, int line, Code err_code=Code::unexpected);
 	~CExc() throw();
-
-	const char* what() const throw() { return NULL; };
-	const TCHAR* getErrorMsg() const throw();
+						
+	const char*			what() const throw() { return NULL; };
+	const TCHAR*		getMsg() const throw();
+	Code				getCode() const throw() { return code; };
 
 private:
 	Code				code;

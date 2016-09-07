@@ -12,8 +12,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef PREFERENCES_DEFINE_H
-#define PREFERENCES_DEFINE_H
+#ifndef PREFERENCES_H_DEF
+#define PREFERENCES_H_DEF
 
 #include "crypt.h"
 #include "mdef.h"
@@ -35,26 +35,29 @@ public:
 		unsigned char	data[16];
 	};
 
-	struct {
+	struct
+	{
 		bool	enable;
 		bool	askonsave;
 		string	extension;
 	} files;
 
-	CPreferences();
-	static CPreferences& Instance() { static CPreferences single; return single; };
+							CPreferences();
+	static CPreferences&	Instance() { static CPreferences single; return single; };
 
-	bool load(const TCHAR* path, CurrentOptions& current);
-	bool save(CurrentOptions& current);
+	void					load(const TCHAR* path, CurrentOptions& current);
+	void					save(CurrentOptions& current);
 
-	size_t					getKeyNum();
+	size_t					getKeyNum() const;
 	bool					addKey(const KeyPreset& key);
 	bool					delKey(size_t i);
-	const TCHAR*			getKeyLabel(size_t i);
-	const unsigned char*	getKey(size_t i);
+	const TCHAR*			getKeyLabel(size_t i) const;
+	const unsigned char*	getKey(size_t i) const;
+
 private:
 	CPreferences(CPreferences const&);
 	CPreferences& operator=(CPreferences const&);
+
 	void load_1010(std::ifstream& f, CurrentOptions& current);
 	void validate(CurrentOptions& current);
 
@@ -62,6 +65,6 @@ private:
 	std::string				filepath;
 };
 
-extern CPreferences& preferences;
+extern CPreferences&		preferences;
 
 #endif

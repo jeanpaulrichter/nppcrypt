@@ -13,7 +13,7 @@ GNU General Public License for more details.
 */
 
 #include "crypt.h"
-
+#include "help.h"
 #include "bcrypt/crypt_blowfish.h"
 #include "keccak/KeccakHash.h"
 #include "scrypt/crypto_scrypt.h"
@@ -21,6 +21,8 @@ GNU General Public License for more details.
 #ifdef max
 #undef max
 #endif
+
+#define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 
 #include <cryptopp/md5.h>
 #include <cryptopp/md4.h>
@@ -60,6 +62,19 @@ GNU General Public License for more details.
 #include <cryptopp/panama.h>
 #include <cryptopp/eax.h>
 
+template<typename T>
+T ipow(T base, T exp)
+{
+	T result = 1;
+	while (exp) {
+		if (exp & 1) {
+			result *= base;
+		}
+		exp >>= 1;
+		base *= base;
+	}
+	return result;
+}
 
 // ---------------------------- SUPPORTED CIPHER MODES -------------------------------------------------------------------------------------------------------------------------------------------
 enum { C_AES=1, C_OTHER=2, C_STREAM=4, C_WEAK=8, MODE_EAX=16, MODE_CCM=32, MODE_GCM=64, BLOCK=128, STREAM=256 };
@@ -149,7 +164,7 @@ bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, int& key_lengt
 	case crypt::Cipher::rc2:
 		key_length = RC2::DEFAULT_KEYLENGTH; iv_length = RC2::BLOCKSIZE; block_size = RC2::BLOCKSIZE; break;
 	case crypt::Cipher::rc4:
-		key_length = ARC4::DEFAULT_KEYLENGTH; iv_length = ARC4::IV_LENGTH; block_size = 0; break;
+		key_length = Weak::ARC4::DEFAULT_KEYLENGTH; iv_length = Weak::ARC4::IV_LENGTH; block_size = 0; break;
 	case crypt::Cipher::rc5:
 		key_length = RC5::DEFAULT_KEYLENGTH; iv_length = RC5::BLOCKSIZE; block_size = RC5::BLOCKSIZE; break;
 	case crypt::Cipher::rc6:
@@ -213,10 +228,12 @@ bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, int& key_lengt
 
 void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitStrings& init)
 {
-	if (!in || !in_len)
+	if (!in || !in_len) {
 		throw CExc(CExc::File::crypt, __LINE__);
-	if (!options.password.size())
+	}
+	if (!options.password.size()) {
 		throw CExc(CExc::File::crypt, __LINE__);
+	}
 
 	using namespace CryptoPP;
 
@@ -227,47 +244,39 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 	const byte*			ptSalt = NULL;
 	int					key_len, iv_len;
 	int					block_size;
+
 	getCipherInfo(options.cipher, options.mode, key_len, iv_len, block_size);
 
 	// --------------------------- prepare salt vector:
-	if (options.key.salt_bytes > 0)
-	{
-		if(options.key.algorithm == crypt::KeyDerivation::bcrypt && options.key.salt_bytes != 16)
+	if (options.key.salt_bytes > 0)	{
+		if (options.key.algorithm == crypt::KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
 			throw CExc(CExc::Code::bcrypt_salt);
+		}
 		tSalt.resize(options.key.salt_bytes);
 		OS_GenerateRandomBlock(true, &tSalt[0], options.key.salt_bytes);
 		ptSalt = &tSalt[0];
 	}
-
 	// --------------------------- prepare iv & key vector
-	if (options.iv == crypt::IV::keyderivation)
-	{
+	if (options.iv == crypt::IV::keyderivation)	{
 		tKey.resize(key_len + iv_len);
-		if (iv_len > 0)
+		if (iv_len > 0) {
 			ptVec = &tKey[key_len];
-
-	}
-	else if (options.iv == crypt::IV::random)
-	{
+		}
+	} else if (options.iv == crypt::IV::random)	{
 		tKey.resize(key_len);
-		if (iv_len > 0)
-		{
+		if (iv_len > 0)	{
 			tVec.resize(iv_len);
 			OS_GenerateRandomBlock(false, &tVec[0], iv_len);
 			ptVec = &tVec[0];
 		}
-	}
-	else if (options.iv == crypt::IV::zero)
-	{
+	} else if (options.iv == crypt::IV::zero) {
 		tKey.resize(key_len);
-		if (iv_len)
-		{
+		if (iv_len)	{
 			tVec.resize(iv_len);
 			memset(&tVec[0], 0, tVec.size());
 			ptVec = &tVec[0];
 		}
 	}
-
 	// --------------------------- key derivation:
 	switch (options.key.algorithm)
 	{
@@ -277,9 +286,9 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 		switch (crypt::Hash(options.key.option1))
 		{
 		case crypt::Hash::md4:
-			pbkdf2.reset( new PKCS5_PBKDF2_HMAC< MD4 > ); break;
+			pbkdf2.reset( new PKCS5_PBKDF2_HMAC< Weak::MD4 > ); break;
 		case crypt::Hash::md5:
-			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< MD5 >); break;
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Weak::MD5 >); break;
 		case crypt::Hash::sha1:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA1 >); break;
 		case crypt::Hash::sha256:
@@ -299,49 +308,47 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 		default: throw CExc(CExc::File::crypt, __LINE__);
 		}
 		pbkdf2->DeriveKey(&tKey[0], tKey.size(), 0, (const byte*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, options.key.option2);
-
-	} break;
-
+		break;
+	}
 	case crypt::KeyDerivation::bcrypt:
 	{
 		char output[64];
 		char settings[32];
 
-		if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)options.key.option1, (const char*)ptSalt, 16, settings, 32) == NULL)
+		if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)options.key.option1, (const char*)ptSalt, 16, settings, 32) == NULL) {
 			throw CExc(CExc::File::crypt, __LINE__);
+		}
 		memset(output, 0, sizeof(output));
-		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL)
+		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL) {
 			throw CExc(CExc::File::crypt, __LINE__);
+		}
 
 		shake128((unsigned char*)output, 24, &tKey[0], tKey.size());
-	} break;
-
+		break;
+	}
 	case crypt::KeyDerivation::scrypt:
 	{
-		if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, std::pow(2, options.key.option1), options.key.option2, options.key.option3, &tKey[0], tKey.size()) != 0)
+		if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow(2, options.key.option1), options.key.option2, options.key.option3, &tKey[0], tKey.size()) != 0) {
 			throw CExc(CExc::File::crypt, __LINE__);
-	} break;
+		}
+		break;
 	}
-
+	}
 	// --------------------------- return encoded IV and Salt
 	init.encoding = Encoding::base64;
-	if (options.iv == crypt::IV::random && tVec.size() > 0) 
-	{
+	if (options.iv == crypt::IV::random && tVec.size() > 0) {
 		StringSource ss(&tVec[0], tVec.size(), true, new Base64Encoder(new StringSink(init.iv), false));
 	}
-	if (options.key.salt_bytes > 0)
-	{
+	if (options.key.salt_bytes > 0)	{
 		StringSource ss(&tSalt[0], tSalt.size(), true, new Base64Encoder(new StringSink(init.salt), false));
 	}
 
-	try
-	{
-		if ((cipher_flags[int(options.cipher)] & STREAM) == STREAM)
-		{
+	try	{
+		if ((cipher_flags[int(options.cipher)] & STREAM) == STREAM)	{
 			std::unique_ptr<SymmetricCipherDocumentation::Encryption> pEnc;
 			switch (options.cipher) {
 			case Cipher::sosemanuk: pEnc.reset(new Sosemanuk::Encryption(tKey.data(), key_len, ptVec)); break;
-			case Cipher::rc4: pEnc.reset(new ARC4::Encryption(tKey.data(), key_len)); break;
+			case Cipher::rc4: pEnc.reset(new Weak::ARC4::Encryption(tKey.data(), key_len)); break;
 			case Cipher::salsa20: pEnc.reset(new Salsa20::Encryption(tKey.data(), key_len, ptVec)); break;
 			case Cipher::xsalsa20: pEnc.reset(new XSalsa20::Encryption(tKey.data(), key_len, ptVec)); break;
 			case Cipher::panama: pEnc.reset(new PanamaCipher<LittleEndian>::Encryption(tKey.data(), key_len, ptVec)); break;
@@ -350,46 +357,46 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 			switch (options.encoding.enc)
 			{
 			case Encoding::ascii:
+			{
 				buffer.resize(in_len);
 				pEnc->ProcessData(&buffer[0], in, in_len);
 				break;
+			}
 			case Encoding::base16: case Encoding::base32:
 			{
 				int linelength = options.encoding.linebreaks ? options.encoding.linelength : 0;
 				std::string& seperator = options.encoding.windows ? s_eol_windows : s_eol_unix;
 				std::vector<byte> temp(in_len);
 				pEnc->ProcessData(temp.data(), in, in_len);
-				if (options.encoding.enc == Encoding::base16)
-				{
+				if (options.encoding.enc == Encoding::base16) {
 					ArraySource(temp.data(), temp.size(), true,
 						new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, seperator)
 						);
-				}
-				else {
+				} else {
 					ArraySource(temp.data(), temp.size(), true,
 						new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, seperator)
 						);
 				}
-			} break;
+				break;
+			}
 			case Encoding::base64:
 			{
 				std::vector<byte> temp(in_len);
 				pEnc->ProcessData(temp.data(), in, in_len);
 				ArraySource(temp.data(), temp.size(), true,
-					new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, options.encoding.windows, options.encoding.linelength)
+					new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, (options.encoding.windows ? EOL::Windows : EOL::Unix), options.encoding.linelength)
 				);
 				if (options.encoding.linebreaks) {
 					buffer.pop_back();
-					if (options.encoding.windows)
+					if (options.encoding.windows) {
 						buffer.pop_back();
+					}
 				}
-			} break;
+				break;
+			}
 			}			
-		}
-		else
-		{
-			if (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax)
-			{
+		} else {
+			if (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax) {
 				std::unique_ptr<AuthenticatedSymmetricCipherDocumentation::Encryption> penc;
 				int tag_size;
 				switch (options.cipher)
@@ -402,8 +409,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< CAST256 >::Encryption); tag_size = Constants::ccm_tag_size;  break;
 					case Mode::eax: penc.reset(new EAX< CAST256 >::Encryption); tag_size = Constants::eax_tag_size;  break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::rc6:
 				{
 					switch (options.mode)
@@ -412,8 +419,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< RC6 >::Encryption); tag_size = Constants::ccm_tag_size;  break;
 					case Mode::eax: penc.reset(new EAX< RC6 >::Encryption); tag_size = Constants::eax_tag_size;  break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::camellia:
 				{
 					switch (options.mode)
@@ -422,8 +429,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< Camellia >::Encryption); tag_size = Constants::ccm_tag_size;  break;
 					case Mode::eax: penc.reset(new EAX< Camellia >::Encryption); tag_size = Constants::eax_tag_size;  break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::seed:
 				{
 					switch (options.mode)
@@ -432,8 +439,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< SEED >::Encryption); tag_size = Constants::ccm_tag_size;  break;
 					case Mode::eax: penc.reset(new EAX< SEED >::Encryption); tag_size = Constants::eax_tag_size;  break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::shacal2:
 				{
 					switch (options.mode)
@@ -441,8 +448,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::eax: penc.reset(new EAX< SHACAL2 >::Encryption); tag_size = Constants::eax_tag_size;  break;
 					default: throw CExc(CExc::File::crypt, __LINE__);
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::mars:
 				{
 					switch (options.mode)
@@ -451,8 +458,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< MARS >::Encryption); tag_size = Constants::ccm_tag_size;  break;
 					case Mode::eax: penc.reset(new EAX< MARS >::Encryption); tag_size = Constants::eax_tag_size;  break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::twofish:
 				{
 					switch (options.mode)
@@ -461,8 +468,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< Twofish >::Encryption); tag_size = Constants::ccm_tag_size;  break;
 					case Mode::eax: penc.reset(new EAX< Twofish >::Encryption); tag_size = Constants::eax_tag_size;  break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::serpent:
 				{
 					switch (options.mode)
@@ -471,8 +478,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< Serpent >::Encryption); tag_size = Constants::ccm_tag_size;  break;
 					case Mode::eax: penc.reset(new EAX< Serpent >::Encryption); tag_size = Constants::eax_tag_size;  break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::rijndael128: case Cipher::rijndael256: case Cipher::rijndael192:
 				{
 					switch (options.mode)
@@ -481,18 +488,21 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< AES >::Encryption); tag_size = Constants::ccm_tag_size;  break;
 					case Mode::eax: penc.reset(new EAX< AES >::Encryption); tag_size = Constants::eax_tag_size;  break;
 					}
-				} break;
+					break;
+				} 
 				}
 				std::basic_string<byte> temp;
 				penc->SetKeyWithIV(tKey.data(), key_len, ptVec, iv_len);
-				if(options.mode == Mode::ccm)
+				if (options.mode == Mode::ccm) {
 					penc->SpecifyDataLengths(init.salt.size() + init.iv.size(), in_len, 0);
+				}
 
 				AuthenticatedEncryptionFilter ef(*penc, NULL, false, tag_size);
-				if(options.encoding.enc == Encoding::ascii)
+				if (options.encoding.enc == Encoding::ascii) {
 					ef.Attach(new StringSinkTemplate<std::basic_string<byte>>(buffer));
-				else
+				} else {
 					ef.Attach(new StringSinkTemplate<std::basic_string<byte>>(temp));
+				}
 
 				ef.ChannelPut(AAD_CHANNEL, (const byte*)init.salt.c_str(), init.salt.size());
 				ef.ChannelPut(AAD_CHANNEL, (const byte*)init.iv.c_str(), init.iv.size());
@@ -506,39 +516,37 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				{
 					StringSource(&buffer[0] + buffer.size() - tag_size, tag_size, true, new Base64Encoder(new StringSink(init.tag), false));
 					buffer.resize(buffer.size() - tag_size);
-				} break;
-
+					break;
+				}
 				case Encoding::base16: case Encoding::base32:
 				{
 					int linelength = options.encoding.linebreaks ? options.encoding.linelength : 0;
 					std::string& seperator = options.encoding.windows ? s_eol_windows : s_eol_unix;
-					if (options.encoding.enc == Encoding::base16)
-					{
+					if (options.encoding.enc == Encoding::base16) {
 						StringSource(temp.data(), temp.size() - tag_size, true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
 							options.encoding.uppercase, linelength, seperator));
-					}
-					else {
+					} else {
 						StringSource(temp.data(), temp.size() - tag_size, true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
 							options.encoding.uppercase, linelength, seperator));
 					}
 					StringSource(temp.data() + temp.size() - tag_size, tag_size, true, new Base64Encoder(new StringSink(init.tag), false));
-				} break;
-
+					break;
+				}
 				case Encoding::base64:
 				{
 					StringSource(temp.data(), temp.size() - tag_size, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
-						options.encoding.linebreaks, options.encoding.windows, options.encoding.linelength));
+						options.encoding.linebreaks, (options.encoding.windows ? EOL::Windows : EOL::Unix), options.encoding.linelength));
 					if (options.encoding.linebreaks) {
 						buffer.pop_back();
-						if (options.encoding.windows)
+						if (options.encoding.windows) {
 							buffer.pop_back();
+						}
 					}
 					StringSource(temp.data() + temp.size() - tag_size, tag_size, true, new Base64Encoder(new StringSink(init.tag), false));
-				} break;
+					break;
 				}
-			}
-			else 
-			{
+				}
+			} else {
 				std::unique_ptr<CipherModeBase> pEnc;
 				switch (options.cipher)
 				{
@@ -800,66 +808,53 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				{
 				case Encoding::ascii:
 				{
-					StringSource(in, in_len, true,
-						new StreamTransformationFilter(*pEnc, new StringSinkTemplate<std::basic_string<byte>>(buffer))
-						);
-				} break;
-
+					StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc, new StringSinkTemplate<std::basic_string<byte>>(buffer)));
+					break;
+				}
 				case Encoding::base16: case Encoding::base32:
 				{
 					int linelength = options.encoding.linebreaks ? options.encoding.linelength : 0;
 					std::string& seperator = options.encoding.windows ? s_eol_windows : s_eol_unix;
-					if (options.encoding.enc == Encoding::base16)
-					{
-						StringSource(in, in_len, true,
-							new StreamTransformationFilter(*pEnc,
-								new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, seperator)
-								)
-							);
+					if (options.encoding.enc == Encoding::base16) {
+						StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
+							new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, seperator)));
+					} else {
+						StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
+								new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, seperator)));
 					}
-					else {
-						StringSource(in, in_len, true,
-							new StreamTransformationFilter(*pEnc,
-								new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, seperator)
-								)
-							);
-					}
-				} break;
-
+					break;
+				}
 				case crypt::Encoding::base64:
 				{
-					StringSource(in, in_len, true,
-						new StreamTransformationFilter(*pEnc,
-							new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, options.encoding.windows, options.encoding.linelength)
-							)
-						);
+					StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
+							new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, (options.encoding.windows ? EOL::Windows : EOL::Unix), options.encoding.linelength)
+							));
 					if (options.encoding.linebreaks) {
 						buffer.pop_back();
-						if (options.encoding.windows)
+						if (options.encoding.windows) {
 							buffer.pop_back();
+						}
 					}
-				} break;
+					break;
+				}
 				}
 			}
 		}
-	}
-	catch (Exception& )
-	{
+	} catch (Exception& ) {
 		throw CExc(CExc::File::crypt, __LINE__);
-	}
-	catch (...) {
+	} catch (...) {
 		throw CExc(CExc::File::crypt, __LINE__);
 	}
 }
 
-// ===========================================================================================================================================================================================
-
 void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const InitStrings& init)
 {
-	if (!in || !in_len)
+	if (!in || !in_len) {
 		throw CExc(CExc::File::crypt, __LINE__);
-	if (!options.password.size())
+	}
+	if (!options.password.size()) {
 		throw CExc(CExc::File::crypt, __LINE__);
+	}
 
 	using namespace		CryptoPP;
 
@@ -870,59 +865,51 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 	const byte*			ptSalt = NULL;
 	int					iv_len, key_len;
 	int					block_size;
+
 	getCipherInfo(options.cipher, options.mode, key_len, iv_len, block_size);
 
 	// --------------------------- prepare salt vector:
-	if (options.key.salt_bytes > 0)
-	{
-		if (options.key.algorithm == crypt::KeyDerivation::bcrypt && options.key.salt_bytes != 16)
+	if (options.key.salt_bytes > 0)	{
+		if (options.key.algorithm == crypt::KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
 			throw CExc(CExc::Code::bcrypt_salt);
-		if (!init.salt.size())
+		}
+		if (!init.salt.size()) {
 			throw CExc(CExc::Code::decrypt_nosalt);
+		}
 		tSalt.resize(options.key.salt_bytes);
-
 		StringSource ss(init.salt, true, new Base64Decoder(new ArraySink(&tSalt[0], tSalt.size())));
-
-		if (tSalt.size() != (size_t)options.key.salt_bytes)
+		if (tSalt.size() != (size_t)options.key.salt_bytes) {
 			throw CExc(CExc::Code::decrypt_badsalt);
+		}
 		ptSalt = &tSalt[0];
 	}
-
 	// --------------------------- prepare iv vector:
-	if (options.iv == crypt::IV::keyderivation)
-	{
+	if (options.iv == crypt::IV::keyderivation)	{
 		tKey.resize(key_len + iv_len);
-		if (iv_len > 0)
+		if (iv_len > 0) {
 			ptVec = &tKey[key_len];
-
-	}
-	else if (options.iv == crypt::IV::random)
-	{
+		}
+	} else if (options.iv == crypt::IV::random) {
 		tKey.resize(key_len);
-		if (iv_len > 0)
-		{
-			if (!init.iv.size())
+		if (iv_len > 0)	{
+			if (!init.iv.size()) {
 				throw CExc(CExc::Code::decrypt_noiv);
-			
+			}			
 			tVec.resize(iv_len);
 			StringSource ss(init.iv, true, new Base64Decoder(new ArraySink(&tVec[0], tVec.size())));
-
-			if (tVec.size() != iv_len)
+			if (tVec.size() != iv_len) {
 				throw CExc(CExc::Code::decrypt_badiv);
+			}
 			ptVec = &tVec[0];
 		}
-	}
-	else if (options.iv == crypt::IV::zero)
-	{
+	} else if (options.iv == crypt::IV::zero) {
 		tKey.resize(key_len);
-		if (iv_len) 
-		{
+		if (iv_len) {
 			tVec.resize(iv_len);
 			memset(&tVec[0], 0, tVec.size());
 			ptVec = &tVec[0];
 		}
 	}
-
 	// --------------------------- key derivation:
 	switch (options.key.algorithm)
 	{
@@ -932,9 +919,9 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 		switch (crypt::Hash(options.key.option1))
 		{
 		case crypt::Hash::md4:
-			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< MD4 >); break;
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Weak::MD4 >); break;
 		case crypt::Hash::md5:
-			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< MD5 >); break;
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Weak::MD5 >); break;
 		case crypt::Hash::sha1:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA1 >); break;
 		case crypt::Hash::sha256:
@@ -956,67 +943,64 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 		pbkdf2->DeriveKey(tKey.data(), tKey.size(), 0, (const byte*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, options.key.option2);
 		break;
 	}
-
 	case crypt::KeyDerivation::bcrypt:
 	{
 		char output[64];
 		char settings[32];
 
-		if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)options.key.option1, (const char*)ptSalt, 16, settings, 32) == NULL)
+		if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)options.key.option1, (const char*)ptSalt, 16, settings, 32) == NULL) {
 			throw CExc(CExc::File::crypt, __LINE__);
+		}
 		memset(output, 0, sizeof(output));
-		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL)
+		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL) {
 			throw CExc(CExc::File::crypt, __LINE__);
-
+		}
 		shake128((unsigned char*)output, 24, &tKey[0], tKey.size());
 		break;
-	} 
-
+	}
 	case crypt::KeyDerivation::scrypt:
 	{
-		if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, std::pow(2, options.key.option1), options.key.option2, options.key.option3, &tKey[0], tKey.size()) != 0)
+		if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.option1), options.key.option2, options.key.option3, &tKey[0], tKey.size()) != 0) {
 			throw CExc(CExc::File::crypt, __LINE__);
+		}
 		break;
 	}
 	}
-
-	try
-	{
-		if ((cipher_flags[int(options.cipher)] & STREAM) == STREAM)
-		{
+	try	{
+		if ((cipher_flags[int(options.cipher)] & STREAM) == STREAM)	{
 			std::unique_ptr<SymmetricCipherDocumentation::Decryption> pEnc;
 			switch (options.cipher) {
 			case Cipher::sosemanuk: pEnc.reset(new Sosemanuk::Decryption(tKey.data(), key_len, ptVec)); break;
-			case Cipher::rc4: pEnc.reset(new ARC4::Decryption(tKey.data(), key_len)); break;
+			case Cipher::rc4: pEnc.reset(new Weak::ARC4::Decryption(tKey.data(), key_len)); break;
 			case Cipher::salsa20: pEnc.reset(new Salsa20::Decryption(tKey.data(), key_len, ptVec)); break;
 			case Cipher::xsalsa20: pEnc.reset(new XSalsa20::Encryption(tKey.data(), key_len, ptVec)); break;
 			case Cipher::panama: pEnc.reset(new PanamaCipher<LittleEndian>::Encryption(tKey.data(), key_len, ptVec)); break;
 			}
-
 			switch (options.encoding.enc)
 			{
 			case Encoding::ascii:
+			{
 				buffer.resize(in_len);
 				pEnc->ProcessData(&buffer[0], in, in_len);
 				break;
+			}
 			case Encoding::base16: case Encoding::base32: case Encoding::base64:
 			{
 				std::basic_string<byte> temp;
-				if(options.encoding.enc == Encoding::base16)
-					StringSource( in, in_len, true, new HexDecoder(new StringSinkTemplate<std::basic_string<byte>>(temp)) );
-				else if(options.encoding.enc == Encoding::base32)
+				if (options.encoding.enc == Encoding::base16) {
+					StringSource(in, in_len, true, new HexDecoder(new StringSinkTemplate<std::basic_string<byte>>(temp)));
+				} else if (options.encoding.enc == Encoding::base32) {
 					StringSource(in, in_len, true, new Base32Decoder(new StringSinkTemplate<std::basic_string<byte>>(temp)));
-				else
+				} else {
 					StringSource(in, in_len, true, new Base64Decoder(new StringSinkTemplate<std::basic_string<byte>>(temp)));
+				}
 				buffer.resize(temp.size());
 				pEnc->ProcessData(&buffer[0], &temp[0], temp.size());
-			} break;
+				break;
 			}
-		}
-		else
-		{
-			if (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax)
-			{
+			}
+		} else {
+			if (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax) {
 				std::unique_ptr<AuthenticatedSymmetricCipherDocumentation::Encryption> penc;
 				int tag_size;
 				switch (options.cipher)
@@ -1026,31 +1010,31 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode)
 					{
 					case Mode::gcm: penc.reset(new GCM< CAST256 >::Decryption); tag_size = Constants::gcm_tag_size; break;
-					case Mode::ccm: penc.reset(new CCM< CAST256 >::Decryption); tag_size = Constants::ccm_tag_size;  break;
-					case Mode::eax: penc.reset(new EAX< CAST256 >::Decryption); tag_size = Constants::eax_tag_size;  break;
+					case Mode::ccm: penc.reset(new CCM< CAST256 >::Decryption); tag_size = Constants::ccm_tag_size; break;
+					case Mode::eax: penc.reset(new EAX< CAST256 >::Decryption); tag_size = Constants::eax_tag_size; break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::rc6:
 				{
 					switch (options.mode)
 					{
 					case Mode::gcm: penc.reset(new GCM< RC6 >::Decryption); tag_size = Constants::gcm_tag_size; break;
-					case Mode::ccm: penc.reset(new CCM< RC6 >::Decryption); tag_size = Constants::ccm_tag_size;  break;
-					case Mode::eax: penc.reset(new EAX< RC6 >::Decryption); tag_size = Constants::eax_tag_size;  break;
+					case Mode::ccm: penc.reset(new CCM< RC6 >::Decryption); tag_size = Constants::ccm_tag_size; break;
+					case Mode::eax: penc.reset(new EAX< RC6 >::Decryption); tag_size = Constants::eax_tag_size; break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::camellia:
 				{
 					switch (options.mode)
 					{
 					case Mode::gcm: penc.reset(new GCM< Camellia >::Decryption); tag_size = Constants::gcm_tag_size; break;
-					case Mode::ccm: penc.reset(new CCM< Camellia >::Decryption); tag_size = Constants::ccm_tag_size;  break;
-					case Mode::eax: penc.reset(new EAX< Camellia >::Decryption); tag_size = Constants::eax_tag_size;  break;
+					case Mode::ccm: penc.reset(new CCM< Camellia >::Decryption); tag_size = Constants::ccm_tag_size; break;
+					case Mode::eax: penc.reset(new EAX< Camellia >::Decryption); tag_size = Constants::eax_tag_size; break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::seed:
 				{
 					switch (options.mode)
@@ -1059,8 +1043,8 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< SEED >::Decryption); tag_size = Constants::ccm_tag_size; break;
 					case Mode::eax: penc.reset(new EAX< SEED >::Decryption); tag_size = Constants::eax_tag_size; break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::shacal2:
 				{
 					switch (options.mode)
@@ -1068,8 +1052,8 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::eax: penc.reset(new EAX< SHACAL2 >::Decryption); tag_size = Constants::eax_tag_size; break;
 					default: throw CExc(CExc::File::crypt, __LINE__);
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::mars:
 				{
 					switch (options.mode)
@@ -1078,8 +1062,8 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< MARS >::Decryption); tag_size = Constants::ccm_tag_size; break;
 					case Mode::eax: penc.reset(new EAX< MARS >::Decryption); tag_size = Constants::eax_tag_size; break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::twofish:
 				{
 					switch (options.mode)
@@ -1088,8 +1072,8 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< Twofish >::Decryption); tag_size = Constants::ccm_tag_size;  break;
 					case Mode::eax: penc.reset(new EAX< Twofish >::Decryption); tag_size = Constants::eax_tag_size;  break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::serpent:
 				{
 					switch (options.mode)
@@ -1098,8 +1082,8 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< Serpent >::Decryption); tag_size = Constants::ccm_tag_size;  break;
 					case Mode::eax: penc.reset(new EAX< Serpent >::Decryption); tag_size = Constants::eax_tag_size;  break;
 					}
-				} break;
-
+					break;
+				}
 				case Cipher::rijndael128: case Cipher::rijndael192: case Cipher::rijndael256:
 				{
 					switch (options.mode)
@@ -1108,7 +1092,8 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					case Mode::ccm: penc.reset(new CCM< AES >::Decryption); tag_size = Constants::ccm_tag_size; break;
 					case Mode::eax: penc.reset(new EAX< AES >::Decryption); tag_size = Constants::eax_tag_size; break;
 					}
-				} break;
+					break;
+				}
 				}
 				penc->SetKeyWithIV(tKey.data(), key_len, ptVec, iv_len);
 
@@ -1124,23 +1109,26 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				{
 					pEncrypted = in;
 					Encrypted_size = in_len;
-				} break;
-
+					break;
+				}
 				case Encoding::base16: case Encoding::base32: case Encoding::base64:
 				{
-					if (options.encoding.enc == Encoding::base16)
+					if (options.encoding.enc == Encoding::base16) {
 						StringSource(in, in_len, true, new HexDecoder(new StringSinkTemplate<std::basic_string<byte>>(temp)));
-					else if (options.encoding.enc == Encoding::base32)
+					} else if (options.encoding.enc == Encoding::base32) {
 						StringSource(in, in_len, true, new Base32Decoder(new StringSinkTemplate<std::basic_string<byte>>(temp)));
-					else
+					} else {
 						StringSource(in, in_len, true, new Base64Decoder(new StringSinkTemplate<std::basic_string<byte>>(temp)));
+					}
 					pEncrypted = temp.c_str();
 					Encrypted_size = temp.size();
-				} break;
+					break;
+				}
 				}				
 
-				if(options.mode == Mode::ccm)
-					penc->SpecifyDataLengths(init.salt.size()+ init.iv.size(), Encrypted_size, 0);
+				if (options.mode == Mode::ccm) {
+					penc->SpecifyDataLengths(init.salt.size() + init.iv.size(), Encrypted_size, 0);
+				}
 
 				AuthenticatedDecryptionFilter df(*penc, NULL, AuthenticatedDecryptionFilter::MAC_AT_BEGIN | AuthenticatedDecryptionFilter::THROW_EXCEPTION, tag_size);
 
@@ -1150,16 +1138,18 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				df.ChannelPut("", pEncrypted, Encrypted_size);
 				df.MessageEnd();
 
-				if(!df.GetLastResult())
+				if (!df.GetLastResult()) {
 					throw CExc(CExc::Code::authentication);
+				}
 
 				df.SetRetrievalChannel("");
 				size_t n = (size_t)df.MaxRetrievable();
 				buffer.resize(n);
 
-				if (n > 0) { df.Get((byte*)buffer.data(), n); }
-			}
-			else {
+				if (n > 0) { 
+					df.Get((byte*)buffer.data(), n);
+				}
+			} else {
 				std::unique_ptr<CipherModeBase> pEnc;
 				switch (options.cipher)
 				{
@@ -1417,51 +1407,52 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				}
 				default: throw CExc(CExc::File::crypt, __LINE__);
 				}
-
 				switch (options.encoding.enc)
 				{
 				case Encoding::ascii:
-					StringSource(in, in_len, true,
-						new StreamTransformationFilter(*pEnc, new StringSinkTemplate<std::basic_string<byte>>(buffer))
-						);
+				{
+					StringSource(in, in_len, true, 
+						new StreamTransformationFilter(*pEnc, 
+							new StringSinkTemplate<std::basic_string<byte>>(buffer)));
 					break;
+				}
 				case Encoding::base16:
-					StringSource(in, in_len, true,
+				{
+					StringSource(in, in_len, true, 
 						new HexDecoder(
-							new StreamTransformationFilter(*pEnc, new StringSinkTemplate<std::basic_string<byte>>(buffer) )
-							)
-						);
+							new StreamTransformationFilter(*pEnc, new StringSinkTemplate<std::basic_string<byte>>(buffer))));
 					break;
+				}
 				case Encoding::base32:
+				{
 					StringSource(in, in_len, true,
 						new Base32Decoder(
 							new StreamTransformationFilter(*pEnc, new StringSinkTemplate<std::basic_string<byte>>(buffer))
-							)
-						);
+						)
+					);
 					break;
+				}
 				case Encoding::base64:
+				{
 					StringSource(in, in_len, true,
 						new Base64Decoder(
-							new StreamTransformationFilter(*pEnc, new StringSinkTemplate<std::basic_string<byte>>(buffer) )
-							)
-						);
+							new StreamTransformationFilter(*pEnc, new StringSinkTemplate<std::basic_string<byte>>(buffer))
+						)
+					);
 					break;
+				}
 				}
 			}
 		}
-	}
-	catch (Exception& e)
-	{
-		if (e.GetErrorType() == Exception::DATA_INTEGRITY_CHECK_FAILED)
+	} catch (Exception& e) {
+		if (e.GetErrorType() == Exception::DATA_INTEGRITY_CHECK_FAILED) {
 			throw CExc(CExc::Code::authentication);
+		}
 		throw CExc(CExc::Code::decrypt);
-	}
-	catch (...) {
+	} catch (...) {
 		throw CExc(CExc::File::crypt, __LINE__);
 	}
 }
-
-// ===========================================================================================================================================================================================
 
 void doHash(CryptoPP::HashTransformation& hash, const unsigned char* in, size_t in_len, CryptoPP::SecByteBlock& sbbDigest)
 {
@@ -1474,25 +1465,24 @@ void doHash(CryptoPP::HashTransformation& hash, const unsigned char* in, size_t 
 
 void crypt::hash(const unsigned char* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Hash& options)
 {
-	if(!in && in_len>0)
-		throw CExc(CExc::File::crypt,__LINE__);
+	if (!in && in_len > 0) {
+		throw CExc(CExc::File::crypt, __LINE__);
+	}
 	
-	try
-	{
+	try	{
 		using namespace CryptoPP;
 		using namespace std;
 
 		SecByteBlock	digest;
 
-		if (options.use_key)
-		{
+		if (options.use_key) {
 			std::unique_ptr<HMAC_Base> phmac;
 			switch (options.algorithm)
 			{
 			case crypt::Hash::md4:
-				phmac.reset(new HMAC< MD4 >); break;
+				phmac.reset(new HMAC< Weak::MD4 >); break;
 			case crypt::Hash::md5:
-				phmac.reset(new HMAC< MD5 >); break;
+				phmac.reset(new HMAC< Weak::MD5 >); break;
 			case crypt::Hash::sha1:
 				phmac.reset(new HMAC< SHA1 >); break;
 			case crypt::Hash::sha256:
@@ -1514,14 +1504,11 @@ void crypt::hash(const unsigned char* in, size_t in_len, std::basic_string<byte>
 			digest.resize(phmac->DigestSize());
 			phmac->SetKey(options.key.data(), options.key.size());
 			StringSource ss2(in, in_len, true, new HashFilter(*phmac, new ArraySink(digest.BytePtr(), digest.size())));
-
-		}
-		else 
-		{
+		} else {
 			switch (options.algorithm)
 			{
-			case crypt::Hash::md4: doHash(MD4(), in, in_len, digest); break;
-			case crypt::Hash::md5: doHash(MD5(), in, in_len, digest); break;
+			case crypt::Hash::md4: doHash(Weak::MD4(), in, in_len, digest); break;
+			case crypt::Hash::md5: doHash(Weak::MD5(), in, in_len, digest); break;
 			case crypt::Hash::sha1: doHash(SHA1(), in, in_len, digest); break;
 			case crypt::Hash::sha256: doHash(SHA256(), in, in_len, digest); break;
 			case crypt::Hash::sha512: doHash(SHA512(), in, in_len, digest); break;
@@ -1536,45 +1523,42 @@ void crypt::hash(const unsigned char* in, size_t in_len, std::basic_string<byte>
 			case crypt::Hash::sha3_512: doHash(SHA3_512(), in, in_len, digest); break;
 			}
 		}
-
 		switch (options.encoding)
 		{
 		case crypt::Encoding::ascii:
 		{
 			buffer.resize(digest.size());
-			for (size_t i = 0; i < digest.size(); i++)
+			for (size_t i = 0; i < digest.size(); i++) {
 				buffer[i] = digest[i];
-		} break;
-
+			}
+			break;
+		}
 		case crypt::Encoding::base16:
 		{
 			HexEncoder(new StringSinkTemplate<basic_string<byte>>(buffer), true).Put(digest.begin(), digest.size());
-		} break;
-
+			break;
+		}
 		case crypt::Encoding::base32:
 		{
 			Base32Encoder(new StringSinkTemplate<basic_string<byte>>(buffer), true).Put(digest.begin(), digest.size());
-		} break;
-
+			break;
+		}
 		case crypt::Encoding::base64:
 		{
 			StringSource ss(digest, digest.size(), true,
 				new Base64Encoder( new StringSinkTemplate<basic_string<byte>>(buffer), false )
 				);
-		} break;
+			break;
 		}
-	}
-	catch (std::exception& ) {
+		}
+	} catch (std::exception& ) {
 		throw CExc(CExc::File::crypt, __LINE__);
 	}
 }
 
-// ===========================================================================================================================================================================================
-
 void crypt::hmac_header(const char* a, size_t a_len, const byte* b, size_t b_len, const Options::Crypt::HMAC& options, std::string& out)
 {
-	try
-	{
+	try	{
 		using namespace CryptoPP;
 		using namespace std;
 
@@ -1584,9 +1568,9 @@ void crypt::hmac_header(const char* a, size_t a_len, const byte* b, size_t b_len
 		switch (options.hash)
 		{
 		case crypt::Hash::md4:
-			phmac.reset(new HMAC< MD4 >); break;
+			phmac.reset(new HMAC< Weak::MD4 >); break;
 		case crypt::Hash::md5:
-			phmac.reset(new HMAC< MD5 >); break;
+			phmac.reset(new HMAC< Weak::MD5 >); break;
 		case crypt::Hash::sha1:
 			phmac.reset(new HMAC< SHA1 >); break;
 		case crypt::Hash::sha256:
@@ -1612,33 +1596,33 @@ void crypt::hmac_header(const char* a, size_t a_len, const byte* b, size_t b_len
 		f.Put((const byte*)a, a_len);
 		f.Put(b, b_len);
 		f.MessageEnd();
-	}
-	catch (std::exception& ) {
+	} catch (std::exception& ) {
 		throw CExc(CExc::File::crypt, __LINE__);
 	}
 }
-
-// ===========================================================================================================================================================================================
 
 void crypt::shake128(const unsigned char* in, size_t in_len, unsigned char* out, size_t out_len)
 {
 	Keccak_HashInstance keccak_inst;
-	if (Keccak_HashInitialize_SHAKE128(&keccak_inst) != 0)
+	if (Keccak_HashInitialize_SHAKE128(&keccak_inst) != 0) {
 		throw CExc(CExc::File::crypt, __LINE__);
-	if (Keccak_HashUpdate(&keccak_inst, in, in_len * 8) != 0)
+	}
+	if (Keccak_HashUpdate(&keccak_inst, in, in_len * 8) != 0) {
 		throw CExc(CExc::File::crypt, __LINE__);
-	if (Keccak_HashFinal(&keccak_inst, out) != 0)
+	}
+	if (Keccak_HashFinal(&keccak_inst, out) != 0) {
 		throw CExc(CExc::File::crypt, __LINE__);
-	if (Keccak_HashSqueeze(&keccak_inst, out, out_len * 8) != 0)
+	}
+	if (Keccak_HashSqueeze(&keccak_inst, out, out_len * 8) != 0) {
 		throw CExc(CExc::File::crypt, __LINE__);
+	}
 }
-
-// ===========================================================================================================================================================================================
 
 void crypt::random(const Options::Random& options, std::basic_string<byte>& buffer)
 {
-	if(options.length == 0)
-		throw CExc(CExc::File::crypt,__LINE__);
+	if (options.length == 0) {
+		throw CExc(CExc::File::crypt, __LINE__);
+	}
 
 	using namespace CryptoPP;
 
@@ -1650,21 +1634,22 @@ void crypt::random(const Options::Random& options, std::basic_string<byte>& buff
 	{
 		buffer.resize(options.length);
 		OS_GenerateRandomBlock(true, &buffer[0], (int)options.length);
-	} break;
-
+		break;
+	}
 	case Random::base16: case Random::base32: case Random::base64:
 	{
 		std::vector<unsigned char> tbuf;
 		tbuf.resize(options.length);
 		OS_GenerateRandomBlock(true, &tbuf[0], (int)options.length);
-		if(options.mode == Random::base16)
+		if (options.mode == Random::base16) {
 			StringSource(&tbuf[0], tbuf.size(), true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), true));
-		else if(options.mode == Random::base32)
+		} else if (options.mode == Random::base32) {
 			StringSource(&tbuf[0], tbuf.size(), true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), true));
-		else
+		} else {
 			StringSource(&tbuf[0], tbuf.size(), true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), false));
-	} break;
-
+		}
+		break;
+	}
 	case Random::charnum:
 	{
 		buffer.resize(options.length);
@@ -1687,15 +1672,14 @@ void crypt::random(const Options::Random& options, std::basic_string<byte>& buff
 				}
 			}
 		}
-	} break;
-	
+		break;
+	}	
 	case Random::specials:
 	{
 		buffer.resize(options.length);
 		unsigned char temp[Constants::rand_char_bufsize];
 		size_t i = 0;
-		while(i < options.length)
-		{
+		while(i < options.length) {
 			OS_GenerateRandomBlock(false, temp, Constants::rand_char_bufsize);
 			for(int x = 0; x < Constants::rand_char_bufsize && i < options.length; x++) {
 				if(temp[x] > 32 && temp[x] < 127) {
@@ -1703,12 +1687,11 @@ void crypt::random(const Options::Random& options, std::basic_string<byte>& buff
 					i++;
 				}
 			}
-		}		
-	} break;
+		}	
+		break;
+	}
 	}
 }
-
-// ===========================================================================================================================================================================================
 
 void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options)
 {
@@ -1726,17 +1709,21 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		case Encoding::base16:
 		{
 			StringSource(in, in_len, true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator));
-		} break;
+			break;
+		}
 		case Encoding::base32:
 		{
 			StringSource(in, in_len, true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator));
-		} break;
+			break;
+		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, options.windows, options.linelength));
-		} break;
+			StringSource(in, in_len, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (options.windows ? EOL::Windows : EOL::Unix), options.linelength));
+			break;
 		}
-	} break;
+		}
+		break;
+	}
 	case Encoding::base16:
 	{
 		switch (options.to)
@@ -1744,17 +1731,21 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		case Encoding::ascii:
 		{
 			StringSource(in, in_len, true, new HexDecoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
-		} break;
+			break;
+		}
 		case Encoding::base32:
 		{
 			StringSource(in, in_len, true, new HexDecoder(new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator)));
-		} break;
+			break;
+		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new HexDecoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, options.windows, options.linelength)));
-		} break;
+			StringSource(in, in_len, true, new HexDecoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (options.windows ? EOL::Windows : EOL::Unix), options.linelength)));
+			break;
 		}
-	} break;
+		}
+		break;
+	}
 	case Encoding::base32:
 	{
 		switch (options.to)
@@ -1762,17 +1753,21 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		case Encoding::ascii:
 		{
 			StringSource(in, in_len, true, new Base32Decoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
-		} break;
+			break;
+		}
 		case Encoding::base16:
 		{
 			StringSource(in, in_len, true, new Base32Decoder(new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator)));
-		} break;
+			break;
+		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new Base32Decoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, options.windows, options.linelength)));
-		} break;
+			StringSource(in, in_len, true, new Base32Decoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (options.windows ? EOL::Windows : EOL::Unix), options.linelength)));
+			break;
 		}
-	} break;
+		}
+		break;
+	}
 	case Encoding::base64:
 	{
 		switch (options.to)
@@ -1780,29 +1775,31 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		case Encoding::ascii:
 		{
 			StringSource(in, in_len, true, new Base64Decoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
-		} break;
+			break;
+		}
 		case Encoding::base16:
 		{
 			StringSource(in, in_len, true, new Base64Decoder(new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator)));
-		} break;
+			break;
+		}
 		case Encoding::base32:
 		{
 			StringSource(in, in_len, true, new Base64Decoder(new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator)));
-		} break;
+			break;
 		}
+		}
+		break;
 	}
 	}
 }
-
-// ===========================================================================================================================================================================================
 
 size_t crypt::getHashLength(Hash h)
 {
 	using namespace CryptoPP;
 	switch(h)
 	{
-	case crypt::Hash::md4: return MD4::DIGESTSIZE;
-	case crypt::Hash::md5: return MD5::DIGESTSIZE;
+	case crypt::Hash::md4: return Weak::MD4::DIGESTSIZE;
+	case crypt::Hash::md5: return Weak::MD5::DIGESTSIZE;
 	case crypt::Hash::sha1: return SHA1::DIGESTSIZE;
 	case crypt::Hash::sha256: return SHA256::DIGESTSIZE;
 	case crypt::Hash::sha512: return SHA512::DIGESTSIZE;
@@ -1819,8 +1816,7 @@ size_t crypt::getHashLength(Hash h)
 	return 0;
 }
 
-// ===========================================================================================================================================================================================
-// ===========================================================================================================================================================================================
+// ===========================================================================================================================================================================
 
 int crypt::help::Iter::_what = 0;
 int crypt::help::Iter::i = -1;
@@ -1860,18 +1856,21 @@ bool crypt::help::Iter::next()
 	switch (_what)
 	{
 	case 0:
-		while (i < static_cast<int>(Cipher::COUNT))
-		{
-			if (_temp == -1 || (cipher_flags[i] & _temp) == _temp)
+	{
+		while (i < static_cast<int>(Cipher::COUNT))	{
+			if (_temp == -1 || (cipher_flags[i] & _temp) == _temp) {
 				return true;
+			}
 			i++;
-		} 
+		}
 		return false;
+	}
 	case 1:
-		if ((cipher_flags[_cipher] & STREAM) == STREAM)
+	{
+		if ((cipher_flags[_cipher] & STREAM) == STREAM) {
 			return false;
-		while (i < static_cast<int>(Mode::COUNT))
-		{
+		}
+		while (i < static_cast<int>(Mode::COUNT)) {
 			if (((int(Mode::eax) == i && (cipher_flags[_cipher] & MODE_EAX) != MODE_EAX))
 				|| ((int(Mode::ccm) == i && (cipher_flags[_cipher] & MODE_CCM) != MODE_CCM))
 				|| ((int(Mode::gcm) == i && (cipher_flags[_cipher] & MODE_GCM) != MODE_GCM)))
@@ -1883,35 +1882,35 @@ bool crypt::help::Iter::next()
 			i++;
 		}
 		return false;
+	}
 	case 2:
-		if (_temp == 1)
-		{
-			if (i < static_cast<int>(Hash::HMAC_COUNT))
+	{
+		if (_temp == 1)	{
+			if (i < static_cast<int>(Hash::HMAC_COUNT)) {
 				return true;
-		}
-		else {
-			if (i < static_cast<int>(Hash::COUNT))
+			}
+		} else {
+			if (i < static_cast<int>(Hash::COUNT)) {
 				return true;
+			}
 		}
 		i = -1;
 		return false;
+	}
 	}
 	return false;
 }
 
 const TCHAR* crypt::help::Iter::getString()
 {
-	if (i < 0)
+	if (i < 0) {
 		return NULL;
-
+	}
 	switch (_what)
 	{
-	case 0:
-		return cipher_str[i];
-	case 1:
-		return mode_str[i];
-	case 2:
-		return hash_str[i];
+	case 0:	return cipher_str[i];
+	case 1:	return mode_str[i];
+	case 2:	return hash_str[i];
 	}
 	return NULL;
 }
@@ -1954,17 +1953,19 @@ const char* crypt::help::getString(crypt::Random mode)
 
 bool crypt::help::getCipher(const char* s, crypt::Cipher& c)
 {
-	if (!s)
+	if (!s) {
 		return false;
+	}
 	size_t sl = strlen(s);
-	for (size_t i = 0; i< static_cast<int>(Cipher::COUNT); i++)
-	{
-		if (sl != strlen(cipher_str_c[i]))
+	for (size_t i = 0; i< static_cast<int>(Cipher::COUNT); i++)	{
+		if (sl != strlen(cipher_str_c[i])) {
 			continue;
+		}
 		size_t x = 0;
 		for (x = 0; x< sl; x++) {
-			if (s[x] != cipher_str_c[i][x])
+			if (s[x] != cipher_str_c[i][x]) {
 				break;
+			}
 		}
 		if (x == sl) {
 			c = (crypt::Cipher)i;
@@ -1973,8 +1974,7 @@ bool crypt::help::getCipher(const char* s, crypt::Cipher& c)
 	}
 	static const char* s_old[] = { "cast5", "aes128", "aes192", "aes256" };
 	static const crypt::Cipher o_cipher[] = { Cipher::cast128, Cipher::rijndael128, Cipher::rijndael192, Cipher::rijndael256 };
-	for (size_t i = 0; i < 4; i++)
-	{
+	for (size_t i = 0; i < 4; i++) {
 		if (std::strcmp(s, s_old[i]) == 0) {
 			c = o_cipher[i];
 			return true;
@@ -1985,16 +1985,18 @@ bool crypt::help::getCipher(const char* s, crypt::Cipher& c)
 
 bool crypt::help::getCipherMode(const char* s, crypt::Mode& m)
 {
-	if (!s)
+	if (!s) {
 		return false;
-	for (size_t i = 0; i< static_cast<int>(Mode::COUNT); i++)
-	{
+	}
+	for (size_t i = 0; i< static_cast<int>(Mode::COUNT); i++) {
 		size_t sl = strlen(s), x = 0;
-		if (sl != lstrlen(mode_str[i]))
+		if (sl != lstrlen(mode_str[i])) {
 			continue;
+		}
 		for (x = 0; x< sl; x++) {
-			if (s[x] != (char)mode_str[i][x])
+			if (s[x] != (char)mode_str[i][x]) {
 				break;
+			}
 		}
 		if (x == sl) {
 			m = (crypt::Mode)i;
@@ -2006,10 +2008,10 @@ bool crypt::help::getCipherMode(const char* s, crypt::Mode& m)
 
 bool crypt::help::getKeyDerivation(const char*s, KeyDerivation& v)
 {
-	if (!s)
+	if (!s) {
 		return false;
-	for (int i = 0; i<static_cast<int>(KeyDerivation::COUNT); i++)
-	{
+	}
+	for (int i = 0; i<static_cast<int>(KeyDerivation::COUNT); i++) {
 		if (strcmp(s, key_algo_str_c[i]) == 0) {
 			v = (crypt::KeyDerivation)i;
 			return true;
@@ -2020,10 +2022,10 @@ bool crypt::help::getKeyDerivation(const char*s, KeyDerivation& v)
 
 bool crypt::help::getIVMode(const char* s, crypt::IV& iv)
 {
-	if (!s)
+	if (!s) {
 		return false;
-	for (int i = 0; i<static_cast<int>(IV::COUNT); i++)
-	{
+	}
+	for (int i = 0; i<static_cast<int>(IV::COUNT); i++)	{
 		if (strcmp(s, iv_str_c[i]) == 0) {
 			iv = (crypt::IV)i;
 			return true;
@@ -2034,10 +2036,10 @@ bool crypt::help::getIVMode(const char* s, crypt::IV& iv)
 
 bool crypt::help::getEncoding(const char* s, crypt::Encoding& e)
 {
-	if (!s)
+	if (!s) {
 		return false;
-	for (int i = 0; i<static_cast<int>(Encoding::COUNT); i++)
-	{
+	}
+	for (int i = 0; i<static_cast<int>(Encoding::COUNT); i++) {
 		if (strcmp(s, encoding_str_c[i]) == 0) {
 			e = (crypt::Encoding)i;
 			return true;
@@ -2048,10 +2050,10 @@ bool crypt::help::getEncoding(const char* s, crypt::Encoding& e)
 
 bool crypt::help::getRandomMode(const char* s, crypt::Random& m)
 {
-	if (!s)
+	if (!s) {
 		return false;
-	for (int i = 0; i<static_cast<int>(crypt::Random::COUNT); i++)
-	{
+	}
+	for (int i = 0; i<static_cast<int>(crypt::Random::COUNT); i++) {
 		if (strcmp(s, random_mode_str_c[i]) == 0) {
 			m = (crypt::Random)i;
 			return true;
@@ -2062,17 +2064,19 @@ bool crypt::help::getRandomMode(const char* s, crypt::Random& m)
 
 bool crypt::help::getHash(const char* s, Hash& h, bool only_openssl)
 {
-	if (!s)
+	if (!s) {
 		return false;
+	}
 	size_t m = (only_openssl) ? static_cast<size_t>(Hash::sha3_256) : static_cast<size_t>(Hash::COUNT);
-	for (size_t i = 0; i< m; i++)
-	{
+	for (size_t i = 0; i< m; i++) {
 		size_t sl = strlen(s), x = 0;
-		if (sl != lstrlen(hash_str[i]))
+		if (sl != lstrlen(hash_str[i])) {
 			continue;
+		}
 		for (x = 0; x< sl; x++) {
-			if (s[x] != (char)hash_str[i][x])
+			if (s[x] != (char)hash_str[i][x]) {
 				break;
+			}
 		}
 		if (x == sl) {
 			h = (Hash)i;
@@ -2084,24 +2088,20 @@ bool crypt::help::getHash(const char* s, Hash& h, bool only_openssl)
 
 crypt::Mode crypt::help::getModeByIndex(crypt::Cipher cipher, int index)
 {
-	if (index < int(Mode::eax))
-	{
+	if (index < int(Mode::eax))	{
 		return Mode(index);
-	}
-	else if (index == int(Mode::eax))
-	{
-		if ((cipher_flags[int(cipher)] & MODE_EAX) == MODE_EAX)
+	} else if (index == int(Mode::eax))	{
+		if ((cipher_flags[int(cipher)] & MODE_EAX) == MODE_EAX) {
 			return Mode::eax;
-	}
-	else if (index == int(Mode::ccm))
-	{
-		if ((cipher_flags[int(cipher)] & MODE_CCM) == MODE_CCM)
+		}
+	} else if (index == int(Mode::ccm))	{
+		if ((cipher_flags[int(cipher)] & MODE_CCM) == MODE_CCM) {
 			return Mode::ccm;
-	}
-	else if (index == int(Mode::gcm))
-	{
-		if ((cipher_flags[int(cipher)] & MODE_GCM) == MODE_GCM)
+		}
+	} else if (index == int(Mode::gcm))	{
+		if ((cipher_flags[int(cipher)] & MODE_GCM) == MODE_GCM) {
 			return Mode::gcm;
+		}
 	}
 	return Mode::cbc;
 }
@@ -2109,18 +2109,18 @@ crypt::Mode crypt::help::getModeByIndex(crypt::Cipher cipher, int index)
 int crypt::help::getIndexByMode(crypt::Cipher cipher, crypt::Mode mode)
 {
 	if (mode == Mode::eax) {
-		if ((cipher_flags[int(cipher)] & MODE_EAX) == MODE_EAX)
+		if ((cipher_flags[int(cipher)] & MODE_EAX) == MODE_EAX) {
 			return int(Mode::eax);
-	}
-	else if (mode == Mode::ccm) {
-		if ((cipher_flags[int(cipher)] & MODE_CCM) == MODE_CCM)
+		}
+	} else if (mode == Mode::ccm) {
+		if ((cipher_flags[int(cipher)] & MODE_CCM) == MODE_CCM) {
 			return int(Mode::ccm);
-	}
-	else if (mode == Mode::gcm) {
-		if ((cipher_flags[int(cipher)] & MODE_GCM) == MODE_GCM)
+		}
+	} else if (mode == Mode::gcm) {
+		if ((cipher_flags[int(cipher)] & MODE_GCM) == MODE_GCM) {
 			return int(Mode::gcm);
-	}
-	else {
+		}
+	} else {
 		return int(mode);
 	}
 	return -1;
@@ -2129,18 +2129,18 @@ int crypt::help::getIndexByMode(crypt::Cipher cipher, crypt::Mode mode)
 bool crypt::help::validCipherMode(crypt::Cipher cipher, crypt::Mode mode)
 {
 	if (mode == Mode::eax) {
-		if ((cipher_flags[int(cipher)] & MODE_EAX) == MODE_EAX)
+		if ((cipher_flags[int(cipher)] & MODE_EAX) == MODE_EAX) {
 			return true;
-	}
-	else if (mode == Mode::ccm) {
-		if ((cipher_flags[int(cipher)] & MODE_CCM) == MODE_CCM)
+		}
+	} else if (mode == Mode::ccm) {
+		if ((cipher_flags[int(cipher)] & MODE_CCM) == MODE_CCM) {
 			return true;
-	}
-	else if (mode == Mode::gcm) {
-		if ((cipher_flags[int(cipher)] & MODE_GCM) == MODE_GCM)
+		}
+	} else if (mode == Mode::gcm) {
+		if ((cipher_flags[int(cipher)] & MODE_GCM) == MODE_GCM) {
 			return true;
-	}
-	else {
+		}
+	} else {
 		return true;
 	}
 	return false;
@@ -2148,14 +2148,15 @@ bool crypt::help::validCipherMode(crypt::Cipher cipher, crypt::Mode mode)
 
 int crypt::help::getCipherCategory(Cipher cipher)
 {
-	if ((cipher_flags[int(cipher)] & C_AES) == C_AES)
+	if ((cipher_flags[int(cipher)] & C_AES) == C_AES) {
 		return 0;
-	else if ((cipher_flags[int(cipher)] & C_OTHER) == C_OTHER)
+	} else if ((cipher_flags[int(cipher)] & C_OTHER) == C_OTHER) {
 		return 1;
-	else if ((cipher_flags[int(cipher)] & C_STREAM) == C_STREAM)
+	} else if ((cipher_flags[int(cipher)] & C_STREAM) == C_STREAM) {
 		return 2;
-	else if ((cipher_flags[int(cipher)] & C_WEAK) == C_WEAK)
+	} else if ((cipher_flags[int(cipher)] & C_WEAK) == C_WEAK) {
 		return 3;
+	}
 	return -1;
 }
 
@@ -2173,12 +2174,13 @@ crypt::Cipher crypt::help::getCipherByIndex(CipherCat category, int index)
 	case CipherCat::stream: cat = C_STREAM; break;
 	case CipherCat::weak: cat = C_WEAK; break;
 	}
-	for (i = 0; i < int(Cipher::COUNT); i++)
-	{
-		if ((cipher_flags[i] & cat) == cat)
+	for (i = 0; i < int(Cipher::COUNT); i++) {
+		if ((cipher_flags[i] & cat) == cat) {
 			ii++;
-		if (ii == index)
+		}
+		if (ii == index) {
 			break;
+		}
 	}
 	return Cipher(i);
 }
@@ -2186,26 +2188,28 @@ crypt::Cipher crypt::help::getCipherByIndex(CipherCat category, int index)
 int crypt::help::getCipherIndex(Cipher cipher)
 {
 	int cat;
-	if ((cipher_flags[int(cipher)] & C_AES) == C_AES)
+	if ((cipher_flags[int(cipher)] & C_AES) == C_AES) {
 		cat = C_AES;
-	else if((cipher_flags[int(cipher)] & C_OTHER) == C_OTHER)
+	} else if ((cipher_flags[int(cipher)] & C_OTHER) == C_OTHER) {
 		cat = C_OTHER;
-	else if ((cipher_flags[int(cipher)] & C_STREAM) == C_STREAM)
+	} else if ((cipher_flags[int(cipher)] & C_STREAM) == C_STREAM) {
 		cat = C_STREAM;
-	else
+	} else {
 		cat = C_WEAK;
+	}
 	int index = -1;
-	for (int i = 0; i < int(Cipher::COUNT); i++)
-	{
-		if ((cipher_flags[i] & cat) == cat)
+	for (int i = 0; i < int(Cipher::COUNT); i++) {
+		if ((cipher_flags[i] & cat) == cat) {
 			index++;
-		if (i == int(cipher))
+		}
+		if (i == int(cipher)) {
 			break;
+		}
 	}
 	return index;
 }
 
-bool crypt::help::IsOpenSSLHash(crypt::Hash h)
+bool crypt::help::canCalcHMAC(crypt::Hash h)
 {
 	return (h < Hash::sha3_256);
 }

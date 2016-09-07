@@ -12,42 +12,28 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef DLG_HASH_DEFINE_H
-#define DLG_HASH_DEFINE_H
+#ifndef DLG_HASH_H_DEF
+#define DLG_HASH_H_DEF
 
-#include "npp/Window.h"
+#include "npp/DockingDlgInterface.h"
 #include "npp/URLCtrl.h"
 #include "exception.h"
 #include "crypt.h"
 #include "unicode.h"
 
-class DlgHash : public Window
+class DlgHash : public DockingDlgInterface
 {
 public:
-
-	DlgHash(crypt::Options::Hash& opt);
-	~DlgHash();
-    
-    void init(HINSTANCE hInst, HWND parent);
-    virtual void destroy() { ::DestroyWindow(_hSelf); };
-
-   	bool doDialog(bool no_ascii);
+						DlgHash(crypt::Options::Hash& opt);
+	void				display(bool toShow = true) const;
 
 private:
-
-	static  BOOL CALLBACK dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
-	BOOL CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	DlgHash(DlgHash const&);
-	DlgHash& operator=(DlgHash const&);
-
-	void enableKeyControls(bool v);
-
+	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	bool				updateOptions();
+	void				enableKeyControls(bool v);
+	
 	crypt::Options::Hash&	options;
-	bool					no_ascii;
-
 	URLCtrl					url_help_hash;
 };
-
-
 
 #endif

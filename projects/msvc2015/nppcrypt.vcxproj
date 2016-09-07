@@ -1,20 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Unicode Debug|Win32">
-      <Configuration>Unicode Debug</Configuration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Unicode Debug|x64">
-      <Configuration>Unicode Debug</Configuration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Unicode Release|Win32">
-      <Configuration>Unicode Release</Configuration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Unicode Release|x64">
-      <Configuration>Unicode Release</Configuration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -32,12 +32,15 @@
     <ClCompile Include="..\..\src\dlg_crypt.cpp" />
     <ClCompile Include="..\..\src\dlg_hash.cpp" />
     <ClCompile Include="..\..\src\dlg_random.cpp" />
+    <ClCompile Include="..\..\src\help.cpp" />
     <ClCompile Include="..\..\src\keccak\KeccakF-1600-inplace32BI.cpp" />
     <ClCompile Include="..\..\src\keccak\KeccakHash.cpp" />
     <ClCompile Include="..\..\src\keccak\KeccakSponge.cpp" />
+    <ClCompile Include="..\..\src\npp\ModalDialog.cpp" />
+    <ClCompile Include="..\..\src\npp\StaticDialog.cpp" />
     <ClCompile Include="..\..\src\unicode.cpp" />
     <ClCompile Include="..\..\src\exception.cpp" />
-    <ClCompile Include="..\..\src\header.cpp" />
+    <ClCompile Include="..\..\src\cryptheader.cpp" />
     <ClCompile Include="..\..\src\nppcrypt.cpp" />
     <ClCompile Include="..\..\src\npp\URLCtrl.cpp" />
     <ClCompile Include="..\..\src\preferences.cpp" />
@@ -57,13 +60,20 @@
     <ClInclude Include="..\..\src\dlg_crypt.h" />
     <ClInclude Include="..\..\src\dlg_hash.h" />
     <ClInclude Include="..\..\src\dlg_random.h" />
+    <ClInclude Include="..\..\src\help.h" />
     <ClInclude Include="..\..\src\keccak\brg_endian.h" />
     <ClInclude Include="..\..\src\keccak\KeccakF-1600-interface.h" />
     <ClInclude Include="..\..\src\keccak\KeccakHash.h" />
     <ClInclude Include="..\..\src\keccak\KeccakSponge.h" />
+    <ClInclude Include="..\..\src\npp\Definitions.h" />
+    <ClInclude Include="..\..\src\npp\Docking.h" />
+    <ClInclude Include="..\..\src\npp\DockingDlgInterface.h" />
+    <ClInclude Include="..\..\src\npp\dockingResource.h" />
+    <ClInclude Include="..\..\src\npp\ModalDialog.h" />
+    <ClInclude Include="..\..\src\npp\StaticDialog.h" />
     <ClInclude Include="..\..\src\unicode.h" />
     <ClInclude Include="..\..\src\exception.h" />
-    <ClInclude Include="..\..\src\header.h" />
+    <ClInclude Include="..\..\src\cryptheader.h" />
     <ClInclude Include="..\..\src\mdef.h" />
     <ClInclude Include="..\..\src\nppcrypt.h" />
     <ClInclude Include="..\..\src\npp\Notepad_plus_msgs.h" />
@@ -89,22 +99,23 @@
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v140_xp</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v140_xp</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v140_xp</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v140_xp</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v140_xp</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -112,59 +123,57 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|Win32'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC70.props" />
-    <Import Project="cryptopp_debug.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC70.props" />
-    <Import Project="cryptopp_debug.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|Win32'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC70.props" />
-    <Import Project="cryptopp_release.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC70.props" />
-    <Import Project="cryptopp_release.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>11.0.50727.1</_ProjectFileVersion>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|Win32'">
-    <OutDir>$(SolutionDir)..\..\build\</OutDir>
-    <IntDir>$(SolutionDir)..\..\obj\$(Configuration)\</IntDir>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)..\..\build\$(PlatformShortName)\</OutDir>
+    <IntDir>$(SolutionDir)..\..\obj\$(PlatformShortName)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(IncludePath)</IncludePath>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\..\libs\cryptopp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\libs\cryptopp\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(IncludePath)</IncludePath>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)..\..\build</OutDir>
-    <IntDir>$(SolutionDir)..\..\obj\$(Configuration)\</IntDir>
+    <IncludePath>..\..\..\libs\cryptopp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\libs\cryptopp\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)..\..\build\$(PlatformShortName)\</OutDir>
+    <IntDir>$(SolutionDir)..\..\obj\$(PlatformShortName)\$(Configuration)\</IntDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|Win32'">
-    <OutDir>..\..\..\..\..\..\..\..\bin\notepad++\plugins\</OutDir>
-    <IntDir>$(SolutionDir)..\..\obj\$(Configuration)\</IntDir>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)..\..\build\$(PlatformShortName)\</OutDir>
+    <IntDir>$(SolutionDir)..\..\obj\$(PlatformShortName)\$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(IncludePath)</IncludePath>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
-    <TargetName>$(ProjectName)_Debug</TargetName>
+    <IncludePath>..\..\..\libs\cryptopp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\libs\cryptopp\lib;$(LibraryPath)</LibraryPath>
+    <TargetName>$(ProjectName)_debug</TargetName>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(IncludePath)</IncludePath>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
-    <TargetName>$(ProjectName)_Debug</TargetName>
+    <IncludePath>..\..\..\libs\cryptopp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\libs\cryptopp\lib;$(LibraryPath)</LibraryPath>
+    <TargetName>$(ProjectName)_debug</TargetName>
+    <IntDir>$(SolutionDir)..\..\obj\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)..\..\build\$(PlatformShortName)\</OutDir>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\DockingFeature;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__STDC_WANT_SECURE_LIB__=1;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;_USRDLL;NPPPLUGINTEMPLATE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -175,7 +184,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cryptlib_x86_mt_s.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)nppcrypt.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -185,7 +194,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\DockingFeature;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__STDC_WANT_SECURE_LIB__=1;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;_USRDLL;NPPPLUGINTEMPLATE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -198,7 +207,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cryptlib_x64_mt_s.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)nppcrypt.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -207,7 +216,7 @@
       <ImportLibrary>$(OutDir)nppcrypt.lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\DockingFeature;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -220,7 +229,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cryptlib_x86_mtd_s.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)nppcrypt_debug.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)nppcrypt.pdb</ProgramDatabaseFile>
@@ -229,7 +238,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.\DockingFeature;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -242,7 +251,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cryptlib_x64_mtd_s.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)nppcrypt_debug.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)nppcrypt.pdb</ProgramDatabaseFile>

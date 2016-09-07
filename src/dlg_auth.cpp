@@ -13,61 +13,23 @@ GNU General Public License for more details.
 */
 
 #include "dlg_auth.h"
-#include "exception.h"
+#include "mdef.h"
 #include "resource.h"
-#include "crypt.h"
-#include <string>
-
-DlgAuth::DlgAuth(): Window()
-{
-};
-
-void DlgAuth::init(HINSTANCE hInst, HWND parent)
-{
-	Window::init(hInst, parent);
-};
+#include "exception.h"
 
 bool DlgAuth::doDialog(const TCHAR* filename)
 {
 	if (filename == NULL) {
 		caption = TEXT("authentication");
-	}
-	else {
+	} else {
 		caption = TEXT("authentication (") + string(filename) + TEXT(")");
 	}
-	if(DialogBoxParam(_hInst, MAKEINTRESOURCE(IDD_AUTH), _hParent,  (DLGPROC)dlgProc, (LPARAM)this)==IDC_OK)
-		return true;
-	return false;
+	return ModalDialog::doDialog();
 }
 
-BOOL CALLBACK DlgAuth::dlgProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) 
+INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	switch (Message) 
-	{
-		case WM_INITDIALOG :
-		{
-			DlgAuth *pDlgAuth = (DlgAuth *)(lParam);
-			pDlgAuth->_hSelf = hWnd;
-			::SetWindowLongPtr(hWnd, GWL_USERDATA, (long)lParam);
-			pDlgAuth->run_dlgProc(Message, wParam, lParam);
-			return TRUE;
-		}
-
-		default :
-		{
-			DlgAuth *pDlgAuth = reinterpret_cast<DlgAuth *>(::GetWindowLong(hWnd, GWL_USERDATA));
-			if (!pDlgAuth)
-				return FALSE;
-			return pDlgAuth->run_dlgProc(Message, wParam, lParam);
-		}
-
-	}
-	return FALSE;
-}
-
-BOOL CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message) 
+	switch (message)
 	{
 	case WM_INITDIALOG:
 	{
@@ -75,17 +37,17 @@ BOOL CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, '*', 0);
 		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
 		PostMessage(_hSelf, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(_hSelf, IDC_AUTH_KEY), TRUE);
+		goToCenter();
 		return TRUE;
-	} break;
-
-	case WM_COMMAND : 
+	}
+	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam))
 		{
 		case IDC_OK:
 		{
-			TCHAR temp_key[NPPC_HMAC_INPUT_MAX+1];
-			::GetDlgItemText(_hSelf, IDC_AUTH_KEY, temp_key, NPPC_HMAC_INPUT_MAX+1);
+			TCHAR temp_key[NPPC_HMAC_INPUT_MAX + 1];
+			::GetDlgItemText(_hSelf, IDC_AUTH_KEY, temp_key, NPPC_HMAC_INPUT_MAX + 1);
 
 			try {
 				#ifdef UNICODE
@@ -93,39 +55,35 @@ BOOL CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 				#else
 				keystring.assign(temp_key);
 				#endif
-
-			} catch(CExc& exc) {
-				::MessageBox(_hSelf, exc.getErrorMsg(), TEXT("Error"), MB_OK);
+			} catch (CExc& exc) {
+				::MessageBox(_hSelf, exc.getMsg(), TEXT("Error"), MB_OK);
 				break;
 			}
 
 			EndDialog(_hSelf, IDC_OK);
 			return TRUE;
-		} break;
-
+		}
 		case IDC_CANCEL: case IDCANCEL:
 		{
 			EndDialog(_hSelf, IDC_CANCEL);
 			return TRUE;
-		} break;
-
+		}
 		case IDC_AUTH_SHOW:
 		{
 			char c = ::SendDlgItemMessage(_hSelf, IDC_AUTH_SHOW, BM_GETCHECK, 0, 0) ? 0 : '*';
 			::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, c, 0);
 			InvalidateRect(::GetDlgItem(_hSelf, IDC_AUTH_KEY), 0, TRUE);
-		} break;
-
-		default:
 			break;
 		}
-	} break;
+		}
+		break;
+	}
 	}
 	return FALSE;
 }
 
-void DlgAuth::getKeyString(std::string& s)
+void DlgAuth::getKeyString(std::string& out)
 {
-	s.assign(keystring);
+	out.assign(keystring);
 	keystring.clear();
 }
