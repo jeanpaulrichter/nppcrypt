@@ -34,6 +34,7 @@ GNU General Public License for more details.
 #include <cryptopp/ripemd.h>
 #include <cryptopp/whrlpool.h>
 #include <cryptopp/tiger.h>
+#include <cryptopp/blake2.h>
 #include <cryptopp/hmac.h>
 #include <cryptopp/aes.h>
 #include <cryptopp/gcm.h>
@@ -123,7 +124,7 @@ static const TCHAR* mode_help_url[] = { TEXT("Block_cipher_mode_of_operation"), 
 static const char*	iv_str_c[] = { "random", "keyderivation", "zero" };
 
 static const TCHAR* hash_str[] = { TEXT("md4"), TEXT("md5"), TEXT("sha1"), TEXT("sha256"), TEXT("sha512"), TEXT("ripemd128"), TEXT("ripemd160"), TEXT("ripemd256"), TEXT("whirlpool"), TEXT("tiger"), TEXT("sha3_224"), TEXT("sha3_256"), TEXT("sha3_384"), TEXT("sha3_512") };
-static const char*	hash_str_c[] = { "md4", "md5", "sha1", "sha256", "sha512", "ripemd128", "ripemd160", "ripemd256", "whirlpool", "tiger", "sha3_224", "sha3_256", "sha3_384", "sha3_512" };
+static const char*	hash_str_c[] = { "md4", "md5", "sha1", "sha256", "sha512", "ripemd128", "ripemd160", "ripemd256", "whirlpool", "tiger", "blake2b", "sha3_224", "sha3_256", "sha3_384", "sha3_512" };
 static const TCHAR* hash_help_url[] = { TEXT("MD4"),TEXT("MD5"), TEXT("SHA-1"), TEXT("SHA-2"), TEXT("SHA-2"), TEXT("RIPEMD"), TEXT("RIPEMD"), TEXT("RIPEMD"), TEXT("Whirlpool_(cryptography)"), TEXT("Tiger_(cryptography)"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3") };
 
 static const char*	encoding_str_c[] = { "ascii", "base16", "base32", "base64" };

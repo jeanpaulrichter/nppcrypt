@@ -45,11 +45,12 @@ void CPreferences::load(const TCHAR* path, CurrentOptions& current)
 
 	std::ifstream f(filepath, std::ios::in | std::ios::binary);
 	
-	try {
-		f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	try {		
 		if (!f.is_open()) {
 			throw CExc(CExc::Code::preffile_missing);
 		}
+		f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
 		char theader[22];
 		f.read(theader, 21);
 		theader[21] = 0;

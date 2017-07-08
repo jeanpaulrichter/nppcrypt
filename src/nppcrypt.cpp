@@ -11,7 +11,6 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
-
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -63,7 +62,7 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD reasonForCall, LPVOID lpReserved )
 	case DLL_PROCESS_ATTACH:
 	{
 		#ifdef _DEBUG
-		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 		#endif
 		m_hInstance = (HINSTANCE)hModule;
 		break;
@@ -72,8 +71,8 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD reasonForCall, LPVOID lpReserved )
 	{
 		try {
 			preferences.save(current);
-		} catch (CExc& exc) {
-			::MessageBox(nppData._nppHandle, exc.getMsg(), TEXT("nppcrypt error"), MB_OK);
+		} catch (CExc& ) {
+			// log error
 		}
 		dlg_random.destroy();
 		dlg_hash.destroy();

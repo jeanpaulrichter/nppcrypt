@@ -1,0 +1,254 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\tinyxml2">
+      <UniqueIdentifier>{2e715d60-a061-4c7b-8200-d58c3b79fb73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\tinyxml2">
+      <UniqueIdentifier>{ba29461e-79fc-455f-a012-fe378c1e5c98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bcrypt">
+      <UniqueIdentifier>{b19885b5-4b7d-4f40-a070-25c84b60039c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bcrypt">
+      <UniqueIdentifier>{c1d1848a-37c2-4cc9-ba7f-02ab819bda38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scrypt">
+      <UniqueIdentifier>{f7532958-93c2-4a6d-983b-90dd0d007b01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scrypt">
+      <UniqueIdentifier>{0a4b9198-f428-4e43-bea4-9c1ba5304bbd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\notepad++">
+      <UniqueIdentifier>{dba0c125-efb5-48a3-a667-907e7c529cd1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\notepad++">
+      <UniqueIdentifier>{25756e2a-5214-4efc-a6aa-2140efda214a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\keccak">
+      <UniqueIdentifier>{0207c31a-32b7-4b16-ac32-11fef7f65a51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\keccak">
+      <UniqueIdentifier>{4b64f114-6c57-4fd8-9a9d-17c9c56654c0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\src\nppcrypt.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\crypt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dlg_about.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dlg_auth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dlg_crypt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dlg_hash.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dlg_random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\exception.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\nppcrypt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\preferences.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\tinyxml2\tinyxml2.cpp">
+      <Filter>Source Files\tinyxml2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\crypto_scrypt-ref.cpp">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\sha256.cpp">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\npp\URLCtrl.cpp">
+      <Filter>Source Files\notepad++</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\bcrypt\crypt_blowfish.cpp">
+      <Filter>Source Files\bcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dlg_preferences.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\insecure_memzero.cpp">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dlg_convert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\unicode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\keccak\KeccakF-1600-inplace32BI.cpp">
+      <Filter>Source Files\keccak</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\keccak\KeccakHash.cpp">
+      <Filter>Source Files\keccak</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\keccak\KeccakSponge.cpp">
+      <Filter>Source Files\keccak</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dlg_initdata.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\npp\StaticDialog.cpp">
+      <Filter>Source Files\notepad++</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\npp\ModalDialog.cpp">
+      <Filter>Source Files\notepad++</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\help.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptheader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\crypt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_about.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_auth.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_crypt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_hash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\exception.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\nppcrypt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\preferences.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\tinyxml2\tinyxml2.h">
+      <Filter>Header Files\tinyxml2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\config.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\crypto_scrypt.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\scrypt_platform.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\sha256.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\sysendian.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\Notepad_plus_msgs.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\PluginInterface.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\Scintilla.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\URLCtrl.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\Window.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\bcrypt\crypt_blowfish.h">
+      <Filter>Header Files\bcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_preferences.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\mdef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\insecure_memzero.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_convert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\unicode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\brg_endian.h">
+      <Filter>Header Files\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\KeccakF-1600-interface.h">
+      <Filter>Header Files\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\KeccakHash.h">
+      <Filter>Header Files\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\KeccakSponge.h">
+      <Filter>Header Files\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dlg_initdata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\StaticDialog.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\ModalDialog.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\Docking.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\DockingDlgInterface.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\dockingResource.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\Definitions.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\help.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptheader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

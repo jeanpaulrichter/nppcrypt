@@ -15,6 +15,12 @@ GNU General Public License for more details.
 #ifndef NPPCRYPT_H_DEF
 #define NPPCRYPT_H_DEF
 
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
 #include "mdef.h"
 #include "npp/PluginInterface.h"
 

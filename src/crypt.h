@@ -122,7 +122,7 @@ namespace crypt
 			HMAC hmac;
 
 			struct Encoding
-			{
+ 			{
 				crypt::Encoding		enc;
 				bool				linebreaks;
 				int					linelength;
@@ -134,7 +134,7 @@ namespace crypt
 
 		struct Hash
 		{
-			Hash() : encoding(crypt::Encoding::base16), algorithm(crypt::Hash::md5), use_key(false) {};
+			Hash() : encoding(crypt::Encoding::base16), algorithm(crypt::Hash::md5), use_key(false), key_id(0) {};
 
 			crypt::Hash					algorithm;
 			crypt::Encoding				encoding;
@@ -167,6 +167,7 @@ namespace crypt
 
 	struct InitStrings
 	{
+		InitStrings() : encoding(Encoding::base64) {};
 		Encoding	encoding;
 		std::string iv;
 		std::string salt;
