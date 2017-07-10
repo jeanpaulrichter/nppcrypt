@@ -60,6 +60,7 @@ GNU General Public License for more details.
 #include <cryptopp/sosemanuk.h>
 #include <cryptopp/arc4.h>
 #include <cryptopp/salsa.h>
+#include <cryptopp/chacha.h>
 #include <cryptopp/panama.h>
 #include <cryptopp/eax.h>
 
@@ -108,14 +109,15 @@ static const unsigned int cipher_flags[unsigned(crypt::Cipher::COUNT)] =
 /* sosemanuk	*/	STREAM | C_STREAM,
 /* salsa20		*/	STREAM | C_STREAM,
 /* xsalsa20		*/	STREAM | C_STREAM,
+/* chacha20		*/	STREAM | C_STREAM,
 /* panama		*/	STREAM | C_STREAM,
 };
 
 // ----------------------------- STRINGS ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static const TCHAR* cipher_str[] = { TEXT("des"), TEXT("des_ede"), TEXT("des_ede3"), TEXT("desx"), TEXT("gost"), TEXT("cast-128"), TEXT("cast-256"), TEXT("RC2"), TEXT("RC4"), TEXT("RC5"), TEXT("RC6"), TEXT("IDEA"), TEXT("Blowfish"), TEXT("Camellia"), TEXT("SEED"), TEXT("TEA"), TEXT("XTEA"), TEXT("SHACAL-2"), TEXT("MARS"), TEXT("Twofish"), TEXT("Serpent"), TEXT("Rijndael-128"), TEXT("Rijndael-192"), TEXT("Rijndael-256"), TEXT("Sosemanuk"), TEXT("Salsa20"), TEXT("XSalsa20"), TEXT("Panama") };
-static const char*	cipher_str_c[] = { "des", "des_ede", "des_ede3", "desx", "gost", "cast128", "cast256", "rc2", "rc4", "rc5", "rc6", "idea", "blowfish", "camellia", "seed", "tea", "xtea", "shacal-2", "mars", "twofish", "serpent", "rijndael128", "rijndael192", "rijndael256", "sosemanuk", "salsa20", "xsalsa20", "panama" };
-static const TCHAR* cipher_help_url[] = { TEXT("Data_Encryption_Standard"), TEXT("Data_Encryption_Standard"), TEXT("Data_Encryption_Standard"), TEXT("DES-X"), TEXT("GOST_(block_cipher)"), TEXT("CAST-128"), TEXT("CAST-256"), TEXT("RC2"), TEXT("RC4"), TEXT("RC5"), TEXT("RC6"), TEXT("International_Data_Encryption_Algorithm"), TEXT("Blowfish_(cipher)"), TEXT("Camellia_(cipher)"), TEXT("SEED"), TEXT("Tiny_Encryption_Algorithm"), TEXT("XTEA"), TEXT("SHACAL"), TEXT("MARS_(cryptography)"), TEXT("Twofish"), TEXT("Serpent_(cipher)"), TEXT("Advanced_Encryption_Standard"), TEXT("Advanced_Encryption_Standard"), TEXT("Advanced_Encryption_Standard"), TEXT("SOSEMANUK"), TEXT("Salsa20"), TEXT("Salsa20"), TEXT("Panama_(cryptography)") };
+static const TCHAR* cipher_str[] = { TEXT("des"), TEXT("des_ede"), TEXT("des_ede3"), TEXT("desx"), TEXT("gost"), TEXT("cast-128"), TEXT("cast-256"), TEXT("RC2"), TEXT("RC4"), TEXT("RC5"), TEXT("RC6"), TEXT("IDEA"), TEXT("Blowfish"), TEXT("Camellia"), TEXT("SEED"), TEXT("TEA"), TEXT("XTEA"), TEXT("SHACAL-2"), TEXT("MARS"), TEXT("Twofish"), TEXT("Serpent"), TEXT("Rijndael-128"), TEXT("Rijndael-192"), TEXT("Rijndael-256"), TEXT("Sosemanuk"), TEXT("Salsa20"), TEXT("XSalsa20"), TEXT("ChaCha20"), TEXT("Panama") };
+static const char*	cipher_str_c[] = { "des", "des_ede", "des_ede3", "desx", "gost", "cast128", "cast256", "rc2", "rc4", "rc5", "rc6", "idea", "blowfish", "camellia", "seed", "tea", "xtea", "shacal-2", "mars", "twofish", "serpent", "rijndael128", "rijndael192", "rijndael256", "sosemanuk", "salsa20", "xsalsa20", "chacha20", "panama" };
+static const TCHAR* cipher_help_url[] = { TEXT("Data_Encryption_Standard"), TEXT("Data_Encryption_Standard"), TEXT("Data_Encryption_Standard"), TEXT("DES-X"), TEXT("GOST_(block_cipher)"), TEXT("CAST-128"), TEXT("CAST-256"), TEXT("RC2"), TEXT("RC4"), TEXT("RC5"), TEXT("RC6"), TEXT("International_Data_Encryption_Algorithm"), TEXT("Blowfish_(cipher)"), TEXT("Camellia_(cipher)"), TEXT("SEED"), TEXT("Tiny_Encryption_Algorithm"), TEXT("XTEA"), TEXT("SHACAL"), TEXT("MARS_(cryptography)"), TEXT("Twofish"), TEXT("Serpent_(cipher)"), TEXT("Advanced_Encryption_Standard"), TEXT("Advanced_Encryption_Standard"), TEXT("Advanced_Encryption_Standard"), TEXT("SOSEMANUK"), TEXT("Salsa20"), TEXT("Salsa20"), TEXT("Salsa20#ChaCha_variant"), TEXT("Panama_(cryptography)") };
 
 static const TCHAR* mode_str[] = { TEXT("ecb"), TEXT("cbc"), TEXT("cbc_cts"), TEXT("cfb"), TEXT("ofb"), TEXT("ctr"), TEXT("eax"), TEXT("ccm"), TEXT("gcm") };
 static const char*	mode_str_c[] = { "ecb", "cbc", "cbc_cts", "cfb", "ofb", "ctr", "eax", "ccm", "gcm" };
@@ -216,6 +218,11 @@ bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, int& key_lengt
 		block_size = 0;
 		key_length = XSalsa20::DEFAULT_KEYLENGTH;
 		iv_length = XSalsa20::IV_LENGTH;
+		break;
+	case crypt::Cipher::chacha20:
+		block_size = 0;
+		key_length = ChaCha20::DEFAULT_KEYLENGTH;
+		iv_length = ChaCha20::IV_LENGTH;
 		break;
 	case crypt::Cipher::panama:
 		block_size = 0;
@@ -352,6 +359,7 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 			case Cipher::rc4: pEnc.reset(new Weak::ARC4::Encryption(tKey.data(), key_len)); break;
 			case Cipher::salsa20: pEnc.reset(new Salsa20::Encryption(tKey.data(), key_len, ptVec)); break;
 			case Cipher::xsalsa20: pEnc.reset(new XSalsa20::Encryption(tKey.data(), key_len, ptVec)); break;
+			case Cipher::chacha20: pEnc.reset(new ChaCha20::Encryption(tKey.data(), key_len, ptVec)); break;
 			case Cipher::panama: pEnc.reset(new PanamaCipher<LittleEndian>::Encryption(tKey.data(), key_len, ptVec)); break;
 			}
 
@@ -975,6 +983,7 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 			case Cipher::rc4: pEnc.reset(new Weak::ARC4::Decryption(tKey.data(), key_len)); break;
 			case Cipher::salsa20: pEnc.reset(new Salsa20::Decryption(tKey.data(), key_len, ptVec)); break;
 			case Cipher::xsalsa20: pEnc.reset(new XSalsa20::Encryption(tKey.data(), key_len, ptVec)); break;
+			case Cipher::chacha20: pEnc.reset(new ChaCha20::Encryption(tKey.data(), key_len, ptVec)); break;
 			case Cipher::panama: pEnc.reset(new PanamaCipher<LittleEndian>::Encryption(tKey.data(), key_len, ptVec)); break;
 			}
 			switch (options.encoding.enc)

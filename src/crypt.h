@@ -22,7 +22,7 @@ GNU General Public License for more details.
 namespace crypt
 {
 	enum class Cipher : unsigned {
-		des=0, des_ede,	des_ede3, desx, gost, cast128, cast256, rc2, rc4, rc5, rc6, idea, blowfish, camellia, seed, tea, xtea, shacal2, mars, twofish, serpent, rijndael128, rijndael192, rijndael256, sosemanuk, salsa20, xsalsa20, panama, COUNT
+		des=0, des_ede,	des_ede3, desx, gost, cast128, cast256, rc2, rc4, rc5, rc6, idea, blowfish, camellia, seed, tea, xtea, shacal2, mars, twofish, serpent, rijndael128, rijndael192, rijndael256, sosemanuk, salsa20, xsalsa20, chacha20, panama, COUNT
 	};
 	
 	enum class Mode : unsigned {
