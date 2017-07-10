@@ -6,17 +6,17 @@ a plugin for notepad++ (https://notepad-plus-plus.org/).
 features: encryption/decryption with symmetric ciphers like aes. hash-functions like sha3. generation of (pseudo)random values (i.e. for passwords), various encoding options.
 
 ###### download:
-* x86:: http://www.cerberus-design.de/nppcrypt/nppcryptv1013.x86.zip (md5: )
-* x64:: http://www.cerberus-design.de/nppcrypt/nppcryptv1013.x64.zip (md5: )
+* x86:: http://www.cerberus-design.de/nppcrypt/nppcryptv1013.x86.zip (md5: 0191b7da5389ce95d637705f13154ed6)
+* x64:: http://www.cerberus-design.de/nppcrypt/nppcryptv1013.x64.zip (md5: b4f6c5bf060e9f5491ef5e7df37d8d55)
 
 email: kontakt (at) cerberus-design . de
 
 ###### this software uses:
 
-- [1] [crypto++](www.cryptopp.com) v.5.6.3 ( important: base64.h and base64.cpp were modified to allow custom linebreaks. see doc/cryptopp-mod )
-- [2] [tinyxml2](www.grinninglizard.com/tinyxml2)
-- [3] [bcrypt](www.openwall.com/crypt/) version 1.3
-- [4] [scrypt](www.tarsnap.com/scrypt.html) version 1.2.0
+- [1] [crypto++](https://www.cryptopp.com) v.5.6.3 ( important: base64.h and base64.cpp were modified to allow custom linebreaks. see doc/cryptopp-mod )
+- [2] [tinyxml2](http://www.grinninglizard.com/tinyxml2) version 2.1.0, part of this project under [tinyxml2](src/tinyxml2)
+- [3] [bcrypt](http://www.openwall.com/crypt/) version 1.3, part of this project under [bcrypt](src/bcrypt)
+- [4] [scrypt](https://www.tarsnap.com/scrypt.html) version 1.2.0, part of this project under [scrypt](src/scrypt)
 
 #### important:
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; 
