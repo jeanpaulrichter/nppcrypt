@@ -153,21 +153,21 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_PRESET), c);
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM), c);
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_LIST), c);
-					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE), c);
+					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), c);
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW), c);
 				}
 				break;
 			}
 			case IDC_CRYPT_AUTH_KEY_CUSTOM:
 			{
-				SendMessage(hwnd_auth, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE), TRUE);
+				SendMessage(hwnd_auth, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), TRUE);
 				break;
 			}
 			case IDC_CRYPT_AUTH_KEY_SHOW:
 			{
 				char c = ::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW, BM_GETCHECK, 0, 0) ? 0 : '*';
-				::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE, EM_SETPASSWORDCHAR, c, 0);
-				InvalidateRect(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE), 0, TRUE);
+				::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE, EM_SETPASSWORDCHAR, c, 0);
+				InvalidateRect(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), 0, TRUE);
 				break;
 			}
 			}
@@ -209,7 +209,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 		{
 			switch (LOWORD(wParam))
 			{
-			case IDC_CRYPT_AUTH_KEY_VALUE:
+			case IDC_CRYPT_AUTH_PW_VALUE:
 			{
 				::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_SETCHECK, true, 0);
 				::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_SETCHECK, false, 0);
@@ -358,7 +358,7 @@ void DlgCrypt::initDialog()
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwnd_key, IDC_CRYPT_SALT_BYTES), 0);
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT_SPIN, UDM_SETPOS32, 0, options->key.salt_bytes);
 	::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_SETCHECK, (options->key.salt_bytes > 0), 0);
-	crypt::help::Iter::setup_hash(true);
+	crypt::help::Iter::setup_hash(crypt::HASH_HMAC);
 	while (crypt::help::Iter::next()) {
 		::SendDlgItemMessage(hwnd_key, IDC_CRYPT_PBKDF2_HASH, CB_ADDSTRING, 0, (LPARAM)crypt::help::Iter::getString());
 	}
@@ -415,7 +415,7 @@ void DlgCrypt::initDialog()
 
 	// ------- Auth
 	::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_ENABLE, BM_SETCHECK, options->hmac.enable, 0);
-	crypt::help::Iter::setup_hash(true);
+	crypt::help::Iter::setup_hash(crypt::HASH_HMAC);
 	while (crypt::help::Iter::next()) {
 		::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_HASH, CB_ADDSTRING, 0, (LPARAM)crypt::help::Iter::getString());
 	}
@@ -433,8 +433,8 @@ void DlgCrypt::initDialog()
 	}
 	::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_SETCHECK, (options->hmac.key_id >= 0), 0);
 	::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_SETCHECK, (options->hmac.key_id < 0), 0);
-	::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE, EM_SETPASSWORDCHAR, '*', 0);
-	::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
+	::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE, EM_SETPASSWORDCHAR, '*', 0);
+	::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
 
 	string tstr;
 	#ifdef UNICODE
@@ -442,7 +442,7 @@ void DlgCrypt::initDialog()
 	#else
 	test.assign(options->hmac.key_input);
 	#endif
-	::SetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE, tstr.c_str());
+	::SetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE, tstr.c_str());
 
 	if (operation == Operation::Dec) {
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_HMAC_ENABLE), false);
@@ -450,16 +450,17 @@ void DlgCrypt::initDialog()
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_PRESET), false);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM), false);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_LIST), false);
-		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE), false);
+		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), false);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW), false);
 	} else {
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_HMAC_HASH), options->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_PRESET), options->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM), options->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_LIST), options->hmac.enable);
-		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE), options->hmac.enable);
+		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), options->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW), options->hmac.enable);
 	}
+	AddToolTip(IDC_CRYPT_AUTH_PW_VALUE, TEXT("utf8 > keccak shake128 > 16 byte"), hwnd_auth);
 
 	url_help[int(HelpURL::hmac)].init(_hInst, hwnd_auth);
 	url_help[int(HelpURL::hmac)].create(::GetDlgItem(hwnd_auth, IDC_CRYPT_HELP_HMAC), TEXT(NPPC_CRYPT_HMAC_HELP_URL));
@@ -752,7 +753,7 @@ bool DlgCrypt::updateOptions()
 			else {
 				TCHAR temp_key[NPPC_HMAC_INPUT_MAX + 1];
 				options->hmac.key_id = -1;
-				::GetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_KEY_VALUE, temp_key, NPPC_HMAC_INPUT_MAX + 1);
+				::GetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE, temp_key, NPPC_HMAC_INPUT_MAX + 1);
 				#ifdef UNICODE
 				unicode::wchar_to_utf8(temp_key, -1, options->hmac.key_input);
 				#else

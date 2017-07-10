@@ -50,7 +50,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_SETCURSEL, (int)options.algorithm, 0);
 			
 		::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_SETCHECK, options.use_key, 0);
-		::SendDlgItemMessage(_hSelf, IDC_HASH_KEYEDIT, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_PWEDIT, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
 
 		for (size_t i = 0; i < preferences.getKeyNum(); i++) {
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
@@ -65,19 +65,25 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 			#else
 			tstr.assign(options.key_input);
 			#endif
-			::SetDlgItemText(_hSelf, IDC_HASH_KEYEDIT, tstr.c_str());
+			::SetDlgItemText(_hSelf, IDC_HASH_PWEDIT, tstr.c_str());
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_SETCHECK, true, 0);
 		}
-		if (!crypt::help::canCalcHMAC(options.algorithm))	{
-			enableKeyControls(false);
-			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
-		} else {
+		if (crypt::help::checkFilter(options.algorithm, crypt::HASH_HMAC) || crypt::help::checkFilter(options.algorithm, crypt::HASH_KEY)) {
 			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), true);
 			enableKeyControls(options.use_key);
+			if (crypt::help::checkFilter(options.algorithm, crypt::HASH_HMAC)) {
+				::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key (hmac):"));
+			} else {
+				::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key:"));
+			}
+		} else {
+			enableKeyControls(false);
+			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
 		}
 
  		url_help_hash.init(_hInst, _hSelf);
 		url_help_hash.create(::GetDlgItem(_hSelf, IDC_HASH_HELP_HASH), crypt::help::getHelpURL(options.algorithm));
+		AddToolTip(IDC_HASH_PWEDIT, TEXT("utf8 > keccak shake128 > 16 byte"));
 
 		goToCenter();
 		return TRUE;
@@ -96,10 +102,6 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 					const byte*				pdata;
 					size_t					data_length;
 					std::basic_string<byte>	buffer;
-
-					HWND test1 = _hParent;
-					HWND test2 = helper::NPP::getWindow();
-					HWND test3 = GetWindow(_hSelf, GW_OWNER);
 
 					if (!updateOptions()) {
 						return TRUE;
@@ -140,14 +142,18 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 			case IDC_HASH_ALGO:
 			{
 				crypt::Hash cur_sel = crypt::Hash(::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0));
-				if (!crypt::help::canCalcHMAC(cur_sel))
-				{
-					enableKeyControls(false);
-					::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
-				} else {
+				if (crypt::help::checkFilter(cur_sel, crypt::HASH_HMAC) || crypt::help::checkFilter(cur_sel, crypt::HASH_KEY)) {
+					if (crypt::help::checkFilter(cur_sel, crypt::HASH_HMAC)) {
+						::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key (hmac):"));
+					} else {
+						::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key:"));
+					}
 					::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), true);
 					bool use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
 					enableKeyControls(use_key);
+				} else {
+					enableKeyControls(false);
+					::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
 				}
 				url_help_hash.changeURL(crypt::help::getHelpURL(cur_sel));
 				break;
@@ -157,7 +163,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		}
 		case EN_SETFOCUS:
 		{
-			if (LOWORD(wParam) == IDC_HASH_KEYEDIT) {
+			if (LOWORD(wParam) == IDC_HASH_PWEDIT) {
 				::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO1, BM_SETCHECK, false, 0);
 				::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_SETCHECK, true, 0);
 			}
@@ -173,14 +179,15 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 bool DlgHash::updateOptions()
 {
 	options.algorithm = (crypt::Hash)::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
-	if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_GETCHECK, 0, 0))
+	if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_GETCHECK, 0, 0)) {
 		options.encoding = crypt::Encoding::ascii;
-	else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_GETCHECK, 0, 0))
+	} else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_GETCHECK, 0, 0)) {
 		options.encoding = crypt::Encoding::base16;
-	else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_GETCHECK, 0, 0))
+	} else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_GETCHECK, 0, 0)) {
 		options.encoding = crypt::Encoding::base32;
-	else
+	} else {
 		options.encoding = crypt::Encoding::base64;
+	}
 
 	// ---------- make sure no binary output for UCS-2 encoding:
 	if (!helper::Buffer::isCurrent8Bit() && options.encoding == crypt::Encoding::ascii) {
@@ -200,7 +207,7 @@ bool DlgHash::updateOptions()
 	if (options.use_key) {
 		if (!!::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_GETCHECK, 0, 0)) {
 			TCHAR temp_key[NPPC_HMAC_INPUT_MAX + 1];
-			::GetDlgItemText(_hSelf, IDC_HASH_KEYEDIT, temp_key, NPPC_HMAC_INPUT_MAX + 1);
+			::GetDlgItemText(_hSelf, IDC_HASH_PWEDIT, temp_key, NPPC_HMAC_INPUT_MAX + 1);
 			if (!lstrlen(temp_key))	{
 				::MessageBox(_hSelf, TEXT("Please enter a key."), TEXT("Error"), MB_OK);
 				return false;
@@ -218,12 +225,9 @@ bool DlgHash::updateOptions()
 			options.key.resize(16);
 			const unsigned char* tkey = preferences.getKey(options.key_id);
 			options.key.assign(tkey, tkey + 16);
-		}
-		else {
-			// hash input?
-			options.key.resize(options.key_input.size());
-			for (size_t i = 0; i < options.key.size(); i++)
-				options.key[i] = (byte)options.key_input[i];
+		} else {
+			options.key.resize(16);
+			crypt::shake128((const unsigned char*)options.key_input.c_str(), options.key_input.size(), &options.key[0], options.key.size());
 		}
 	}
 	return true;
@@ -232,7 +236,7 @@ bool DlgHash::updateOptions()
 void DlgHash::enableKeyControls(bool v)
 {
 	::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYLIST), v);
-	::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYEDIT), v);
+	::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_PWEDIT), v);
 	::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYRADIO1), v);
 	::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYRADIO2), v);
 }

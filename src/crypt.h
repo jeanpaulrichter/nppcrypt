@@ -21,6 +21,8 @@ GNU General Public License for more details.
 
 namespace crypt
 {
+	enum { HASH_WEAK = 1, HASH_HMAC = 2, HASH_KEY = 4 };
+
 	enum class Cipher : unsigned {
 		des=0, des_ede,	des_ede3, desx, gost, cast128, cast256, rc2, rc4, rc5, rc6, idea, blowfish, camellia, seed, tea, xtea, shacal2, mars, twofish, serpent, rijndael128, rijndael192, rijndael256, sosemanuk, salsa20, xsalsa20, chacha20, panama, COUNT
 	};
@@ -30,7 +32,7 @@ namespace crypt
 	};
 
 	enum class Hash: unsigned {
-		md4=0, md5, sha1, sha256, sha512, ripemd128, ripemd160, ripemd256, whirlpool, tiger, HMAC_COUNT, sha3_224=HMAC_COUNT, sha3_256, sha3_384, sha3_512, COUNT
+		md4=0, md5, sha1, sha256, sha512, ripemd128, ripemd160, ripemd256, whirlpool, tiger, sha3_224, sha3_256, sha3_384, sha3_512, keccak256, keccak512, blake2s, blake2b, COUNT
 	};
 
 	enum class Encoding : unsigned {
@@ -208,7 +210,7 @@ namespace crypt
 		static crypt::Mode	getModeByIndex(crypt::Cipher cipher, int index);
 		static int			getIndexByMode(crypt::Cipher cipher, crypt::Mode mode);
 		static bool			validCipherMode(crypt::Cipher cipher, crypt::Mode mode);
-		static bool			canCalcHMAC(crypt::Hash h);
+		static bool			checkFilter(crypt::Hash h, unsigned int filter);
 		static int			getCipherCategory(Cipher cipher);
 		static Cipher		getCipherByIndex(CipherCat category, int index);
 		static int			getCipherIndex(Cipher cipher);
@@ -224,13 +226,14 @@ namespace crypt
 		public:
 			static void setup_cipher(CipherCat category);
 			static void setup_mode(Cipher cipher);
-			static void setup_hash(bool hmac=false);
+			static void setup_hash(unsigned int filter=0);
 			static bool next();
 			static const TCHAR* getString();
 		private:
 			static int _what;
 			static int _cipher;
 			static int _temp;
+			static unsigned int _filter;
 			static int i;
 		};
 	};

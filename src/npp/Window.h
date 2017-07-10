@@ -19,6 +19,7 @@
 #define WINDOW_CONTROL_H
 
 #include <windows.h>
+#include <Commctrl.h>
 
 class Window
 {
@@ -103,6 +104,33 @@ public:
 		}
 		return _hInst;
 	};
+
+	HWND AddToolTip(int toolID, PTSTR pszText, HWND child = NULL)
+	{
+		HWND hwndDlg = (child != NULL) ? child : _hSelf;
+		HWND hwndTool = ::GetDlgItem(hwndDlg, toolID);
+		HWND hwndTip = CreateWindowEx(NULL, TOOLTIPS_CLASS, NULL,
+			WS_POPUP | TTS_ALWAYSTIP | TTS_BALLOON,
+			CW_USEDEFAULT, CW_USEDEFAULT,
+			CW_USEDEFAULT, CW_USEDEFAULT,
+			hwndDlg, NULL,
+			_hInst, NULL);
+
+		if (!hwndTool || !hwndTip) {
+			return (HWND)NULL;
+		}
+
+		TOOLINFO toolInfo = { 0 };
+		toolInfo.cbSize = sizeof(toolInfo);
+		toolInfo.hwnd = hwndDlg;
+		toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+		toolInfo.uId = (UINT_PTR)hwndTool;
+		toolInfo.lpszText = pszText;
+		SendMessage(hwndTip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
+
+		return hwndTip;
+	}
+
 protected:
 	HINSTANCE _hInst;
 	HWND _hParent;

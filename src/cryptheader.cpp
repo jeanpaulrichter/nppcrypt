@@ -96,9 +96,7 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 		}
 		s_hmac = std::string(pHMAC);
 		const char* pHMAC_hash = xml_nppcrypt->Attribute("hmac-hash");
-		if (!crypt::help::getHash(pHMAC_hash, t_options.hmac.hash) || t_options.hmac.hash == crypt::Hash::sha3_256
-			|| t_options.hmac.hash == crypt::Hash::sha3_384 || t_options.hmac.hash == crypt::Hash::sha3_512)
-		{
+		if (!crypt::help::getHash(pHMAC_hash, t_options.hmac.hash) || !crypt::help::checkFilter(t_options.hmac.hash, crypt::HASH_HMAC))	{
 			throw CExc(CExc::Code::header_hmac_hash);
 		}
 		xml_err = xml_nppcrypt->QueryIntAttribute("auth-key", &t_options.hmac.key_id);
@@ -171,7 +169,7 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 		{
 			t = xml_key->Attribute("hash");
 			crypt::Hash thash;
-			if (!crypt::help::getHash(t, thash) || thash == crypt::Hash::sha3_256 || thash == crypt::Hash::sha3_384 || thash == crypt::Hash::sha3_512) {
+			if (!crypt::help::getHash(t, thash) || !crypt::help::checkFilter(t_options.hmac.hash, crypt::HASH_HMAC)) {
 				throw CExc(CExc::Code::header_pbkdf2);
 			}
 			t_options.key.option1 = static_cast<int>(thash);

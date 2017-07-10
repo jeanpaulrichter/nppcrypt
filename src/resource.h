@@ -1,4 +1,7 @@
-
+//{{NO_DEPENDENCIES}}
+// Von Microsoft Visual C++ generierte Includedatei.
+// Verwendet durch nppcrypt.rc
+//
 #define VS_VERSION_INFO                 1
 #define IDD_ABOUT                       101
 #define IDD_HASH                        102
@@ -56,7 +59,7 @@
 #define IDC_RANDOM_R6                   1007
 #define IDC_CRYPT_SALT                  1008
 #define IDC_PREF_KEYS_RANDOM            1008
-#define IDC_HASH_KEYEDIT                1008
+#define IDC_HASH_PWEDIT                 1008
 #define IDC_CRYPT_CIPHER2               1008
 #define IDC_CRYPT_CIPHER_TYPE           1008
 #define IDC_CRYPT_SALT_BYTES            1009
@@ -126,7 +129,7 @@
 #define IDC_PREF_BASE32_LOWERCASE       1028
 #define IDC_CRYPT_AUTH_KEY_CUSTOM       1029
 #define IDC_PREF_BASE32_UPPERCASE       1029
-#define IDC_CRYPT_AUTH_KEY_VALUE        1030
+#define IDC_CRYPT_AUTH_PW_VALUE        1030
 #define IDC_RADIO10                     1030
 #define IDC_CONVERT_TO_BASE64           1030
 #define IDC_PREF_BASE32_LINELEN         1030
@@ -165,14 +168,14 @@
 #define IDC_CHECK2                      1047
 #define IDC_CRYPT_ADDHEADER             1047
 #define IDC_CRYPT_AUTH_KEY_SHOW         1051
-#define IDC_COPY						1052
+#define IDC_COPY                        1052
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        117
+#define _APS_NEXT_RESOURCE_VALUE        118
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1048
 #define _APS_NEXT_SYMED_VALUE           101

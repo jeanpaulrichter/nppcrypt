@@ -34,6 +34,7 @@ GNU General Public License for more details.
 #include <cryptopp/ripemd.h>
 #include <cryptopp/whrlpool.h>
 #include <cryptopp/tiger.h>
+#include <cryptopp/keccak.h>
 #include <cryptopp/blake2.h>
 #include <cryptopp/hmac.h>
 #include <cryptopp/aes.h>
@@ -78,7 +79,8 @@ T ipow(T base, T exp)
 	return result;
 }
 
-// ---------------------------- SUPPORTED CIPHER MODES -------------------------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/* C_xxx = gui category changed by combobox */
 enum { C_AES=1, C_OTHER=2, C_STREAM=4, C_WEAK=8, MODE_EAX=16, MODE_CCM=32, MODE_GCM=64, BLOCK=128, STREAM=256 };
 static const unsigned int cipher_flags[unsigned(crypt::Cipher::COUNT)] = 
 {	
@@ -113,6 +115,28 @@ static const unsigned int cipher_flags[unsigned(crypt::Cipher::COUNT)] =
 /* panama		*/	STREAM | C_STREAM,
 };
 
+static const unsigned int hash_flags[unsigned(crypt::Hash::COUNT)] =
+{
+/* md4			*/	crypt::HASH_WEAK | crypt::HASH_HMAC,
+/* md5			*/	crypt::HASH_WEAK | crypt::HASH_HMAC,
+/* sha1			*/	crypt::HASH_WEAK | crypt::HASH_HMAC,
+/* sha256		*/	crypt::HASH_HMAC,
+/* sha512		*/	crypt::HASH_HMAC,
+/* ripemd128	*/	crypt::HASH_HMAC,
+/* ripemd160	*/	crypt::HASH_HMAC,
+/* ripemd256	*/	crypt::HASH_HMAC,
+/* whirlpool	*/	crypt::HASH_HMAC,
+/* tiger		*/	crypt::HASH_HMAC,
+/* sha3_224		*/	crypt::HASH_HMAC,
+/* sha3_256		*/	crypt::HASH_HMAC,
+/* sha3_384		*/	crypt::HASH_HMAC,
+/* sha3_512		*/	crypt::HASH_HMAC,
+/* keccac256	*/  crypt::HASH_HMAC,
+/* keccac512	*/  crypt::HASH_HMAC,
+/* blake2s		*/	0,
+/* blake2b		*/	crypt::HASH_KEY
+};
+
 // ----------------------------- STRINGS ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 static const TCHAR* cipher_str[] = { TEXT("des"), TEXT("des_ede"), TEXT("des_ede3"), TEXT("desx"), TEXT("gost"), TEXT("cast-128"), TEXT("cast-256"), TEXT("RC2"), TEXT("RC4"), TEXT("RC5"), TEXT("RC6"), TEXT("IDEA"), TEXT("Blowfish"), TEXT("Camellia"), TEXT("SEED"), TEXT("TEA"), TEXT("XTEA"), TEXT("SHACAL-2"), TEXT("MARS"), TEXT("Twofish"), TEXT("Serpent"), TEXT("Rijndael-128"), TEXT("Rijndael-192"), TEXT("Rijndael-256"), TEXT("Sosemanuk"), TEXT("Salsa20"), TEXT("XSalsa20"), TEXT("ChaCha20"), TEXT("Panama") };
@@ -125,9 +149,9 @@ static const TCHAR* mode_help_url[] = { TEXT("Block_cipher_mode_of_operation"), 
 
 static const char*	iv_str_c[] = { "random", "keyderivation", "zero" };
 
-static const TCHAR* hash_str[] = { TEXT("md4"), TEXT("md5"), TEXT("sha1"), TEXT("sha256"), TEXT("sha512"), TEXT("ripemd128"), TEXT("ripemd160"), TEXT("ripemd256"), TEXT("whirlpool"), TEXT("tiger"), TEXT("sha3_224"), TEXT("sha3_256"), TEXT("sha3_384"), TEXT("sha3_512") };
-static const char*	hash_str_c[] = { "md4", "md5", "sha1", "sha256", "sha512", "ripemd128", "ripemd160", "ripemd256", "whirlpool", "tiger", "blake2b", "sha3_224", "sha3_256", "sha3_384", "sha3_512" };
-static const TCHAR* hash_help_url[] = { TEXT("MD4"),TEXT("MD5"), TEXT("SHA-1"), TEXT("SHA-2"), TEXT("SHA-2"), TEXT("RIPEMD"), TEXT("RIPEMD"), TEXT("RIPEMD"), TEXT("Whirlpool_(cryptography)"), TEXT("Tiger_(cryptography)"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3") };
+static const TCHAR* hash_str[] = { TEXT("md4"), TEXT("md5"), TEXT("sha1"), TEXT("sha256"), TEXT("sha512"), TEXT("ripemd128"), TEXT("ripemd160"), TEXT("ripemd256"), TEXT("whirlpool"), TEXT("tiger"), TEXT("sha3_224"), TEXT("sha3_256"), TEXT("sha3_384"), TEXT("sha3_512"), TEXT("keccac256"), TEXT("keccac512"), TEXT("blake2s"), TEXT("blake2b")};
+static const char*	hash_str_c[] = { "md4", "md5", "sha1", "sha256", "sha512", "ripemd128", "ripemd160", "ripemd256", "whirlpool", "tiger", "sha3_224", "sha3_256", "sha3_384", "sha3_512", "keccac256", "keccac512", "blake2s", "blake2b" };
+static const TCHAR* hash_help_url[] = { TEXT("MD4"),TEXT("MD5"), TEXT("SHA-1"), TEXT("SHA-2"), TEXT("SHA-2"), TEXT("RIPEMD"), TEXT("RIPEMD"), TEXT("RIPEMD"), TEXT("Whirlpool_(cryptography)"), TEXT("Tiger_(cryptography)"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3#Capacity_change_proposal"), TEXT("SHA-3#Capacity_change_proposal"), TEXT("BLAKE_(hash_function)#BLAKE2"), TEXT("BLAKE_(hash_function)#BLAKE2") };
 
 static const char*	encoding_str_c[] = { "ascii", "base16", "base32", "base64" };
 static const TCHAR* encoding_help_url[] = { TEXT("ASCII"), TEXT("Hexadecimal"), TEXT("Base32"), TEXT("Base64") };
@@ -313,6 +337,18 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Whirlpool >); break;
 		case crypt::Hash::tiger:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Tiger >); break;
+		case crypt::Hash::sha3_224:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_224 >); break;
+		case crypt::Hash::sha3_256:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_256 >); break;
+		case crypt::Hash::sha3_384:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_384 >); break;
+		case crypt::Hash::sha3_512:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_512 >); break;
+		case crypt::Hash::keccak256:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Keccak_256 >); break;
+		case crypt::Hash::keccak512:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Keccak_512 >); break;
 		default: throw CExc(CExc::File::crypt, __LINE__);
 		}
 		pbkdf2->DeriveKey(&tKey[0], tKey.size(), 0, (const byte*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, options.key.option2);
@@ -947,6 +983,18 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Whirlpool >); break;
 		case crypt::Hash::tiger:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Tiger >); break;
+		case crypt::Hash::sha3_224:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_224 >); break;
+		case crypt::Hash::sha3_256:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_256 >); break;
+		case crypt::Hash::sha3_384:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_384 >); break;
+		case crypt::Hash::sha3_512:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_512 >); break;
+		case crypt::Hash::keccak256:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Keccak_256 >); break;
+		case crypt::Hash::keccak512:
+			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Keccak_512 >); break;
 		default: throw CExc(CExc::File::crypt, __LINE__);
 		}
 		pbkdf2->DeriveKey(tKey.data(), tKey.size(), 0, (const byte*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, options.key.option2);
@@ -1486,34 +1534,62 @@ void crypt::hash(const unsigned char* in, size_t in_len, std::basic_string<byte>
 		SecByteBlock	digest;
 
 		if (options.use_key) {
-			std::unique_ptr<HMAC_Base> phmac;
-			switch (options.algorithm)
-			{
-			case crypt::Hash::md4:
-				phmac.reset(new HMAC< Weak::MD4 >); break;
-			case crypt::Hash::md5:
-				phmac.reset(new HMAC< Weak::MD5 >); break;
-			case crypt::Hash::sha1:
-				phmac.reset(new HMAC< SHA1 >); break;
-			case crypt::Hash::sha256:
-				phmac.reset(new HMAC< SHA256 >); break;
-			case crypt::Hash::sha512:
-				phmac.reset(new HMAC< SHA512 >); break;
-			case crypt::Hash::ripemd128:
-				phmac.reset(new HMAC< RIPEMD128 >); break;
-			case crypt::Hash::ripemd160:
-				phmac.reset(new HMAC< RIPEMD160 >); break;
-			case crypt::Hash::ripemd256:
-				phmac.reset(new HMAC< RIPEMD256 >); break;
-			case crypt::Hash::whirlpool:
-				phmac.reset(new HMAC< Whirlpool >); break;
-			case crypt::Hash::tiger:
-				phmac.reset(new HMAC< Tiger >); break;
-			default: throw CExc(CExc::File::crypt, __LINE__);
+			if ((hash_flags[(unsigned)options.algorithm] & HASH_HMAC) != HASH_HMAC && (hash_flags[(unsigned)options.algorithm] & HASH_KEY) != HASH_KEY) {
+				throw CExc(CExc::File::crypt, __LINE__);
 			}
-			digest.resize(phmac->DigestSize());
-			phmac->SetKey(options.key.data(), options.key.size());
-			StringSource ss2(in, in_len, true, new HashFilter(*phmac, new ArraySink(digest.BytePtr(), digest.size())));
+
+			if ((hash_flags[(unsigned)options.algorithm] & HASH_HMAC) == HASH_HMAC) {
+				std::unique_ptr<HMAC_Base> phmac;
+				switch (options.algorithm)
+				{
+				case crypt::Hash::md4:
+					phmac.reset(new HMAC< Weak::MD4 >); break;
+				case crypt::Hash::md5:
+					phmac.reset(new HMAC< Weak::MD5 >); break;
+				case crypt::Hash::sha1:
+					phmac.reset(new HMAC< SHA1 >); break;
+				case crypt::Hash::sha256:
+					phmac.reset(new HMAC< SHA256 >); break;
+				case crypt::Hash::sha512:
+					phmac.reset(new HMAC< SHA512 >); break;
+				case crypt::Hash::ripemd128:
+					phmac.reset(new HMAC< RIPEMD128 >); break;
+				case crypt::Hash::ripemd160:
+					phmac.reset(new HMAC< RIPEMD160 >); break;
+				case crypt::Hash::ripemd256:
+					phmac.reset(new HMAC< RIPEMD256 >); break;
+				case crypt::Hash::whirlpool:
+					phmac.reset(new HMAC< Whirlpool >); break;
+				case crypt::Hash::tiger:
+					phmac.reset(new HMAC< Tiger >); break;
+				case crypt::Hash::sha3_224:
+					phmac.reset(new HMAC< SHA3_224 >); break;
+				case crypt::Hash::sha3_256:
+					phmac.reset(new HMAC< SHA3_256 >); break;
+				case crypt::Hash::sha3_384:
+					phmac.reset(new HMAC< SHA3_384 >); break;
+				case crypt::Hash::sha3_512:
+					phmac.reset(new HMAC< SHA3_512 >); break;
+				case crypt::Hash::keccak256:
+					phmac.reset(new HMAC< Keccak_256 >); break;
+				case crypt::Hash::keccak512:
+					phmac.reset(new HMAC< Keccak_512 >); break;
+				default: throw CExc(CExc::File::crypt, __LINE__);
+				}
+				digest.resize(phmac->DigestSize());
+				phmac->SetKey(options.key.data(), options.key.size());
+				StringSource ss2(in, in_len, true, new HashFilter(*phmac, new ArraySink(digest.BytePtr(), digest.size())));
+			} else {
+				if (options.algorithm == crypt::Hash::blake2b) {
+					digest.resize(BLAKE2b::DIGESTSIZE);
+					BLAKE2b hash(options.key.data(), options.key.size());
+					hash.Update(in, in_len);
+					hash.Final(digest.BytePtr());
+				} else {
+					throw CExc(CExc::File::crypt, __LINE__);
+				}
+			}
+
 		} else {
 			switch (options.algorithm)
 			{
@@ -1531,6 +1607,11 @@ void crypt::hash(const unsigned char* in, size_t in_len, std::basic_string<byte>
 			case crypt::Hash::sha3_256: doHash(SHA3_256(), in, in_len, digest); break;
 			case crypt::Hash::sha3_384: doHash(SHA3_384(), in, in_len, digest); break;
 			case crypt::Hash::sha3_512: doHash(SHA3_512(), in, in_len, digest); break;
+			case crypt::Hash::keccak256: doHash(Keccak_256(), in, in_len, digest); break;
+			case crypt::Hash::keccak512: doHash(Keccak_512(), in, in_len, digest); break;
+			case crypt::Hash::blake2s: doHash(BLAKE2s(), in, in_len, digest); break;
+			case crypt::Hash::blake2b: doHash(BLAKE2b(), in, in_len, digest); break;
+			//case crypt::Hash::sha3_512: doHash(SHA3_512(), in, in_len, digest); break;
 			}
 		}
 		switch (options.encoding)
@@ -1597,6 +1678,14 @@ void crypt::hmac_header(const char* a, size_t a_len, const byte* b, size_t b_len
 			phmac.reset(new HMAC< Whirlpool >); break;
 		case crypt::Hash::tiger:
 			phmac.reset(new HMAC< Tiger >); break;
+		case crypt::Hash::sha3_224:
+			phmac.reset(new HMAC< SHA3_224 >); break;
+		case crypt::Hash::sha3_256:
+			phmac.reset(new HMAC< SHA3_256 >); break;
+		case crypt::Hash::sha3_384:
+			phmac.reset(new HMAC< SHA3_384 >); break;
+		case crypt::Hash::sha3_512:
+			phmac.reset(new HMAC< SHA3_512 >); break;
 		default: throw CExc(CExc::File::crypt, __LINE__);
 		}
 
@@ -1798,7 +1887,7 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			break;
 		}
 		}
-		break;
+break;
 	}
 	}
 }
@@ -1806,7 +1895,7 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 size_t crypt::getHashLength(Hash h)
 {
 	using namespace CryptoPP;
-	switch(h)
+	switch (h)
 	{
 	case crypt::Hash::md4: return Weak::MD4::DIGESTSIZE;
 	case crypt::Hash::md5: return Weak::MD5::DIGESTSIZE;
@@ -1832,6 +1921,7 @@ int crypt::help::Iter::_what = 0;
 int crypt::help::Iter::i = -1;
 int crypt::help::Iter::_cipher = -1;
 int crypt::help::Iter::_temp = 0;
+unsigned int crypt::help::Iter::_filter = 0;
 
 void crypt::help::Iter::setup_cipher(CipherCat category)
 {
@@ -1853,11 +1943,11 @@ void crypt::help::Iter::setup_mode(Cipher cipher)
 	i = -1;
 }
 
-void crypt::help::Iter::setup_hash(bool hmac)
+void crypt::help::Iter::setup_hash(unsigned int filter)
 {
 	_what = 2;
 	i = -1;
-	_temp = hmac ? 1 : 0;
+	_filter = filter;
 }
 
 bool crypt::help::Iter::next()
@@ -1867,7 +1957,7 @@ bool crypt::help::Iter::next()
 	{
 	case 0:
 	{
-		while (i < static_cast<int>(Cipher::COUNT))	{
+		while (i < static_cast<int>(Cipher::COUNT)) {
 			if (_temp == -1 || (cipher_flags[i] & _temp) == _temp) {
 				return true;
 			}
@@ -1895,12 +1985,13 @@ bool crypt::help::Iter::next()
 	}
 	case 2:
 	{
-		if (_temp == 1)	{
-			if (i < static_cast<int>(Hash::HMAC_COUNT)) {
-				return true;
-			}
-		} else {
-			if (i < static_cast<int>(Hash::COUNT)) {
+		while (i < static_cast<int>(Hash::COUNT)) {
+			if (((_filter & HASH_WEAK) == HASH_WEAK && (hash_flags[i] & HASH_WEAK) != HASH_WEAK) ||
+				((_filter & HASH_HMAC) == HASH_HMAC && (hash_flags[i] & HASH_HMAC) != HASH_HMAC) ||
+				((_filter & HASH_KEY) == HASH_KEY && (hash_flags[i] & HASH_KEY) != HASH_KEY)) {
+				i++;
+				continue;
+			} else {
 				return true;
 			}
 		}
@@ -2219,9 +2310,11 @@ int crypt::help::getCipherIndex(Cipher cipher)
 	return index;
 }
 
-bool crypt::help::canCalcHMAC(crypt::Hash h)
+bool crypt::help::checkFilter(crypt::Hash h, unsigned int filter)
 {
-	return (h < Hash::sha3_256);
+	if ((unsigned)h >= (unsigned)Hash::COUNT)
+		return false;
+	return ((hash_flags[(unsigned)h] & filter) == filter);
 }
 
 const TCHAR* crypt::help::getHelpURL(crypt::Encoding enc)
