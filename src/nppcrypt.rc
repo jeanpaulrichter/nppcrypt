@@ -9,8 +9,8 @@
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,1,3
- PRODUCTVERSION 1,0,1,3
+ FILEVERSION 1,0,1,4
+ PRODUCTVERSION 1,0,1,4
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -28,12 +28,12 @@ BEGIN
             VALUE "Comments", "Source code at http://www.cerberus-design.de/downloads.htm"
             VALUE "CompanyName", "Cerberus-Design.de"
             VALUE "FileDescription", "NppCrypt - Notepad++ Plugin"
-            VALUE "FileVersion", "1.0.1.3"
+            VALUE "FileVersion", "1.0.1.4"
             VALUE "InternalName", "NppCrypt"
             VALUE "LegalCopyright", "Copyright (C) 2017 cerberus-design"
             VALUE "OriginalFilename", "NppCrypt.dll"
             VALUE "ProductName", "NppCrypt"
-            VALUE "ProductVersion", "1.0.1.3"
+            VALUE "ProductVersion", "1.0.1.4"
         END
     END
 END
