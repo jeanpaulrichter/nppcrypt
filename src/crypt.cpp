@@ -549,11 +549,11 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					ef.Attach(new StringSinkTemplate<std::basic_string<byte>>(temp));
 				}
 
-				ef.ChannelPut(AAD_CHANNEL, (const byte*)init.salt.c_str(), init.salt.size());
-				ef.ChannelPut(AAD_CHANNEL, (const byte*)init.iv.c_str(), init.iv.size());
-				ef.ChannelMessageEnd(AAD_CHANNEL);
+				ef.ChannelPut( AAD_CHANNEL, (const byte*)init.salt.c_str(), init.salt.size());
+				ef.ChannelPut( AAD_CHANNEL, (const byte*)init.iv.c_str(), init.iv.size());
+				ef.ChannelMessageEnd( AAD_CHANNEL );
 				ef.ChannelPut(DEFAULT_CHANNEL, in, in_len);
-				ef.ChannelMessageEnd(DEFAULT_CHANNEL);
+				ef.ChannelMessageEnd( DEFAULT_CHANNEL );
 
 				switch (options.encoding.enc)
 				{
@@ -587,7 +587,7 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 							buffer.pop_back();
 						}
 					}
-					StringSource(temp.data() + temp.size() - tag_size, tag_size, true, new Base64Encoder(new StringSink(init.tag), false));
+					StringSource(temp.data() + (temp.size() - tag_size), tag_size, true, new Base64Encoder(new StringSink(init.tag), false));
 					break;
 				}
 				}
@@ -1190,11 +1190,12 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 
 				AuthenticatedDecryptionFilter df(*penc, NULL, AuthenticatedDecryptionFilter::MAC_AT_BEGIN | AuthenticatedDecryptionFilter::THROW_EXCEPTION, tag_size);
 
-				df.ChannelPut("", mac.c_str(), mac.size());
-				df.ChannelPut("AAD", (const byte*)init.salt.c_str(), init.salt.size());
-				df.ChannelPut("AAD", (const byte*)init.iv.c_str(), init.iv.size());
-				df.ChannelPut("", pEncrypted, Encrypted_size);
-				df.MessageEnd();
+				df.ChannelPut( DEFAULT_CHANNEL, mac.c_str(), mac.size());
+				df.ChannelPut( AAD_CHANNEL, (const byte*)init.salt.c_str(), init.salt.size());
+				df.ChannelPut( AAD_CHANNEL, (const byte*)init.iv.c_str(), init.iv.size());
+				df.ChannelPut( DEFAULT_CHANNEL, pEncrypted, Encrypted_size);
+				df.ChannelMessageEnd( AAD_CHANNEL );
+				df.ChannelMessageEnd( DEFAULT_CHANNEL );
 
 				if (!df.GetLastResult()) {
 					throw CExc(CExc::Code::authentication);
