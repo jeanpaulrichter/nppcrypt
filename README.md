@@ -7,8 +7,8 @@ features: encryption/decryption with symmetric ciphers like aes. hash-functions 
 
 ##### download:
 ###### test/alpha (1.0.1.4)
-* x86:: http://www.cerberus-design.de/nppcrypt/nppcryptv1014b.x86.zip (md5: 5bcbc154924be2b73f89bf072e2ada1e)
-* x64:: http://www.cerberus-design.de/nppcrypt/nppcryptv1014b.x64.zip (md5: 5440a447916621ea54bfee23f854d0f7)
+* x86:: http://www.cerberus-design.de/nppcrypt/nppcryptv1014c.x86.zip (md5: 1d8bed9be7ac3b962451b567d7dbfc61)
+* x64:: http://www.cerberus-design.de/nppcrypt/nppcryptv1014c.x64.zip (md5: 7a165330b2303635a4fdcf43a61f2c3a)
 ###### 1.0.1.3
 * x86:: http://www.cerberus-design.de/nppcrypt/nppcryptv1013.x86.zip (md5: 0191b7da5389ce95d637705f13154ed6)
 * x64:: http://www.cerberus-design.de/nppcrypt/nppcryptv1013.x64.zip (md5: b4f6c5bf060e9f5491ef5e7df37d8d55)
