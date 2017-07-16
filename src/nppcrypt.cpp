@@ -351,7 +351,7 @@ void EncryptDlg()
 			return;
 		}
 	
-		if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &current.crypt, helper::Buffer::isCurrent8Bit())) {
+		if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &current.crypt, !helper::Buffer::isCurrent8Bit())) {
 			CryptHeaderWriter			header(current.crypt);
 			std::basic_string<byte>		buffer;
 
@@ -417,7 +417,7 @@ void DecryptDlg()
 			}
 		}
 
-		if(dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &current.crypt, helper::Buffer::isCurrent8Bit()))	{
+		if(dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &current.crypt, !helper::Buffer::isCurrent8Bit())) {
 			crypt::InitStrings& s_init = header.init_strings();
 			bool need_salt = (current.crypt.key.salt_bytes > 0 && s_init.salt.size() == 0);
 			bool need_iv = (current.crypt.iv == crypt::IV::random && s_init.iv.size() == 0);
