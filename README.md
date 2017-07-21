@@ -7,8 +7,8 @@ features: encryption/decryption with symmetric ciphers like aes. hash-functions 
 
 ##### download:
 ###### test/alpha (1.0.1.4)
-* x86:: http://www.cerberus-design.de/nppcrypt/nppcryptv1014c.x86.zip (md5: 1d8bed9be7ac3b962451b567d7dbfc61)
-* x64:: http://www.cerberus-design.de/nppcrypt/nppcryptv1014c.x64.zip (md5: 7a165330b2303635a4fdcf43a61f2c3a)
+* x86:: http://www.cerberus-design.de/nppcrypt/nppcryptv1014c.x86.zip (md5: 105089f4e6073930303913bfd15b19d6)
+* x64:: http://www.cerberus-design.de/nppcrypt/nppcryptv1014c.x64.zip (md5: ccb87309bb3b092caa06c37fa9db87c1)
 ###### 1.0.1.3
 * x86:: http://www.cerberus-design.de/nppcrypt/nppcryptv1013.x86.zip (md5: 0191b7da5389ce95d637705f13154ed6)
 * x64:: http://www.cerberus-design.de/nppcrypt/nppcryptv1013.x64.zip (md5: b4f6c5bf060e9f5491ef5e7df37d8d55)
@@ -34,6 +34,11 @@ This program is free software; you can redistribute it and/or modify it under th
 ###### v1.0.1.3:
  - several dialogs (random/covert/hash) are now non-modal and dockable
  - added copy to clipboard buttons
+
+----------
+#### how to compile nppcrypt:
+In order to compile nppcrypt you first need to compile a custom version of cryptopp. Download the [crypto++](https://www.cryptopp.com) sourcecode and replace the files base64.h and base64.cpp with the custom versions you find under /doc/cryptopp-mod. Then use the Visual Studio Solution (.sln) included with cryptopp to compile cryptlib (static library, runtime-lib: /MT). Now you either have to edit the nppcrypt project-files to indicate where cryptopp can be found or use the existing folder structure: on the same level as nppcrypt: libs/cryptopp/lib with the following files for x86/x64-release/debug: cryptlib_x64_mt_s.lib, cryptlib_x64_mtd_s.lib, cryptlib_x86_mt_s.lib, cryptlib_x86_mtd_s.lib. /libs/cryptopp/include with all cryptopp header files. Now you should be able to compile all nppcrypt configurations.
+
 
 ----------
 ### FAQ

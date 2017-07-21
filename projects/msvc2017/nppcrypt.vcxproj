@@ -171,7 +171,7 @@
     <LibraryPath>..\..\..\libs\cryptopp\lib;$(LibraryPath)</LibraryPath>
     <TargetName>$(ProjectName)_debug</TargetName>
     <IntDir>$(SolutionDir)..\..\obj\$(PlatformShortName)\$(Configuration)\</IntDir>
-    <OutDir>..\..\..\..\..\..\..\..\Program Files\Notepad++\plugins\</OutDir>
+    <OutDir>$(SolutionDir)..\..\build\$(PlatformShortName)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -227,6 +227,7 @@
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <AdditionalDependencies>cryptlib_x86_mtd_s.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
