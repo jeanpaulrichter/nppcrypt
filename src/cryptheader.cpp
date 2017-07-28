@@ -367,11 +367,12 @@ void CryptHeaderWriter::create()
 	} else {
 		linebreak = &win[1];
 	}
-
+	out << std::fixed;
 	out << "<nppcrypt version=\"" << NPPC_VERSION << "\"";
 	if (options.hmac.enable) {
-		if (options.hmac.key_id >= 0)
+		if (options.hmac.key_id >= 0) {
 			out << " auth-key=\"" << options.hmac.key_id << "\"";
+		}
 		out << " hmac-hash=\"" << crypt::help::getString(options.hmac.hash) << "\" hmac=\"";
 		hmac_offset = static_cast<size_t>(out.tellp());
 		out << std::string(base64length(crypt::getHashLength(options.hmac.hash)), ' ') << "\"";
@@ -380,7 +381,9 @@ void CryptHeaderWriter::create()
 	body_start = static_cast<size_t>(out.tellp());
 	out << "<encryption cipher=\"" << crypt::help::getString(options.cipher) << "\" mode=\"" << crypt::help::getString(options.mode)
 		<< "\" encoding=\"" << crypt::help::getString(options.encoding.enc) << "\" ";
-	if (s_init.tag.size()) { out << "tag=\"" << s_init.tag << "\" "; }
+	if (s_init.tag.size()) { 
+		out << "tag=\"" << s_init.tag << "\" "; 
+	}
 	out << "/>" << linebreak;
 	if ((options.iv == crypt::IV::random && s_init.iv.size()>0) || options.key.salt_bytes > 0) {
 		out << "<random ";
@@ -402,11 +405,11 @@ void CryptHeaderWriter::create()
 	}
 	case crypt::KeyDerivation::bcrypt:
 	{
-		out << "\" iterations=\"" << std::pow(2, options.key.option1) << "\" "; break;
+		out << "\" iterations=\"" << static_cast<size_t>(std::pow(2, options.key.option1)) << "\" "; break;
 	}
 	case crypt::KeyDerivation::scrypt:
 	{
-		out << "\" N=\"" << std::pow(2, options.key.option1) << "\" r=\"" << options.key.option2 << "\" p=\"" << options.key.option3 << "\" ";
+		out << "\" N=\"" << static_cast<size_t>(std::pow(2, options.key.option1)) << "\" r=\"" << options.key.option2 << "\" p=\"" << options.key.option3 << "\" ";
 		break;
 	}
 	}
@@ -417,6 +420,7 @@ void CryptHeaderWriter::create()
 	}
 	body_end = static_cast<size_t>(out.tellp());
 	out << "</nppcrypt>" << linebreak;
+	out << std::scientific;
 
 	s_header.assign(out.str());
 	pContent = &s_header[body_start];
