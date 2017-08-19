@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -13,12 +16,11 @@ GNU General Public License for more details.
 */
 
 #include "dlg_preferences.h"
-#include "unicode.h"
 #include "preferences.h"
 #include "resource.h"
 #include "commctrl.h"
-#include <cryptopp/osrng.h>
-#include <cryptopp/base64.h>
+#include "cryptopp/osrng.h"
+#include "cryptopp/base64.h"
 
 INT_PTR CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -33,11 +35,15 @@ INT_PTR CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 
 		::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_VALUE, EM_LIMITTEXT, 24, 0);
 		::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LABEL, EM_LIMITTEXT, 30, 0);
-		for (size_t i = 0; i< preferences.getKeyNum(); i++)
+		for (size_t i = 0; i < preferences.getKeyNum(); i++) {
 			::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
+		}
 
-		url_help.init(_hInst, _hSelf);
-		url_help.create(::GetDlgItem(_hSelf, IDC_PREF_HELP), TEXT(NPPC_PREFERENCES_HELP_URL));
+		if (preferences.failed()) {
+			::SetDlgItemText(_hSelf, IDC_PREF_ERROR, TEXT("( failed to load configfile )"));
+			url_error.init(_hInst, _hSelf);
+			url_error.create(::GetDlgItem(_hSelf, IDC_PREF_ERROR), NPPC_ABOUT_GITHUB, RGB(255, 0, 0), false);
+		}
 
 		goToCenter();
 		return TRUE;
@@ -46,7 +52,7 @@ INT_PTR CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 	{
 		switch (LOWORD(wParam))
 		{
-		case IDC_PREF_OK: 
+		case IDC_OK: 
 		{
 			preferences.files.enable = !!::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ENABLE, BM_GETCHECK, 0, 0);
 			preferences.files.askonsave = !!::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ASK, BM_GETCHECK, 0, 0);
@@ -76,20 +82,26 @@ INT_PTR CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 					::MessageBox(_hSelf, TEXT("Please enter key-label."), TEXT("Error"), MB_OK);
 					return FALSE;
 				}
+				if (lstrcmp(temp.label, TEXT("nppcrypt default")) == 0) {
+					::MessageBox(_hSelf, TEXT("Please choose a different label."), TEXT("Error"), MB_OK);
+					return FALSE;
+				}
 				TCHAR	tvalue[25];
 				byte	tstr[24];
 				size_t	i;
 				memset(temp.data, 0, 16);
 				::GetDlgItemText(_hSelf, IDC_PREF_KEYS_VALUE, tvalue, 25);
-				for (i = 0; i < 24; i++)
+				for (i = 0; i < 24; i++) {
 					tstr[i] = static_cast<byte>(tvalue[i]);
+				}
 
 				using namespace CryptoPP;
 				StringSource((const byte*)tstr, 24, true, new Base64Decoder(new ArraySink(temp.data, 16)));
 
 				for (i = 0; i < 16; i++) {
-					if (temp.data[i] != 0)
+					if (temp.data[i] != 0) {
 						break;
+					}
 				}
 				if (i == 16) {
 					::MessageBox(_hSelf, TEXT("The key value must be 16 bytes encoded as base64."), TEXT("Error"), MB_OK); break;

@@ -1,5 +1,6 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -13,10 +14,13 @@ GNU General Public License for more details.
 */
 
 #include "crypt.h"
-#include "help.h"
+#include "exception.h"
+
 #include "bcrypt/crypt_blowfish.h"
 #include "keccak/KeccakHash.h"
+extern "C" {
 #include "scrypt/crypto_scrypt.h"
+}
 
 #ifdef max
 #undef max
@@ -24,46 +28,47 @@ GNU General Public License for more details.
 
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 
-#include <cryptopp/md5.h>
-#include <cryptopp/md4.h>
-#include <cryptopp/sha.h>
-#include <cryptopp/sha3.h>
-#include <cryptopp/hex.h>
-#include <cryptopp/base32.h>
-#include <cryptopp/base64.h>
-#include <cryptopp/ripemd.h>
-#include <cryptopp/whrlpool.h>
-#include <cryptopp/tiger.h>
-#include <cryptopp/keccak.h>
-#include <cryptopp/blake2.h>
-#include <cryptopp/hmac.h>
-#include <cryptopp/aes.h>
-#include <cryptopp/gcm.h>
-#include <cryptopp/ccm.h>
-#include <cryptopp/pwdbased.h>
-#include <cryptopp/osrng.h>
-#include <cryptopp/des.h>
-#include <cryptopp/gost.h>
-#include <cryptopp/blowfish.h>
-#include <cryptopp/rc2.h>
-#include <cryptopp/rc5.h>
-#include <cryptopp/rc6.h>
-#include <cryptopp/idea.h>
-#include <cryptopp/cast.h>
-#include <cryptopp/camellia.h>
-#include <cryptopp/seed.h>
-#include <cryptopp/tea.h>
-#include <cryptopp/skipjack.h>
-#include <cryptopp/shacal2.h>
-#include <cryptopp/mars.h>
-#include <cryptopp/twofish.h>
-#include <cryptopp/serpent.h>
-#include <cryptopp/sosemanuk.h>
-#include <cryptopp/arc4.h>
-#include <cryptopp/salsa.h>
-#include <cryptopp/chacha.h>
-#include <cryptopp/panama.h>
-#include <cryptopp/eax.h>
+#include "cryptopp/md5.h"
+#include "cryptopp/md4.h"
+#include "cryptopp/sha.h"
+#include "cryptopp/sha3.h"
+#include "cryptopp/hex.h"
+#include "cryptopp/base32.h"
+#include "cryptopp/base64.h"
+#include "cryptopp/ripemd.h"
+#include "cryptopp/whrlpool.h"
+#include "cryptopp/tiger.h"
+#include "cryptopp/keccak.h"
+#include "cryptopp/blake2.h"
+#include "cryptopp/hmac.h"
+#include "cryptopp/aes.h"
+#include "cryptopp/gcm.h"
+#include "cryptopp/ccm.h"
+#include "cryptopp/pwdbased.h"
+#include "cryptopp/osrng.h"
+#include "cryptopp/des.h"
+#include "cryptopp/gost.h"
+#include "cryptopp/blowfish.h"
+#include "cryptopp/rc2.h"
+#include "cryptopp/rc5.h"
+#include "cryptopp/rc6.h"
+#include "cryptopp/idea.h"
+#include "cryptopp/cast.h"
+#include "cryptopp/camellia.h"
+#include "cryptopp/seed.h"
+#include "cryptopp/tea.h"
+#include "cryptopp/skipjack.h"
+#include "cryptopp/shacal2.h"
+#include "cryptopp/mars.h"
+#include "cryptopp/twofish.h"
+#include "cryptopp/serpent.h"
+#include "cryptopp/sosemanuk.h"
+#include "cryptopp/arc4.h"
+#include "cryptopp/salsa.h"
+#include "cryptopp/chacha.h"
+#include "cryptopp/panama.h"
+#include "cryptopp/eax.h"
+#include "cryptopp/files.h"
 
 template<typename T>
 T ipow(T base, T exp)
@@ -79,94 +84,94 @@ T ipow(T base, T exp)
 	return result;
 }
 
-// -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-/* C_xxx = gui category changed by combobox */
-enum { C_AES=1, C_OTHER=2, C_STREAM=4, C_WEAK=8, MODE_EAX=16, MODE_CCM=32, MODE_GCM=64, BLOCK=128, STREAM=256 };
-static const unsigned int cipher_flags[unsigned(crypt::Cipher::COUNT)] = 
+using namespace crypt;
+
+// ----------------------------- PROPERTIES -------------------------------------------------------------------------------------------------------------------------------------------------------
+
+static const unsigned int cipher_properties[unsigned(Cipher::COUNT)] = 
 {	
-/* des			*/	BLOCK | C_WEAK,
-/* des_ede		*/	BLOCK | C_OTHER,
-/* des_ede3		*/	BLOCK | C_OTHER,
-/* desx			*/	BLOCK | C_WEAK,
-/* gost			*/	BLOCK | C_WEAK,
-/* cast128		*/	BLOCK | C_WEAK,
-/* cast256		*/	BLOCK | C_AES | MODE_EAX | MODE_CCM | MODE_GCM,
-/* rc2			*/	BLOCK | C_WEAK,
-/* rc4			*/	STREAM | C_WEAK | MODE_EAX | MODE_CCM | MODE_GCM,
-/* rc5			*/	BLOCK | C_OTHER,
-/* rc6			*/	BLOCK | C_AES | MODE_EAX | MODE_CCM | MODE_GCM,
-/* idea			*/	BLOCK | C_OTHER,
-/* blowfish		*/	BLOCK | C_OTHER,
-/* camellia		*/	BLOCK | C_OTHER | MODE_EAX | MODE_CCM | MODE_GCM,
-/* seed			*/	BLOCK | C_OTHER | MODE_EAX | MODE_CCM | MODE_GCM,
-/* tea			*/	BLOCK | C_OTHER,
-/* xtea			*/	BLOCK | C_OTHER,
-/* shacal2		*/	BLOCK | C_OTHER | MODE_EAX,
-/* mars			*/	BLOCK | C_AES | MODE_EAX | MODE_CCM | MODE_GCM,
-/* twofish		*/	BLOCK | C_AES | MODE_EAX | MODE_CCM | MODE_GCM,
-/* serpent		*/	BLOCK | C_AES | MODE_EAX | MODE_CCM | MODE_GCM,
-/* rijndael128	*/	BLOCK | C_AES | MODE_EAX | MODE_CCM | MODE_GCM,
-/* rijndael192	*/	BLOCK | C_AES | MODE_EAX | MODE_CCM | MODE_GCM,
-/* rijndael256	*/	BLOCK | C_AES | MODE_EAX | MODE_CCM | MODE_GCM,
-/* sosemanuk	*/	STREAM | C_STREAM,
-/* salsa20		*/	STREAM | C_STREAM,
-/* xsalsa20		*/	STREAM | C_STREAM,
-/* chacha20		*/	STREAM | C_STREAM,
-/* panama		*/	STREAM | C_STREAM,
+	/* des			*/	CipherProperties::block | CipherProperties::c_weak,
+	/* des_ede		*/	CipherProperties::block | CipherProperties::c_other,
+	/* des_ede3		*/	CipherProperties::block | CipherProperties::c_other,
+	/* desx			*/	CipherProperties::block | CipherProperties::c_weak,
+	/* gost			*/	CipherProperties::block | CipherProperties::c_weak,
+	/* cast128		*/	CipherProperties::block | CipherProperties::c_weak,
+	/* cast256		*/	CipherProperties::block | CipherProperties::c_aes | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* rc2			*/	CipherProperties::block | CipherProperties::c_weak,
+	/* rc4			*/	CipherProperties::stream | CipherProperties::c_weak | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* rc5			*/	CipherProperties::block | CipherProperties::c_other,
+	/* rc6			*/	CipherProperties::block | CipherProperties::c_aes | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* idea			*/	CipherProperties::block | CipherProperties::c_other,
+	/* blowfish		*/	CipherProperties::block | CipherProperties::c_other,
+	/* camellia		*/	CipherProperties::block | CipherProperties::c_other | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* seed			*/	CipherProperties::block | CipherProperties::c_other | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* tea			*/	CipherProperties::block | CipherProperties::c_other,
+	/* xtea			*/	CipherProperties::block | CipherProperties::c_other,
+	/* shacal2		*/	CipherProperties::block | CipherProperties::c_other | CipherProperties::eax,
+	/* mars			*/	CipherProperties::block | CipherProperties::c_aes | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* twofish		*/	CipherProperties::block | CipherProperties::c_aes | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* serpent		*/	CipherProperties::block | CipherProperties::c_aes | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* rijndael128	*/	CipherProperties::block | CipherProperties::c_aes | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* rijndael192	*/	CipherProperties::block | CipherProperties::c_aes | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* rijndael256	*/	CipherProperties::block | CipherProperties::c_aes | CipherProperties::eax | CipherProperties::ccm | CipherProperties::gcm,
+	/* sosemanuk	*/	CipherProperties::stream | CipherProperties::c_stream,
+	/* salsa20		*/	CipherProperties::stream | CipherProperties::c_stream,
+	/* xsalsa20		*/	CipherProperties::stream | CipherProperties::c_stream,
+	/* chacha20		*/	CipherProperties::stream | CipherProperties::c_stream,
+	/* panama		*/	CipherProperties::stream | CipherProperties::c_stream,
 };
 
-static const unsigned int hash_flags[unsigned(crypt::Hash::COUNT)] =
+static const unsigned int hash_properties[unsigned(crypt::Hash::COUNT)] =
 {
-/* md4			*/	crypt::HASH_WEAK | crypt::HASH_HMAC,
-/* md5			*/	crypt::HASH_WEAK | crypt::HASH_HMAC,
-/* sha1			*/	crypt::HASH_WEAK | crypt::HASH_HMAC,
-/* sha256		*/	crypt::HASH_HMAC,
-/* sha512		*/	crypt::HASH_HMAC,
-/* ripemd128	*/	crypt::HASH_HMAC,
-/* ripemd160	*/	crypt::HASH_HMAC,
-/* ripemd256	*/	crypt::HASH_HMAC,
-/* whirlpool	*/	crypt::HASH_HMAC,
-/* tiger		*/	crypt::HASH_HMAC,
-/* sha3_224		*/	crypt::HASH_HMAC,
-/* sha3_256		*/	crypt::HASH_HMAC,
-/* sha3_384		*/	crypt::HASH_HMAC,
-/* sha3_512		*/	crypt::HASH_HMAC,
-/* keccac256	*/  crypt::HASH_HMAC,
-/* keccac512	*/  crypt::HASH_HMAC,
-/* blake2s		*/	0,
-/* blake2b		*/	crypt::HASH_KEY
+	/* md4			*/	HashProperties::weak | HashProperties::hmac_possible,
+	/* md5			*/	HashProperties::weak | HashProperties::hmac_possible,
+	/* sha1			*/	HashProperties::weak | HashProperties::hmac_possible,
+	/* sha256		*/	HashProperties::hmac_possible,
+	/* sha512		*/	HashProperties::hmac_possible,
+	/* ripemd128	*/	HashProperties::hmac_possible,
+	/* ripemd160	*/	HashProperties::hmac_possible,
+	/* ripemd256	*/	HashProperties::hmac_possible,
+	/* whirlpool	*/	HashProperties::hmac_possible,
+	/* tiger		*/	HashProperties::hmac_possible,
+	/* sha3_224		*/	HashProperties::hmac_possible,
+	/* sha3_256		*/	HashProperties::hmac_possible,
+	/* sha3_384		*/	HashProperties::hmac_possible,
+	/* sha3_512		*/	HashProperties::hmac_possible,
+	/* keccac256	*/  HashProperties::hmac_possible,
+	/* keccac512	*/  HashProperties::hmac_possible,
+	/* blake2s		*/	0,
+	/* blake2b		*/	HashProperties::key
 };
 
 // ----------------------------- STRINGS ---------------------------------------------------------------------------------------------------------------------------------------------------------
+namespace Strings {
+	static const char*	cipher[] = { "des", "des_ede", "des_ede3", "desx", "gost", "cast128", "cast256", "rc2", "rc4", "rc5", "rc6", "idea", "blowfish", "camellia", "seed", "tea", "xtea", "shacal-2", "mars", "twofish", "serpent", "rijndael128", "rijndael192", "rijndael256", "sosemanuk", "salsa20", "xsalsa20", "chacha20", "panama" };
+	static const char*	cipher_help_url[] = { "Data_Encryption_Standard", "Data_Encryption_Standard", "Data_Encryption_Standard", "DES-X", "GOST_(block_cipher)", "CAST-128", "CAST-256", "RC2", "RC4", "RC5", "RC6", "International_Data_Encryption_Algorithm", "Blowfish_(cipher)", "Camellia_(cipher)", "SEED", "Tiny_Encryption_Algorithm", "XTEA", "SHACAL", "MARS_(cryptography)", "Twofish", "Serpent_(cipher)", "Advanced_Encryption_Standard", "Advanced_Encryption_Standard", "Advanced_Encryption_Standard", "SOSEMANUK", "Salsa20", "Salsa20", "Salsa20#ChaCha_variant", "Panama_(cryptography)" };
 
-static const TCHAR* cipher_str[] = { TEXT("des"), TEXT("des_ede"), TEXT("des_ede3"), TEXT("desx"), TEXT("gost"), TEXT("cast-128"), TEXT("cast-256"), TEXT("RC2"), TEXT("RC4"), TEXT("RC5"), TEXT("RC6"), TEXT("IDEA"), TEXT("Blowfish"), TEXT("Camellia"), TEXT("SEED"), TEXT("TEA"), TEXT("XTEA"), TEXT("SHACAL-2"), TEXT("MARS"), TEXT("Twofish"), TEXT("Serpent"), TEXT("Rijndael-128"), TEXT("Rijndael-192"), TEXT("Rijndael-256"), TEXT("Sosemanuk"), TEXT("Salsa20"), TEXT("XSalsa20"), TEXT("ChaCha20"), TEXT("Panama") };
-static const char*	cipher_str_c[] = { "des", "des_ede", "des_ede3", "desx", "gost", "cast128", "cast256", "rc2", "rc4", "rc5", "rc6", "idea", "blowfish", "camellia", "seed", "tea", "xtea", "shacal-2", "mars", "twofish", "serpent", "rijndael128", "rijndael192", "rijndael256", "sosemanuk", "salsa20", "xsalsa20", "chacha20", "panama" };
-static const TCHAR* cipher_help_url[] = { TEXT("Data_Encryption_Standard"), TEXT("Data_Encryption_Standard"), TEXT("Data_Encryption_Standard"), TEXT("DES-X"), TEXT("GOST_(block_cipher)"), TEXT("CAST-128"), TEXT("CAST-256"), TEXT("RC2"), TEXT("RC4"), TEXT("RC5"), TEXT("RC6"), TEXT("International_Data_Encryption_Algorithm"), TEXT("Blowfish_(cipher)"), TEXT("Camellia_(cipher)"), TEXT("SEED"), TEXT("Tiny_Encryption_Algorithm"), TEXT("XTEA"), TEXT("SHACAL"), TEXT("MARS_(cryptography)"), TEXT("Twofish"), TEXT("Serpent_(cipher)"), TEXT("Advanced_Encryption_Standard"), TEXT("Advanced_Encryption_Standard"), TEXT("Advanced_Encryption_Standard"), TEXT("SOSEMANUK"), TEXT("Salsa20"), TEXT("Salsa20"), TEXT("Salsa20#ChaCha_variant"), TEXT("Panama_(cryptography)") };
+	static const char*	mode[] = { "ecb", "cbc", "cfb", "ofb", "ctr", "eax", "ccm", "gcm" };
+	static const char*	mode_help_url[] = { "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "EAX_mode", "CCM_mode", "Galois/Counter_Mode" };
 
-static const TCHAR* mode_str[] = { TEXT("ecb"), TEXT("cbc"), TEXT("cbc_cts"), TEXT("cfb"), TEXT("ofb"), TEXT("ctr"), TEXT("eax"), TEXT("ccm"), TEXT("gcm") };
-static const char*	mode_str_c[] = { "ecb", "cbc", "cbc_cts", "cfb", "ofb", "ctr", "eax", "ccm", "gcm" };
-static const TCHAR* mode_help_url[] = { TEXT("Block_cipher_mode_of_operation"), TEXT("Block_cipher_mode_of_operation"), TEXT("Block_cipher_mode_of_operation"), TEXT("Block_cipher_mode_of_operation"), TEXT("Block_cipher_mode_of_operation"), TEXT("Block_cipher_mode_of_operation"), TEXT("EAX_mode"), TEXT("CCM_mode"), TEXT("Galois/Counter_Mode") };
+	static const char*	iv[] = { "random", "keyderivation", "zero" };
 
-static const char*	iv_str_c[] = { "random", "keyderivation", "zero" };
+	static const char*	hash[] = { "md4", "md5", "sha1", "sha256", "sha512", "ripemd128", "ripemd160", "ripemd256", "whirlpool", "tiger128", "sha3_224", "sha3_256", "sha3_384", "sha3_512", "keccac256", "keccac512", "blake2s", "blake2b" };
+	static const char*	hash_help_url[] = { "MD4","MD5", "SHA-1", "SHA-2", "SHA-2", "RIPEMD", "RIPEMD", "RIPEMD", "Whirlpool_(cryptography)", "Tiger_(cryptography)", "SHA-3", "SHA-3", "SHA-3", "SHA-3", "SHA-3#Capacity_change_proposal", "SHA-3#Capacity_change_proposal", "BLAKE_(hash_function)#BLAKE2", "BLAKE_(hash_function)#BLAKE2" };
 
-static const TCHAR* hash_str[] = { TEXT("md4"), TEXT("md5"), TEXT("sha1"), TEXT("sha256"), TEXT("sha512"), TEXT("ripemd128"), TEXT("ripemd160"), TEXT("ripemd256"), TEXT("whirlpool"), TEXT("tiger"), TEXT("sha3_224"), TEXT("sha3_256"), TEXT("sha3_384"), TEXT("sha3_512"), TEXT("keccac256"), TEXT("keccac512"), TEXT("blake2s"), TEXT("blake2b")};
-static const char*	hash_str_c[] = { "md4", "md5", "sha1", "sha256", "sha512", "ripemd128", "ripemd160", "ripemd256", "whirlpool", "tiger", "sha3_224", "sha3_256", "sha3_384", "sha3_512", "keccac256", "keccac512", "blake2s", "blake2b" };
-static const TCHAR* hash_help_url[] = { TEXT("MD4"),TEXT("MD5"), TEXT("SHA-1"), TEXT("SHA-2"), TEXT("SHA-2"), TEXT("RIPEMD"), TEXT("RIPEMD"), TEXT("RIPEMD"), TEXT("Whirlpool_(cryptography)"), TEXT("Tiger_(cryptography)"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3"), TEXT("SHA-3#Capacity_change_proposal"), TEXT("SHA-3#Capacity_change_proposal"), TEXT("BLAKE_(hash_function)#BLAKE2"), TEXT("BLAKE_(hash_function)#BLAKE2") };
+	static const char*	encoding[] = { "ascii", "base16", "base32", "base64" };
+	static const char*	encoding_help_url[] = { "ASCII", "Hexadecimal", "Base32", "Base64" };
 
-static const char*	encoding_str_c[] = { "ascii", "base16", "base32", "base64" };
-static const TCHAR* encoding_help_url[] = { TEXT("ASCII"), TEXT("Hexadecimal"), TEXT("Base32"), TEXT("Base64") };
+	static const char*	key_algo[] = { "pbkdf2", "bcrypt", "scrypt" };
+	static const char*	key_algo_help_url[] = { "PBKDF2", "Bcrypt", "Scrypt" };
 
-static const char*	key_algo_str_c[] = { "pbkdf2", "bcrypt", "scrypt" };
-static const TCHAR* key_algo_help_url[] = { TEXT("PBKDF2"), TEXT("Bcrypt"), TEXT("Scrypt") };
+	static const char*	random_mode[] = { "charnum", "specials", "ascii", "base16" , "base64" };
 
-static const char*	random_mode_str_c[] = { "charnum", "specials", "ascii", "base16" , "base64" };
+	static const char*	eol[] = { "windows", "unix" };
 
-static TCHAR		help_url_wikipedia[100] = TEXT("https://en.wikipedia.org/wiki/");
-static const int	help_url_wikipedia_len = 30;
+	static char			help_url_wikipedia[100] = "https://en.wikipedia.org/wiki/";
+	static const int	help_url_wikipedia_len = 30;
 
-static std::string	s_eol_windows = "\r\n";
-static std::string	s_eol_unix = "\n";
-
+	static const std::string	eol_windows = "\r\n";
+	static const std::string	eol_unix = "\n";
+};
 // ===========================================================================================================================================================================================
 
 bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, int& key_length, int& iv_length, int& block_size)
@@ -258,17 +263,42 @@ bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, int& key_lengt
 	return true;
 }
 
-void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitStrings& init)
+bool crypt::getHashInfo(Hash h, int& length)
 {
-	if (!in || !in_len) {
-		throw CExc(CExc::File::crypt, __LINE__);
+	using namespace CryptoPP;
+	switch (h)
+	{
+	case crypt::Hash::md4: length = Weak::MD4::DIGESTSIZE; break;
+	case crypt::Hash::md5: length = Weak::MD5::DIGESTSIZE; break;
+	case crypt::Hash::sha1: length = SHA1::DIGESTSIZE; break;
+	case crypt::Hash::sha256: length = SHA256::DIGESTSIZE; break;
+	case crypt::Hash::sha512: length = SHA512::DIGESTSIZE; break;
+	case crypt::Hash::ripemd128: length = RIPEMD128::DIGESTSIZE; break;
+	case crypt::Hash::ripemd160: length = RIPEMD160::DIGESTSIZE; break;
+	case crypt::Hash::ripemd256: length = RIPEMD256::DIGESTSIZE; break;
+	case crypt::Hash::whirlpool: length = Whirlpool::DIGESTSIZE; break;
+	case crypt::Hash::tiger128: length = Tiger::DIGESTSIZE; break;
+	case crypt::Hash::sha3_224: length = SHA3_224::DIGESTSIZE; break;
+	case crypt::Hash::sha3_256: length = SHA3_256::DIGESTSIZE; break;
+	case crypt::Hash::sha3_384: length = SHA3_384::DIGESTSIZE; break;
+	case crypt::Hash::sha3_512: length = SHA3_512::DIGESTSIZE; break;
+	case crypt::Hash::keccak256: length = Keccak_256::DIGESTSIZE; break;
+	case crypt::Hash::keccak512: length = Keccak_512::DIGESTSIZE; break;
+	case crypt::Hash::blake2s: length = BLAKE2s::DIGESTSIZE; break;
+	case crypt::Hash::blake2b: length = BLAKE2b::DIGESTSIZE; break;
+	default: return false;
 	}
-	if (!options.password.size()) {
-		throw CExc(CExc::File::crypt, __LINE__);
-	}
+	return true;
+}
 
+void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init)
+{
 	using namespace CryptoPP;
 
+	if (!in || !in_len) {
+		throw CExc(CExc::Code::input_null);
+	}
+	
 	std::vector<byte>	tKey;
 	std::vector<byte>	tVec;
 	std::vector<byte>	tSalt;
@@ -281,8 +311,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 
 	// --------------------------- prepare salt vector:
 	if (options.key.salt_bytes > 0)	{
-		if (options.key.algorithm == crypt::KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
-			throw CExc(CExc::Code::bcrypt_salt);
+		if (options.key.algorithm == KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
+			throw CExc(CExc::Code::invalid_bcrypt_saltlength);
 		}
 		tSalt.resize(options.key.salt_bytes);
 		OS_GenerateRandomBlock(true, &tSalt[0], options.key.salt_bytes);
@@ -312,84 +342,119 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 	// --------------------------- key derivation:
 	switch (options.key.algorithm)
 	{
-	case crypt::KeyDerivation::pbkdf2:
+	case KeyDerivation::pbkdf2:
 	{
 		std::unique_ptr<PasswordBasedKeyDerivationFunction> pbkdf2;
-		switch (crypt::Hash(options.key.option1))
+		switch (Hash(options.key.options[0]))
 		{
-		case crypt::Hash::md4:
+		case Hash::md4:
 			pbkdf2.reset( new PKCS5_PBKDF2_HMAC< Weak::MD4 > ); break;
-		case crypt::Hash::md5:
+		case Hash::md5:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Weak::MD5 >); break;
-		case crypt::Hash::sha1:
+		case Hash::sha1:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA1 >); break;
-		case crypt::Hash::sha256:
+		case Hash::sha256:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA256 >); break;
-		case crypt::Hash::sha512:
+		case Hash::sha512:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA512 >); break;
-		case crypt::Hash::ripemd128:
+		case Hash::ripemd128:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< RIPEMD128 >); break;
-		case crypt::Hash::ripemd160:
+		case Hash::ripemd160:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< RIPEMD160 >); break;
-		case crypt::Hash::ripemd256:
+		case Hash::ripemd256:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< RIPEMD256 >); break;
-		case crypt::Hash::whirlpool:
+		case Hash::whirlpool:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Whirlpool >); break;
-		case crypt::Hash::tiger:
+		case Hash::tiger128:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Tiger >); break;
-		case crypt::Hash::sha3_224:
+		case Hash::sha3_224:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_224 >); break;
-		case crypt::Hash::sha3_256:
+		case Hash::sha3_256:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_256 >); break;
-		case crypt::Hash::sha3_384:
+		case Hash::sha3_384:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_384 >); break;
-		case crypt::Hash::sha3_512:
+		case Hash::sha3_512:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_512 >); break;
-		case crypt::Hash::keccak256:
+		case Hash::keccak256:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Keccak_256 >); break;
-		case crypt::Hash::keccak512:
+		case Hash::keccak512:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Keccak_512 >); break;
-		default: throw CExc(CExc::File::crypt, __LINE__);
+		default: throw CExc(CExc::Code::invalid_pbkdf2_hash);
 		}
-		pbkdf2->DeriveKey(&tKey[0], tKey.size(), 0, (const byte*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, options.key.option2);
+		pbkdf2->DeriveKey(&tKey[0], tKey.size(), 0, (const byte*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, options.key.options[1]);
 		break;
 	}
-	case crypt::KeyDerivation::bcrypt:
+	case KeyDerivation::bcrypt:
 	{
 		char output[64];
 		char settings[32];
 
-		if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)options.key.option1, (const char*)ptSalt, 16, settings, 32) == NULL) {
-			throw CExc(CExc::File::crypt, __LINE__);
+		if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)options.key.options[0], (const char*)ptSalt, 16, settings, 32) == NULL) {
+			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		memset(output, 0, sizeof(output));
 		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL) {
-			throw CExc(CExc::File::crypt, __LINE__);
+			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		byte hashdata[23];
 		ArraySource ss((const byte*)output + 29, 31, true, new Base64Decoder(new ArraySink(hashdata, 23)));
 		shake128(hashdata, 23, &tKey[0], tKey.size());
 		break;
 	}
-	case crypt::KeyDerivation::scrypt:
+	case KeyDerivation::scrypt:
 	{
-		if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow(2, options.key.option1), options.key.option2, options.key.option3, &tKey[0], tKey.size()) != 0) {
-			throw CExc(CExc::File::crypt, __LINE__);
+		if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
+			throw CExc(CExc::Code::scrypt_failed);
 		}
 		break;
 	}
 	}
 	// --------------------------- return encoded IV and Salt
-	init.encoding = Encoding::base64;
-	if (options.iv == crypt::IV::random && tVec.size() > 0) {
-		StringSource ss(&tVec[0], tVec.size(), true, new Base64Encoder(new StringSink(init.iv), false));
+	switch (init.encoding) {
+	case Encoding::ascii:
+	{
+		if (options.iv == crypt::IV::random && tVec.size() > 0) {
+			init.iv.assign(tVec.begin(), tVec.end());
+		}
+		if (options.key.salt_bytes > 0) {
+			init.salt.assign(tSalt.begin(), tSalt.end());
+		}
+		break;
 	}
-	if (options.key.salt_bytes > 0)	{
-		StringSource ss(&tSalt[0], tSalt.size(), true, new Base64Encoder(new StringSink(init.salt), false));
+	case Encoding::base16:
+	{
+		if (options.iv == crypt::IV::random && tVec.size() > 0) {
+			StringSource ss(&tVec[0], tVec.size(), true, new HexEncoder(new StringSink(init.iv)));
+		}
+		if (options.key.salt_bytes > 0) {
+			StringSource ss(&tSalt[0], tSalt.size(), true, new HexEncoder(new StringSink(init.salt)));
+		}
+		break;
+	}
+	case Encoding::base32:
+	{
+		if (options.iv == crypt::IV::random && tVec.size() > 0) {
+			StringSource ss(&tVec[0], tVec.size(), true, new Base32Encoder(new StringSink(init.iv)));
+		}
+		if (options.key.salt_bytes > 0) {
+			StringSource ss(&tSalt[0], tSalt.size(), true, new Base32Encoder(new StringSink(init.salt)));
+		}
+		break;
+	}
+	case Encoding::base64:
+	{
+		if (options.iv == crypt::IV::random && tVec.size() > 0) {
+			StringSource ss(&tVec[0], tVec.size(), true, new Base64Encoder(new StringSink(init.iv), false));
+		}
+		if (options.key.salt_bytes > 0) {
+			StringSource ss(&tSalt[0], tSalt.size(), true, new Base64Encoder(new StringSink(init.salt), false));
+		}
+		break;
+	}
 	}
 
 	try	{
-		if ((cipher_flags[int(options.cipher)] & STREAM) == STREAM)	{
+		if ((cipher_properties[int(options.cipher)] & CipherProperties::stream) == CipherProperties::stream)	{
 			std::unique_ptr<SymmetricCipherDocumentation::Encryption> pEnc;
 			switch (options.cipher) {
 			case Cipher::sosemanuk: pEnc.reset(new Sosemanuk::Encryption(tKey.data(), key_len, ptVec)); break;
@@ -410,8 +475,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 			}
 			case Encoding::base16: case Encoding::base32:
 			{
-				int linelength = options.encoding.linebreaks ? options.encoding.linelength : 0;
-				std::string& seperator = options.encoding.windows ? s_eol_windows : s_eol_unix;
+				int linelength = options.encoding.linebreaks ? (int)options.encoding.linelength : 0;
+				const std::string& seperator = (options.encoding.eol == crypt::EOL::windows) ? Strings::eol_windows : Strings::eol_unix;
 				std::vector<byte> temp(in_len);
 				pEnc->ProcessData(temp.data(), in, in_len);
 				if (options.encoding.enc == Encoding::base16) {
@@ -429,12 +494,13 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 			{
 				std::vector<byte> temp(in_len);
 				pEnc->ProcessData(temp.data(), in, in_len);
+				CryptoPP::EOL eol = ((options.encoding.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
 				ArraySource(temp.data(), temp.size(), true,
-					new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, (options.encoding.windows ? EOL::Windows : EOL::Unix), options.encoding.linelength)
+					new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, eol, (int)options.encoding.linelength)
 				);
 				if (options.encoding.linebreaks) {
 					buffer.pop_back();
-					if (options.encoding.windows) {
+					if (options.encoding.eol == crypt::EOL::windows) {
 						buffer.pop_back();
 					}
 				}
@@ -492,7 +558,7 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode)
 					{
 					case Mode::eax: penc.reset(new EAX< SHACAL2 >::Encryption); tag_size = Constants::eax_tag_size;  break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					}
 					break;
 				}
@@ -566,8 +632,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				}
 				case Encoding::base16: case Encoding::base32:
 				{
-					int linelength = options.encoding.linebreaks ? options.encoding.linelength : 0;
-					std::string& seperator = options.encoding.windows ? s_eol_windows : s_eol_unix;
+					int linelength = options.encoding.linebreaks ? (int)options.encoding.linelength : 0;
+					const std::string& seperator = (options.encoding.eol == crypt::EOL::windows) ? Strings::eol_windows : Strings::eol_unix;
 					if (options.encoding.enc == Encoding::base16) {
 						StringSource(temp.data(), temp.size() - tag_size, true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
 							options.encoding.uppercase, linelength, seperator));
@@ -580,11 +646,12 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				}
 				case Encoding::base64:
 				{
+					CryptoPP::EOL eol = ((options.encoding.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
 					StringSource(temp.data(), temp.size() - tag_size, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
-						options.encoding.linebreaks, (options.encoding.windows ? EOL::Windows : EOL::Unix), options.encoding.linelength));
+						options.encoding.linebreaks, eol, (int)options.encoding.linelength));
 					if (options.encoding.linebreaks) {
 						buffer.pop_back();
-						if (options.encoding.windows) {
+						if (options.encoding.eol == crypt::EOL::windows) {
 							buffer.pop_back();
 						}
 					}
@@ -601,11 +668,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<DES>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<DES>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<DES>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<DES>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<DES>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<DES>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::des_ede:
@@ -613,11 +679,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<DES_EDE2>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<DES_EDE2>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<DES_EDE2>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<DES_EDE2>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<DES_EDE2>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<DES_EDE2>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::des_ede3:
@@ -625,11 +690,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<DES_EDE3>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<DES_EDE3>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<DES_EDE3>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<DES_EDE3>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<DES_EDE3>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<DES_EDE3>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::desx:
@@ -637,11 +701,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<DES_XEX3>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<DES_XEX3>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<DES_XEX3>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<DES_XEX3>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<DES_XEX3>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<DES_XEX3>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::gost:
@@ -649,11 +712,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<GOST>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<GOST>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<GOST>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<GOST>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<GOST>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<GOST>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::cast128:
@@ -661,11 +723,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<CAST128>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<CAST128>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<CAST128>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<CAST128>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<CAST128>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<CAST128>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::cast256:
@@ -673,11 +734,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<CAST256>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<CAST256>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<CAST256>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<CAST256>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<CAST256>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<CAST256>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::rc2:
@@ -685,11 +745,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<RC2>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<RC2>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<RC2>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<RC2>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<RC2>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<RC2>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::rc5:
@@ -697,11 +756,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<RC5>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<RC5>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<RC5>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<RC5>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<RC5>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<RC5>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::rc6:
@@ -709,11 +767,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<RC6>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<RC6>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<RC6>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<RC6>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<RC6>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<RC6>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::idea:
@@ -721,11 +778,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<IDEA>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<IDEA>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<IDEA>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<IDEA>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<IDEA>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<IDEA>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::blowfish:
@@ -733,11 +789,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<Blowfish>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<Blowfish>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<Blowfish>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<Blowfish>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<Blowfish>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<Blowfish>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::camellia:
@@ -745,11 +800,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<Camellia>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<Camellia>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<Camellia>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<Camellia>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<Camellia>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<Camellia>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::seed:
@@ -757,11 +811,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<SEED>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<SEED>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<SEED>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<SEED>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<SEED>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<SEED>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::tea:
@@ -769,11 +822,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<TEA>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<TEA>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<TEA>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<TEA>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<TEA>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<TEA>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::xtea:
@@ -781,11 +833,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<XTEA>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<XTEA>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<XTEA>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<XTEA>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<XTEA>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<XTEA>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::shacal2:
@@ -793,11 +844,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<SHACAL2>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<SHACAL2>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<SHACAL2>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<SHACAL2>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<SHACAL2>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<SHACAL2>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::mars:
@@ -805,11 +855,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<MARS>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<MARS>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<MARS>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<MARS>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<MARS>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<MARS>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::twofish:
@@ -817,11 +866,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<Twofish>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<Twofish>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<Twofish>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<Twofish>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<Twofish>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<Twofish>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::serpent:
@@ -829,11 +877,10 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<Serpent>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<Serpent>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<Serpent>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<Serpent>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<Serpent>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<Serpent>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::rijndael128: case Cipher::rijndael256: case Cipher::rijndael192:
@@ -841,14 +888,13 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<AES>::Encryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<AES>::Encryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<AES>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<AES>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<AES>::Encryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<AES>::Encryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
-				default: throw CExc(CExc::File::crypt, __LINE__);
+				default: throw CExc(CExc::Code::invalid_cipher);
 				}
 				switch (options.encoding.enc)
 				{
@@ -859,8 +905,8 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				}
 				case Encoding::base16: case Encoding::base32:
 				{
-					int linelength = options.encoding.linebreaks ? options.encoding.linelength : 0;
-					std::string& seperator = options.encoding.windows ? s_eol_windows : s_eol_unix;
+					int linelength = options.encoding.linebreaks ? (int)options.encoding.linelength : 0;
+					const std::string& seperator = (options.encoding.eol == crypt::EOL::windows) ? Strings::eol_windows : Strings::eol_unix;
 					if (options.encoding.enc == Encoding::base16) {
 						StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
 							new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, seperator)));
@@ -872,12 +918,13 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				}
 				case crypt::Encoding::base64:
 				{
+					CryptoPP::EOL eol = ((options.encoding.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
 					StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
-							new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, (options.encoding.windows ? EOL::Windows : EOL::Unix), options.encoding.linelength)
+							new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, eol, (int)options.encoding.linelength)
 							));
 					if (options.encoding.linebreaks) {
 						buffer.pop_back();
-						if (options.encoding.windows) {
+						if (options.encoding.eol == crypt::EOL::windows) {
 							buffer.pop_back();
 						}
 					}
@@ -886,23 +933,34 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				}
 			}
 		}
-	} catch (Exception& ) {
-		throw CExc(CExc::File::crypt, __LINE__);
+	} catch (CryptoPP::Exception& exc) {
+		switch (exc.GetErrorType()) {
+		case CryptoPP::Exception::NOT_IMPLEMENTED: throw CExc(CExc::Code::cryptopp_not_implemented); break;
+		case CryptoPP::Exception::INVALID_ARGUMENT: throw CExc(CExc::Code::cryptopp_invalid_argument); break;
+		case CryptoPP::Exception::CANNOT_FLUSH: throw CExc(CExc::Code::cryptopp_cannot_flush); break;
+		case CryptoPP::Exception::DATA_INTEGRITY_CHECK_FAILED: throw CExc(CExc::Code::cryptopp_bad_integrity); break;
+		case CryptoPP::Exception::INVALID_DATA_FORMAT: throw CExc(CExc::Code::cryptopp_invalid_data); break;
+		case CryptoPP::Exception::IO_ERROR: throw CExc(CExc::Code::cryptopp_io_error); break;
+		default: throw CExc(CExc::Code::cryptopp_other); break;
+		}
+	} catch(CExc& exc) {
+		throw exc;
 	} catch (...) {
-		throw CExc(CExc::File::crypt, __LINE__);
+		throw CExc(CExc::Code::unexpected);
 	}
 }
 
-void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const InitStrings& init)
+void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const InitData& init)
 {
 	if (!in || !in_len) {
-		throw CExc(CExc::File::crypt, __LINE__);
+		throw CExc(CExc::Code::input_null);
 	}
-	if (!options.password.size()) {
-		throw CExc(CExc::File::crypt, __LINE__);
-	}
+	//if (!options.password.size()) {
+	//	throw CExc(CExc::File::crypt, __LINE__);
+	//}
 
-	using namespace		CryptoPP;
+	using namespace crypt;
+	using namespace	CryptoPP;
 
 	std::vector<byte>	tKey;
 	std::vector<byte>	tVec;
@@ -917,15 +975,36 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 	// --------------------------- prepare salt vector:
 	if (options.key.salt_bytes > 0)	{
 		if (options.key.algorithm == crypt::KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
-			throw CExc(CExc::Code::bcrypt_salt);
+			throw CExc(CExc::Code::invalid_bcrypt_saltlength);
 		}
 		if (!init.salt.size()) {
-			throw CExc(CExc::Code::decrypt_nosalt);
+			throw CExc(CExc::Code::salt_missing);
 		}
 		tSalt.resize(options.key.salt_bytes);
-		StringSource ss(init.salt, true, new Base64Decoder(new ArraySink(&tSalt[0], tSalt.size())));
+		switch (init.encoding) {
+		case Encoding::ascii:
+		{
+			tSalt.assign(init.salt.begin(), init.salt.end());
+			break;
+		}
+		case Encoding::base16:
+		{
+			StringSource ss(init.salt, true, new HexDecoder(new ArraySink(&tSalt[0], tSalt.size())));
+			break;
+		}
+		case Encoding::base32:
+		{
+			StringSource ss(init.salt, true, new Base32Decoder(new ArraySink(&tSalt[0], tSalt.size())));
+			break;
+		}
+		case Encoding::base64:
+		{
+			StringSource ss(init.salt, true, new Base64Decoder(new ArraySink(&tSalt[0], tSalt.size())));
+			break;
+		}
+		}		
 		if (tSalt.size() != (size_t)options.key.salt_bytes) {
-			throw CExc(CExc::Code::decrypt_badsalt);
+			throw CExc(CExc::Code::invalid_salt);
 		}
 		ptSalt = &tSalt[0];
 	}
@@ -939,12 +1018,33 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 		tKey.resize(key_len);
 		if (iv_len > 0)	{
 			if (!init.iv.size()) {
-				throw CExc(CExc::Code::decrypt_noiv);
+				throw CExc(CExc::Code::iv_missing);
 			}			
 			tVec.resize(iv_len);
-			StringSource ss(init.iv, true, new Base64Decoder(new ArraySink(&tVec[0], tVec.size())));
+			switch (init.encoding) {
+			case Encoding::ascii:
+			{
+				tVec.assign(init.iv.begin(), init.iv.end());
+				break;
+			}
+			case Encoding::base16:
+			{
+				StringSource ss(init.iv, true, new HexDecoder(new ArraySink(&tVec[0], tVec.size())));
+				break;
+			}
+			case Encoding::base32:
+			{
+				StringSource ss(init.iv, true, new Base32Decoder(new ArraySink(&tVec[0], tVec.size())));
+				break;
+			}
+			case Encoding::base64:
+			{
+				StringSource ss(init.iv, true, new Base64Decoder(new ArraySink(&tVec[0], tVec.size())));
+				break;
+			}
+			}
 			if (tVec.size() != iv_len) {
-				throw CExc(CExc::Code::decrypt_badiv);
+				throw CExc(CExc::Code::invalid_iv);
 			}
 			ptVec = &tVec[0];
 		}
@@ -959,46 +1059,46 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 	// --------------------------- key derivation:
 	switch (options.key.algorithm)
 	{
-	case crypt::KeyDerivation::pbkdf2:
+	case KeyDerivation::pbkdf2:
 	{
 		std::unique_ptr<PasswordBasedKeyDerivationFunction> pbkdf2;
-		switch (crypt::Hash(options.key.option1))
+		switch (crypt::Hash(options.key.options[0]))
 		{
-		case crypt::Hash::md4:
+		case Hash::md4:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Weak::MD4 >); break;
-		case crypt::Hash::md5:
+		case Hash::md5:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Weak::MD5 >); break;
-		case crypt::Hash::sha1:
+		case Hash::sha1:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA1 >); break;
-		case crypt::Hash::sha256:
+		case Hash::sha256:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA256 >); break;
-		case crypt::Hash::sha512:
+		case Hash::sha512:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA512 >); break;
-		case crypt::Hash::ripemd128:
+		case Hash::ripemd128:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< RIPEMD128 >); break;
-		case crypt::Hash::ripemd160:
+		case Hash::ripemd160:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< RIPEMD160 >); break;
-		case crypt::Hash::ripemd256:
+		case Hash::ripemd256:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< RIPEMD256 >); break;
-		case crypt::Hash::whirlpool:
+		case Hash::whirlpool:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Whirlpool >); break;
-		case crypt::Hash::tiger:
+		case Hash::tiger128:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Tiger >); break;
-		case crypt::Hash::sha3_224:
+		case Hash::sha3_224:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_224 >); break;
-		case crypt::Hash::sha3_256:
+		case Hash::sha3_256:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_256 >); break;
-		case crypt::Hash::sha3_384:
+		case Hash::sha3_384:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_384 >); break;
-		case crypt::Hash::sha3_512:
+		case Hash::sha3_512:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< SHA3_512 >); break;
-		case crypt::Hash::keccak256:
+		case Hash::keccak256:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Keccak_256 >); break;
-		case crypt::Hash::keccak512:
+		case Hash::keccak512:
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Keccak_512 >); break;
-		default: throw CExc(CExc::File::crypt, __LINE__);
+		default: throw CExc(CExc::Code::invalid_pbkdf2_hash);
 		}
-		pbkdf2->DeriveKey(tKey.data(), tKey.size(), 0, (const byte*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, options.key.option2);
+		pbkdf2->DeriveKey(tKey.data(), tKey.size(), 0, (const byte*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, options.key.options[1]);
 		break;
 	}
 	case crypt::KeyDerivation::bcrypt:
@@ -1006,12 +1106,12 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 		char output[64];
 		char settings[32];
 
-		if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)options.key.option1, (const char*)ptSalt, 16, settings, 32) == NULL) {
-			throw CExc(CExc::File::crypt, __LINE__);
+		if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)options.key.options[0], (const char*)ptSalt, 16, settings, 32) == NULL) {
+			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		memset(output, 0, sizeof(output));
 		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL) {
-			throw CExc(CExc::File::crypt, __LINE__);
+			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		byte hashdata[23];
 		ArraySource ss((const byte*)output + 29, 31, true, new Base64Decoder(new ArraySink(hashdata, 23)));
@@ -1020,14 +1120,14 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 	}
 	case crypt::KeyDerivation::scrypt:
 	{
-		if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.option1), options.key.option2, options.key.option3, &tKey[0], tKey.size()) != 0) {
-			throw CExc(CExc::File::crypt, __LINE__);
+		if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
+			throw CExc(CExc::Code::scrypt_failed);
 		}
 		break;
 	}
 	}
 	try	{
-		if ((cipher_flags[int(options.cipher)] & STREAM) == STREAM)	{
+		if ((cipher_properties[int(options.cipher)] & CipherProperties::stream) == CipherProperties::stream)	{
 			std::unique_ptr<SymmetricCipherDocumentation::Decryption> pEnc;
 			switch (options.cipher) {
 			case Cipher::sosemanuk: pEnc.reset(new Sosemanuk::Decryption(tKey.data(), key_len, ptVec)); break;
@@ -1036,6 +1136,7 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 			case Cipher::xsalsa20: pEnc.reset(new XSalsa20::Encryption(tKey.data(), key_len, ptVec)); break;
 			case Cipher::chacha20: pEnc.reset(new ChaCha20::Encryption(tKey.data(), key_len, ptVec)); break;
 			case Cipher::panama: pEnc.reset(new PanamaCipher<LittleEndian>::Encryption(tKey.data(), key_len, ptVec)); break;
+			default: throw CExc(CExc::Code::invalid_cipher);
 			}
 			switch (options.encoding.enc)
 			{
@@ -1111,7 +1212,7 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode)
 					{
 					case Mode::eax: penc.reset(new EAX< SHACAL2 >::Decryption); tag_size = Constants::eax_tag_size; break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					}
 					break;
 				}
@@ -1201,7 +1302,7 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				df.ChannelMessageEnd( DEFAULT_CHANNEL );
 
 				if (!df.GetLastResult()) {
-					throw CExc(CExc::Code::authentication);
+					throw CExc(CExc::Code::authentication_failed);
 				}
 
 				df.SetRetrievalChannel("");
@@ -1220,11 +1321,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<DES>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<DES>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<DES>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<DES>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<DES>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<DES>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::des_ede:
@@ -1232,11 +1332,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<DES_EDE2>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<DES_EDE2>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<DES_EDE2>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<DES_EDE2>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<DES_EDE2>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<DES_EDE2>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::des_ede3:
@@ -1244,11 +1343,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<DES_EDE3>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<DES_EDE3>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<DES_EDE3>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<DES_EDE3>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<DES_EDE3>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<DES_EDE3>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::desx:
@@ -1256,11 +1354,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<DES_XEX3>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<DES_XEX3>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<DES_XEX3>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<DES_XEX3>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<DES_XEX3>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<DES_XEX3>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::gost:
@@ -1268,11 +1365,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<GOST>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<GOST>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<GOST>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<GOST>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<GOST>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<GOST>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::cast128:
@@ -1280,11 +1376,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<CAST128>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<CAST128>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<CAST128>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<CAST128>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<CAST128>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<CAST128>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::cast256:
@@ -1292,11 +1387,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<CAST256>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<CAST256>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<CAST256>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<CAST256>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<CAST256>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<CAST256>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::rc2:
@@ -1304,11 +1398,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<RC2>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<RC2>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<RC2>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<RC2>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<RC2>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<RC2>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::rc5:
@@ -1316,11 +1409,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<RC5>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<RC5>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<RC5>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<RC5>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<RC5>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<RC5>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::rc6:
@@ -1328,11 +1420,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<RC6>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<RC6>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<RC6>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<RC6>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<RC6>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<RC6>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::idea:
@@ -1340,11 +1431,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<IDEA>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<IDEA>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<IDEA>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<IDEA>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<IDEA>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<IDEA>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::blowfish:
@@ -1352,11 +1442,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<Blowfish>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<Blowfish>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<Blowfish>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<Blowfish>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<Blowfish>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<Blowfish>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::camellia:
@@ -1364,11 +1453,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<Camellia>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<Camellia>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<Camellia>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<Camellia>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<Camellia>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<Camellia>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::seed:
@@ -1376,11 +1464,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<SEED>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<SEED>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<SEED>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<SEED>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<SEED>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<SEED>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::tea:
@@ -1388,11 +1475,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<TEA>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<TEA>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<TEA>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<TEA>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<TEA>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<TEA>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::xtea:
@@ -1400,11 +1486,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<XTEA>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<XTEA>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<XTEA>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<XTEA>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<XTEA>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<XTEA>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::shacal2:
@@ -1412,11 +1497,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<SHACAL2>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<SHACAL2>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<SHACAL2>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<SHACAL2>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<SHACAL2>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<SHACAL2>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::mars:
@@ -1424,11 +1508,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<MARS>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<MARS>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<MARS>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<MARS>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<MARS>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<MARS>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::twofish:
@@ -1436,11 +1519,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<Twofish>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<Twofish>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<Twofish>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<Twofish>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<Twofish>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<Twofish>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::serpent:
@@ -1448,11 +1530,10 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<Serpent>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<Serpent>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<Serpent>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<Serpent>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<Serpent>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<Serpent>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
 				case Cipher::rijndael128: case Cipher::rijndael192: case Cipher::rijndael256:
@@ -1460,14 +1541,13 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 					switch (options.mode) {
 					case Mode::ecb: pEnc.reset(new ECB_Mode<AES>::Decryption(tKey.data(), key_len)); break;
 					case Mode::cbc: pEnc.reset(new CBC_Mode<AES>::Decryption(tKey.data(), key_len, ptVec)); break;
-					case Mode::cbc_cts: pEnc.reset(new CBC_CTS_Mode<AES>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::cfb: pEnc.reset(new CFB_Mode<AES>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ofb: pEnc.reset(new OFB_Mode<AES>::Decryption(tKey.data(), key_len, ptVec)); break;
 					case Mode::ctr: pEnc.reset(new CTR_Mode<AES>::Decryption(tKey.data(), key_len, ptVec)); break;
-					default: throw CExc(CExc::File::crypt, __LINE__);
+					default: throw CExc(CExc::Code::invalid_mode);
 					} break;
 				}
-				default: throw CExc(CExc::File::crypt, __LINE__);
+				default: throw CExc(CExc::Code::invalid_cipher);
 				}
 				switch (options.encoding.enc)
 				{
@@ -1506,228 +1586,284 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 				}
 			}
 		}
-	} catch (Exception& e) {
-		if (e.GetErrorType() == Exception::DATA_INTEGRITY_CHECK_FAILED) {
-			throw CExc(CExc::Code::authentication);
+	} catch (CryptoPP::Exception& exc) {
+		switch (exc.GetErrorType()) {
+		case CryptoPP::Exception::NOT_IMPLEMENTED: throw CExc(CExc::Code::cryptopp_not_implemented); break;
+		case CryptoPP::Exception::INVALID_ARGUMENT: throw CExc(CExc::Code::cryptopp_invalid_argument); break;
+		case CryptoPP::Exception::CANNOT_FLUSH: throw CExc(CExc::Code::cryptopp_cannot_flush); break;
+		case CryptoPP::Exception::DATA_INTEGRITY_CHECK_FAILED: throw CExc(CExc::Code::cryptopp_bad_integrity); break;
+		case CryptoPP::Exception::INVALID_DATA_FORMAT: throw CExc(CExc::Code::cryptopp_invalid_data); break;
+		case CryptoPP::Exception::IO_ERROR: throw CExc(CExc::Code::cryptopp_io_error); break;
+		default: throw CExc(CExc::Code::cryptopp_other); break;
 		}
-		throw CExc(CExc::Code::decrypt);
+	} catch (CExc& exc) {
+		throw exc;
 	} catch (...) {
-		throw CExc(CExc::File::crypt, __LINE__);
+		throw CExc(CExc::Code::unexpected);
 	}
 }
 
-void doHash(CryptoPP::HashTransformation& hash, const unsigned char* in, size_t in_len, CryptoPP::SecByteBlock& sbbDigest)
+void crypt::hash(const Options::Hash& options, std::basic_string<byte>& buffer, std::initializer_list<std::pair<const byte*, size_t>> in)
 {
-	using namespace std;
-	using namespace CryptoPP;
-	
-	sbbDigest.resize(hash.DigestSize());
-	hash.CalculateDigest(sbbDigest.begin(), in, in_len);
-}
-
-void crypt::hash(const unsigned char* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Hash& options)
-{
-	if (!in && in_len > 0) {
-		throw CExc(CExc::File::crypt, __LINE__);
-	}
-	
 	try	{
 		using namespace CryptoPP;
 		using namespace std;
 
-		SecByteBlock	digest;
+		SecByteBlock digest;
+		std::unique_ptr<HashTransformation> hash;
+		std::unique_ptr<MessageAuthenticationCode> hmac;
+		HashTransformation* phash;
 
 		if (options.use_key) {
-			if ((hash_flags[(unsigned)options.algorithm] & HASH_HMAC) != HASH_HMAC && (hash_flags[(unsigned)options.algorithm] & HASH_KEY) != HASH_KEY) {
-				throw CExc(CExc::File::crypt, __LINE__);
+			if ((hash_properties[(unsigned)options.algorithm] & HashProperties::hmac_possible) != HashProperties::hmac_possible && 
+				(hash_properties[(unsigned)options.algorithm] & HashProperties::key) != HashProperties::key) {
+				throw CExc(CExc::Code::invalid_hash);
 			}
-
-			if ((hash_flags[(unsigned)options.algorithm] & HASH_HMAC) == HASH_HMAC) {
-				std::unique_ptr<HMAC_Base> phmac;
-				switch (options.algorithm)
-				{
-				case crypt::Hash::md4:
-					phmac.reset(new HMAC< Weak::MD4 >); break;
-				case crypt::Hash::md5:
-					phmac.reset(new HMAC< Weak::MD5 >); break;
-				case crypt::Hash::sha1:
-					phmac.reset(new HMAC< SHA1 >); break;
-				case crypt::Hash::sha256:
-					phmac.reset(new HMAC< SHA256 >); break;
-				case crypt::Hash::sha512:
-					phmac.reset(new HMAC< SHA512 >); break;
-				case crypt::Hash::ripemd128:
-					phmac.reset(new HMAC< RIPEMD128 >); break;
-				case crypt::Hash::ripemd160:
-					phmac.reset(new HMAC< RIPEMD160 >); break;
-				case crypt::Hash::ripemd256:
-					phmac.reset(new HMAC< RIPEMD256 >); break;
-				case crypt::Hash::whirlpool:
-					phmac.reset(new HMAC< Whirlpool >); break;
-				case crypt::Hash::tiger:
-					phmac.reset(new HMAC< Tiger >); break;
-				case crypt::Hash::sha3_224:
-					phmac.reset(new HMAC< SHA3_224 >); break;
-				case crypt::Hash::sha3_256:
-					phmac.reset(new HMAC< SHA3_256 >); break;
-				case crypt::Hash::sha3_384:
-					phmac.reset(new HMAC< SHA3_384 >); break;
-				case crypt::Hash::sha3_512:
-					phmac.reset(new HMAC< SHA3_512 >); break;
-				case crypt::Hash::keccak256:
-					phmac.reset(new HMAC< Keccak_256 >); break;
-				case crypt::Hash::keccak512:
-					phmac.reset(new HMAC< Keccak_512 >); break;
-				default: throw CExc(CExc::File::crypt, __LINE__);
-				}
-				digest.resize(phmac->DigestSize());
-				phmac->SetKey(options.key.data(), options.key.size());
-				StringSource ss2(in, in_len, true, new HashFilter(*phmac, new ArraySink(digest.BytePtr(), digest.size())));
-			} else {
-				if (options.algorithm == crypt::Hash::blake2b) {
-					digest.resize(BLAKE2b::DIGESTSIZE);
-					BLAKE2b hash(options.key.data(), options.key.size());
-					hash.Update(in, in_len);
-					hash.Final(digest.BytePtr());
-				} else {
-					throw CExc(CExc::File::crypt, __LINE__);
-				}
+			switch (options.algorithm)
+			{
+			case crypt::Hash::md4:
+				hmac.reset(new HMAC< Weak::MD4 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::md5:
+				hmac.reset(new HMAC< Weak::MD5 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha1:
+				hmac.reset(new HMAC< SHA1 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha256:
+				hmac.reset(new HMAC< SHA256 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha512:
+				hmac.reset(new HMAC< SHA512 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::ripemd128:
+				hmac.reset(new HMAC< RIPEMD128 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::ripemd160:
+				hmac.reset(new HMAC< RIPEMD160 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::ripemd256:
+				hmac.reset(new HMAC< RIPEMD256 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::whirlpool:
+				hmac.reset(new HMAC< Whirlpool >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::tiger128:
+				hmac.reset(new HMAC< Tiger >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha3_224:
+				hmac.reset(new HMAC< SHA3_224 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha3_256:
+				hmac.reset(new HMAC< SHA3_256 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha3_384:
+				hmac.reset(new HMAC< SHA3_384 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha3_512:
+				hmac.reset(new HMAC< SHA3_512 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::keccak256:
+				hmac.reset(new HMAC< Keccak_256 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::keccak512:
+				hmac.reset(new HMAC< Keccak_512 >(options.key.data(), options.key.size())); break;
+			case Hash::blake2b:
+				hmac.reset(new BLAKE2b(options.key.data(), options.key.size())); break;
+			default: throw CExc(CExc::Code::invalid_hash);
 			}
-
+			phash = hmac.get();
 		} else {
 			switch (options.algorithm)
 			{
-			case crypt::Hash::md4: doHash(Weak::MD4(), in, in_len, digest); break;
-			case crypt::Hash::md5: doHash(Weak::MD5(), in, in_len, digest); break;
-			case crypt::Hash::sha1: doHash(SHA1(), in, in_len, digest); break;
-			case crypt::Hash::sha256: doHash(SHA256(), in, in_len, digest); break;
-			case crypt::Hash::sha512: doHash(SHA512(), in, in_len, digest); break;
-			case crypt::Hash::ripemd128: doHash(RIPEMD128(), in, in_len, digest); break;
-			case crypt::Hash::ripemd160: doHash(RIPEMD160(), in, in_len, digest); break;
-			case crypt::Hash::ripemd256: doHash(RIPEMD256(), in, in_len, digest); break;
-			case crypt::Hash::whirlpool: doHash(Whirlpool(), in, in_len, digest); break;
-			case crypt::Hash::tiger: doHash(Tiger(), in, in_len, digest); break;
-			case crypt::Hash::sha3_224: doHash(SHA3_224(), in, in_len, digest); break;
-			case crypt::Hash::sha3_256: doHash(SHA3_256(), in, in_len, digest); break;
-			case crypt::Hash::sha3_384: doHash(SHA3_384(), in, in_len, digest); break;
-			case crypt::Hash::sha3_512: doHash(SHA3_512(), in, in_len, digest); break;
-			case crypt::Hash::keccak256: doHash(Keccak_256(), in, in_len, digest); break;
-			case crypt::Hash::keccak512: doHash(Keccak_512(), in, in_len, digest); break;
-			case crypt::Hash::blake2s: doHash(BLAKE2s(), in, in_len, digest); break;
-			case crypt::Hash::blake2b: doHash(BLAKE2b(), in, in_len, digest); break;
-			//case crypt::Hash::sha3_512: doHash(SHA3_512(), in, in_len, digest); break;
+			case crypt::Hash::md4: hash.reset(new Weak::MD4()); break;
+			case crypt::Hash::md5: hash.reset(new Weak::MD5()); break;
+			case crypt::Hash::sha1: hash.reset(new SHA1()); break;
+			case crypt::Hash::sha256: hash.reset(new SHA256()); break;
+			case crypt::Hash::sha512: hash.reset(new SHA512()); break;
+			case crypt::Hash::ripemd128: hash.reset(new RIPEMD128()); break;
+			case crypt::Hash::ripemd160: hash.reset(new RIPEMD160()); break;
+			case crypt::Hash::ripemd256: hash.reset(new RIPEMD256()); break;
+			case crypt::Hash::whirlpool: hash.reset(new Whirlpool()); break;
+			case crypt::Hash::tiger128: hash.reset(new Tiger()); break;
+			case crypt::Hash::sha3_224: hash.reset(new SHA3_224()); break;
+			case crypt::Hash::sha3_256: hash.reset(new SHA3_256()); break;
+			case crypt::Hash::sha3_384: hash.reset(new SHA3_384()); break;
+			case crypt::Hash::sha3_512: hash.reset(new SHA3_512()); break;
+			case crypt::Hash::keccak256: hash.reset(new Keccak_256()); break;
+			case crypt::Hash::keccak512: hash.reset(new Keccak_512()); break;
+			case crypt::Hash::blake2s: hash.reset(new BLAKE2s()); break;
+			case crypt::Hash::blake2b: hash.reset(new BLAKE2b()); break;
+			default: throw CExc(CExc::Code::invalid_hash);
 			}
+			
+			phash = hash.get();
 		}
+		digest.resize(phash->DigestSize());
+		for (const std::pair<const byte*, size_t>& i : in) {
+			phash->Update(i.first, i.second);
+		}
+		phash->Final(digest);
+
 		switch (options.encoding)
 		{
 		case crypt::Encoding::ascii:
 		{
-			buffer.resize(digest.size());
-			for (size_t i = 0; i < digest.size(); i++) {
-				buffer[i] = digest[i];
-			}
+			buffer.assign(digest.begin(), digest.end());
 			break;
 		}
 		case crypt::Encoding::base16:
 		{
-			HexEncoder(new StringSinkTemplate<basic_string<byte>>(buffer), true).Put(digest.begin(), digest.size());
+			StringSource(&digest[0], digest.size(), true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), true, 0));
 			break;
 		}
 		case crypt::Encoding::base32:
 		{
-			Base32Encoder(new StringSinkTemplate<basic_string<byte>>(buffer), true).Put(digest.begin(), digest.size());
+			StringSource(&digest[0], digest.size(), true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), true, 0));
 			break;
 		}
 		case crypt::Encoding::base64:
 		{
-			StringSource ss(digest, digest.size(), true,
-				new Base64Encoder( new StringSinkTemplate<basic_string<byte>>(buffer), false )
-				);
+			StringSource(&digest[0], digest.size(), true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), false));
 			break;
 		}
 		}
-	} catch (std::exception& ) {
-		throw CExc(CExc::File::crypt, __LINE__);
+	} catch (CExc& exc) {
+		throw exc;
+	} catch (...) {
+		throw CExc(CExc::Code::unexpected);
 	}
 }
 
-void crypt::hmac_header(const char* a, size_t a_len, const byte* b, size_t b_len, const Options::Crypt::HMAC& options, std::string& out)
+void crypt::hash(const Options::Hash& options, std::basic_string<byte>& buffer, const std::string& path)
 {
-	try	{
+	try {
 		using namespace CryptoPP;
 		using namespace std;
 
-		SecByteBlock	digest;
+		SecByteBlock digest;
+		std::unique_ptr<HashTransformation> hash;
+		std::unique_ptr<MessageAuthenticationCode> hmac;
+		HashTransformation* phash;
 
-		std::unique_ptr<HMAC_Base> phmac;
-		switch (options.hash)
-		{
-		case crypt::Hash::md4:
-			phmac.reset(new HMAC< Weak::MD4 >); break;
-		case crypt::Hash::md5:
-			phmac.reset(new HMAC< Weak::MD5 >); break;
-		case crypt::Hash::sha1:
-			phmac.reset(new HMAC< SHA1 >); break;
-		case crypt::Hash::sha256:
-			phmac.reset(new HMAC< SHA256 >); break;
-		case crypt::Hash::sha512:
-			phmac.reset(new HMAC< SHA512 >); break;
-		case crypt::Hash::ripemd128:
-			phmac.reset(new HMAC< RIPEMD128 >); break;
-		case crypt::Hash::ripemd160:
-			phmac.reset(new HMAC< RIPEMD160 >); break;
-		case crypt::Hash::ripemd256:
-			phmac.reset(new HMAC< RIPEMD256 >); break;
-		case crypt::Hash::whirlpool:
-			phmac.reset(new HMAC< Whirlpool >); break;
-		case crypt::Hash::tiger:
-			phmac.reset(new HMAC< Tiger >); break;
-		case crypt::Hash::sha3_224:
-			phmac.reset(new HMAC< SHA3_224 >); break;
-		case crypt::Hash::sha3_256:
-			phmac.reset(new HMAC< SHA3_256 >); break;
-		case crypt::Hash::sha3_384:
-			phmac.reset(new HMAC< SHA3_384 >); break;
-		case crypt::Hash::sha3_512:
-			phmac.reset(new HMAC< SHA3_512 >); break;
-		default: throw CExc(CExc::File::crypt, __LINE__);
+		if (options.use_key) {
+			if ((hash_properties[(unsigned)options.algorithm] & HashProperties::hmac_possible) != HashProperties::hmac_possible &&
+				(hash_properties[(unsigned)options.algorithm] & HashProperties::key) != HashProperties::key) {
+				throw CExc(CExc::Code::invalid_hash);
+			}
+			switch (options.algorithm)
+			{
+			case crypt::Hash::md4:
+				hmac.reset(new HMAC< Weak::MD4 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::md5:
+				hmac.reset(new HMAC< Weak::MD5 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha1:
+				hmac.reset(new HMAC< SHA1 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha256:
+				hmac.reset(new HMAC< SHA256 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha512:
+				hmac.reset(new HMAC< SHA512 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::ripemd128:
+				hmac.reset(new HMAC< RIPEMD128 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::ripemd160:
+				hmac.reset(new HMAC< RIPEMD160 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::ripemd256:
+				hmac.reset(new HMAC< RIPEMD256 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::whirlpool:
+				hmac.reset(new HMAC< Whirlpool >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::tiger128:
+				hmac.reset(new HMAC< Tiger >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha3_224:
+				hmac.reset(new HMAC< SHA3_224 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha3_256:
+				hmac.reset(new HMAC< SHA3_256 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha3_384:
+				hmac.reset(new HMAC< SHA3_384 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::sha3_512:
+				hmac.reset(new HMAC< SHA3_512 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::keccak256:
+				hmac.reset(new HMAC< Keccak_256 >(options.key.data(), options.key.size())); break;
+			case crypt::Hash::keccak512:
+				hmac.reset(new HMAC< Keccak_512 >(options.key.data(), options.key.size())); break;
+			case Hash::blake2b:
+				hmac.reset(new BLAKE2b(options.key.data(), options.key.size())); break;
+			default: throw CExc(CExc::Code::invalid_hash);
+			}
+			phash = hmac.get();
 		}
+		else {
+			switch (options.algorithm)
+			{
+			case crypt::Hash::md4: hash.reset(new Weak::MD4()); break;
+			case crypt::Hash::md5: hash.reset(new Weak::MD5()); break;
+			case crypt::Hash::sha1: hash.reset(new SHA1()); break;
+			case crypt::Hash::sha256: hash.reset(new SHA256()); break;
+			case crypt::Hash::sha512: hash.reset(new SHA512()); break;
+			case crypt::Hash::ripemd128: hash.reset(new RIPEMD128()); break;
+			case crypt::Hash::ripemd160: hash.reset(new RIPEMD160()); break;
+			case crypt::Hash::ripemd256: hash.reset(new RIPEMD256()); break;
+			case crypt::Hash::whirlpool: hash.reset(new Whirlpool()); break;
+			case crypt::Hash::tiger128: hash.reset(new Tiger()); break;
+			case crypt::Hash::sha3_224: hash.reset(new SHA3_224()); break;
+			case crypt::Hash::sha3_256: hash.reset(new SHA3_256()); break;
+			case crypt::Hash::sha3_384: hash.reset(new SHA3_384()); break;
+			case crypt::Hash::sha3_512: hash.reset(new SHA3_512()); break;
+			case crypt::Hash::keccak256: hash.reset(new Keccak_256()); break;
+			case crypt::Hash::keccak512: hash.reset(new Keccak_512()); break;
+			case crypt::Hash::blake2s: hash.reset(new BLAKE2s()); break;
+			case crypt::Hash::blake2b: hash.reset(new BLAKE2b()); break;
+			default: throw CExc(CExc::Code::invalid_hash);
+			}
 
-		digest.resize(phmac->DigestSize());
-		phmac->SetKey(options.key.data(), options.key.size());
-		HashFilter f(*phmac, new Base64Encoder(new StringSink(out), false));
-		f.Put((const byte*)a, a_len);
-		f.Put(b, b_len);
-		f.MessageEnd();
-	} catch (std::exception& ) {
-		throw CExc(CExc::File::crypt, __LINE__);
+			phash = hash.get();
+		}
+		digest.resize(phash->DigestSize());
+
+		FileSource f(path.c_str(), true, new HashFilter(*phash, new ArraySink(digest, digest.size())));
+
+		switch (options.encoding)
+		{
+		case crypt::Encoding::ascii:
+		{
+			buffer.assign(digest.begin(), digest.end());
+			break;
+		}
+		case crypt::Encoding::base16:
+		{
+			StringSource(&digest[0], digest.size(), true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), true, 0));
+			break;
+		}
+		case crypt::Encoding::base32:
+		{
+			StringSource(&digest[0], digest.size(), true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), true, 0));
+			break;
+		}
+		case crypt::Encoding::base64:
+		{
+			StringSource(&digest[0], digest.size(), true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), false));
+			break;
+		}
+		}
+	}
+	catch (CExc& exc) {
+		throw exc;
+	}
+	catch (...) {
+		throw CExc(CExc::Code::unexpected);
 	}
 }
 
-void crypt::shake128(const unsigned char* in, size_t in_len, unsigned char* out, size_t out_len)
+void crypt::shake128(const byte* in, size_t in_len, byte* out, size_t out_len)
 {
 	Keccak_HashInstance keccak_inst;
 	if (Keccak_HashInitialize_SHAKE128(&keccak_inst) != 0) {
-		throw CExc(CExc::File::crypt, __LINE__);
+		throw CExc(CExc::Code::keccak_shake_failed);
 	}
 	if (Keccak_HashUpdate(&keccak_inst, in, in_len * 8) != 0) {
-		throw CExc(CExc::File::crypt, __LINE__);
+		throw CExc(CExc::Code::keccak_shake_failed);
 	}
 	if (Keccak_HashFinal(&keccak_inst, out) != 0) {
-		throw CExc(CExc::File::crypt, __LINE__);
+		throw CExc(CExc::Code::keccak_shake_failed);
 	}
 	if (Keccak_HashSqueeze(&keccak_inst, out, out_len * 8) != 0) {
-		throw CExc(CExc::File::crypt, __LINE__);
+		throw CExc(CExc::Code::keccak_shake_failed);
 	}
 }
 
 void crypt::random(const Options::Random& options, std::basic_string<byte>& buffer)
 {
 	if (options.length == 0) {
-		throw CExc(CExc::File::crypt, __LINE__);
+		buffer.clear();
+		return;
 	}
 
 	using namespace CryptoPP;
+	using namespace crypt;
 
 	buffer.clear();
 
@@ -1799,8 +1935,9 @@ void crypt::random(const Options::Random& options, std::basic_string<byte>& buff
 void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options)
 {
 	using namespace CryptoPP;
+	using namespace crypt;
 
-	std::string s_seperator = options.windows ? "\r\n" : "\n";
+	std::string s_seperator = (options.eol == crypt::EOL::windows) ? "\r\n" : "\n";
 	int groupsize = options.linebreaks ? options.linelength : 0;
 
 	switch (options.from)
@@ -1821,7 +1958,8 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (options.windows ? EOL::Windows : EOL::Unix), options.linelength));
+			CryptoPP::EOL eol = ((options.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
+			StringSource(in, in_len, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, eol, options.linelength));
 			break;
 		}
 		}
@@ -1843,7 +1981,8 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new HexDecoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (options.windows ? EOL::Windows : EOL::Unix), options.linelength)));
+			CryptoPP::EOL eol = ((options.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
+			StringSource(in, in_len, true, new HexDecoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, eol, options.linelength)));
 			break;
 		}
 		}
@@ -1865,7 +2004,8 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new Base32Decoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (options.windows ? EOL::Windows : EOL::Unix), options.linelength)));
+			CryptoPP::EOL eol = ((options.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
+			StringSource(in, in_len, true, new Base32Decoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, eol, options.linelength)));
 			break;
 		}
 		}
@@ -1891,32 +2031,9 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			break;
 		}
 		}
-break;
+		break;
 	}
 	}
-}
-
-size_t crypt::getHashLength(Hash h)
-{
-	using namespace CryptoPP;
-	switch (h)
-	{
-	case crypt::Hash::md4: return Weak::MD4::DIGESTSIZE;
-	case crypt::Hash::md5: return Weak::MD5::DIGESTSIZE;
-	case crypt::Hash::sha1: return SHA1::DIGESTSIZE;
-	case crypt::Hash::sha256: return SHA256::DIGESTSIZE;
-	case crypt::Hash::sha512: return SHA512::DIGESTSIZE;
-	case crypt::Hash::ripemd128: return RIPEMD128::DIGESTSIZE;
-	case crypt::Hash::ripemd160: return RIPEMD160::DIGESTSIZE;
-	case crypt::Hash::ripemd256: return RIPEMD256::DIGESTSIZE;
-	case crypt::Hash::whirlpool: return Whirlpool::DIGESTSIZE;
-	case crypt::Hash::tiger: return Tiger::DIGESTSIZE;
-	case crypt::Hash::sha3_224: return SHA3_224::DIGESTSIZE;
-	case crypt::Hash::sha3_256: return SHA3_256::DIGESTSIZE;
-	case crypt::Hash::sha3_384: return SHA3_384::DIGESTSIZE;
-	case crypt::Hash::sha3_512: return SHA3_512::DIGESTSIZE;
-	}
-	return 0;
 }
 
 // ===========================================================================================================================================================================
@@ -1932,10 +2049,10 @@ void crypt::help::Iter::setup_cipher(CipherCat category)
 	_what = 0;
 	i = -1;
 	switch (category) {
-	case CipherCat::aes: _temp = C_AES; break;
-	case CipherCat::other: _temp = C_OTHER; break;
-	case CipherCat::stream: _temp = C_STREAM; break;
-	case CipherCat::weak: _temp = C_WEAK; break;
+	case CipherCat::aes: _temp = CipherProperties::c_aes; break;
+	case CipherCat::other: _temp = CipherProperties::c_other; break;
+	case CipherCat::stream: _temp = CipherProperties::c_stream; break;
+	case CipherCat::weak: _temp = CipherProperties::c_weak; break;
 	default: _temp = -1;
 	}
 }
@@ -1962,7 +2079,7 @@ bool crypt::help::Iter::next()
 	case 0:
 	{
 		while (i < static_cast<int>(Cipher::COUNT)) {
-			if (_temp == -1 || (cipher_flags[i] & _temp) == _temp) {
+			if (_temp == -1 || (cipher_properties[i] & _temp) == _temp) {
 				return true;
 			}
 			i++;
@@ -1971,13 +2088,13 @@ bool crypt::help::Iter::next()
 	}
 	case 1:
 	{
-		if ((cipher_flags[_cipher] & STREAM) == STREAM) {
+		if ((cipher_properties[_cipher] & CipherProperties::stream) == CipherProperties::stream) {
 			return false;
 		}
 		while (i < static_cast<int>(Mode::COUNT)) {
-			if (((int(Mode::eax) == i && (cipher_flags[_cipher] & MODE_EAX) != MODE_EAX))
-				|| ((int(Mode::ccm) == i && (cipher_flags[_cipher] & MODE_CCM) != MODE_CCM))
-				|| ((int(Mode::gcm) == i && (cipher_flags[_cipher] & MODE_GCM) != MODE_GCM)))
+			if (((int(Mode::eax) == i && (cipher_properties[_cipher] & CipherProperties::eax) != CipherProperties::eax))
+				|| ((int(Mode::ccm) == i && (cipher_properties[_cipher] & CipherProperties::ccm) != CipherProperties::ccm))
+				|| ((int(Mode::gcm) == i && (cipher_properties[_cipher] & CipherProperties::gcm) != CipherProperties::gcm)))
 			{
 				i++;
 				continue;
@@ -1990,9 +2107,9 @@ bool crypt::help::Iter::next()
 	case 2:
 	{
 		while (i < static_cast<int>(Hash::COUNT)) {
-			if (((_filter & HASH_WEAK) == HASH_WEAK && (hash_flags[i] & HASH_WEAK) != HASH_WEAK) ||
-				((_filter & HASH_HMAC) == HASH_HMAC && (hash_flags[i] & HASH_HMAC) != HASH_HMAC) ||
-				((_filter & HASH_KEY) == HASH_KEY && (hash_flags[i] & HASH_KEY) != HASH_KEY)) {
+			if (((_filter & HashProperties::weak) == HashProperties::weak && (hash_properties[i] & HashProperties::weak) != HashProperties::weak) ||
+				((_filter & HashProperties::hmac_possible) == HashProperties::hmac_possible && (hash_properties[i] & HashProperties::hmac_possible) != HashProperties::hmac_possible) ||
+				((_filter & HashProperties::key) == HashProperties::key && (hash_properties[i] & HashProperties::key) != HashProperties::key)) {
 				i++;
 				continue;
 			} else {
@@ -2006,16 +2123,16 @@ bool crypt::help::Iter::next()
 	return false;
 }
 
-const TCHAR* crypt::help::Iter::getString()
+const char* crypt::help::Iter::getString()
 {
 	if (i < 0) {
 		return NULL;
 	}
 	switch (_what)
 	{
-	case 0:	return cipher_str[i];
-	case 1:	return mode_str[i];
-	case 2:	return hash_str[i];
+	case 0:	return Strings::cipher[i];
+	case 1:	return Strings::mode[i];
+	case 2:	return Strings::hash[i];
 	}
 	return NULL;
 }
@@ -2023,37 +2140,42 @@ const TCHAR* crypt::help::Iter::getString()
 
 const char* crypt::help::getString(crypt::Cipher cipher)
 {
-	return cipher_str_c[static_cast<int>(cipher)];
+	return Strings::cipher[static_cast<int>(cipher)];
 }
 
 const char* crypt::help::getString(crypt::Mode mode)
 {
-	return mode_str_c[static_cast<int>(mode)];
+	return Strings::mode[static_cast<int>(mode)];
 }
 
 const char*  crypt::help::getString(crypt::Encoding enc)
 {
-	return encoding_str_c[static_cast<int>(enc)];
+	return Strings::encoding[static_cast<int>(enc)];
 }
 
 const char* crypt::help::getString(crypt::KeyDerivation k)
 {
-	return key_algo_str_c[static_cast<int>(k)];
+	return Strings::key_algo[static_cast<int>(k)];
 }
 
 const char* crypt::help::getString(crypt::IV iv)
 {
-	return iv_str_c[static_cast<int>(iv)];
+	return Strings::iv[static_cast<int>(iv)];
 }
 
 const char* crypt::help::getString(crypt::Hash h)
 {
-	return hash_str_c[static_cast<int>(h)];
+	return Strings::hash[static_cast<int>(h)];
 }
 
 const char* crypt::help::getString(crypt::Random mode)
 {
-	return random_mode_str_c[static_cast<int>(mode)];
+	return Strings::random_mode[static_cast<int>(mode)];
+}
+
+const char* crypt::help::getString(crypt::EOL eol)
+{
+	return Strings::eol[static_cast<int>(eol)];
 }
 
 bool crypt::help::getCipher(const char* s, crypt::Cipher& c)
@@ -2063,25 +2185,17 @@ bool crypt::help::getCipher(const char* s, crypt::Cipher& c)
 	}
 	size_t sl = strlen(s);
 	for (size_t i = 0; i< static_cast<int>(Cipher::COUNT); i++)	{
-		if (sl != strlen(cipher_str_c[i])) {
+		if (sl != strlen(Strings::cipher[i])) {
 			continue;
 		}
 		size_t x = 0;
 		for (x = 0; x< sl; x++) {
-			if (s[x] != cipher_str_c[i][x]) {
+			if (s[x] != Strings::cipher[i][x]) {
 				break;
 			}
 		}
 		if (x == sl) {
 			c = (crypt::Cipher)i;
-			return true;
-		}
-	}
-	static const char* s_old[] = { "cast5", "aes128", "aes192", "aes256" };
-	static const crypt::Cipher o_cipher[] = { Cipher::cast128, Cipher::rijndael128, Cipher::rijndael192, Cipher::rijndael256 };
-	for (size_t i = 0; i < 4; i++) {
-		if (std::strcmp(s, s_old[i]) == 0) {
-			c = o_cipher[i];
 			return true;
 		}
 	}
@@ -2095,11 +2209,11 @@ bool crypt::help::getCipherMode(const char* s, crypt::Mode& m)
 	}
 	for (size_t i = 0; i< static_cast<int>(Mode::COUNT); i++) {
 		size_t sl = strlen(s), x = 0;
-		if (sl != lstrlen(mode_str[i])) {
+		if (sl != strlen(Strings::mode[i])) {
 			continue;
 		}
 		for (x = 0; x< sl; x++) {
-			if (s[x] != (char)mode_str[i][x]) {
+			if (s[x] != Strings::mode[i][x]) {
 				break;
 			}
 		}
@@ -2117,7 +2231,7 @@ bool crypt::help::getKeyDerivation(const char*s, KeyDerivation& v)
 		return false;
 	}
 	for (int i = 0; i<static_cast<int>(KeyDerivation::COUNT); i++) {
-		if (strcmp(s, key_algo_str_c[i]) == 0) {
+		if (strcmp(s, Strings::key_algo[i]) == 0) {
 			v = (crypt::KeyDerivation)i;
 			return true;
 		}
@@ -2131,7 +2245,7 @@ bool crypt::help::getIVMode(const char* s, crypt::IV& iv)
 		return false;
 	}
 	for (int i = 0; i<static_cast<int>(IV::COUNT); i++)	{
-		if (strcmp(s, iv_str_c[i]) == 0) {
+		if (strcmp(s, Strings::iv[i]) == 0) {
 			iv = (crypt::IV)i;
 			return true;
 		}
@@ -2145,7 +2259,7 @@ bool crypt::help::getEncoding(const char* s, crypt::Encoding& e)
 		return false;
 	}
 	for (int i = 0; i<static_cast<int>(Encoding::COUNT); i++) {
-		if (strcmp(s, encoding_str_c[i]) == 0) {
+		if (strcmp(s, Strings::encoding[i]) == 0) {
 			e = (crypt::Encoding)i;
 			return true;
 		}
@@ -2159,8 +2273,22 @@ bool crypt::help::getRandomMode(const char* s, crypt::Random& m)
 		return false;
 	}
 	for (int i = 0; i<static_cast<int>(crypt::Random::COUNT); i++) {
-		if (strcmp(s, random_mode_str_c[i]) == 0) {
+		if (strcmp(s, Strings::random_mode[i]) == 0) {
 			m = (crypt::Random)i;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool crypt::help::getEOL(const char* s, crypt::EOL& eol)
+{
+	if (!s) {
+		return false;
+	}
+	for (int i = 0; i<static_cast<int>(crypt::EOL::COUNT); i++) {
+		if (strcmp(s, Strings::eol[i]) == 0) {
+			eol = (crypt::EOL)i;
 			return true;
 		}
 	}
@@ -2175,11 +2303,11 @@ bool crypt::help::getHash(const char* s, Hash& h, bool only_openssl)
 	size_t m = (only_openssl) ? static_cast<size_t>(Hash::sha3_256) : static_cast<size_t>(Hash::COUNT);
 	for (size_t i = 0; i< m; i++) {
 		size_t sl = strlen(s), x = 0;
-		if (sl != lstrlen(hash_str[i])) {
+		if (sl != strlen(Strings::hash[i])) {
 			continue;
 		}
 		for (x = 0; x< sl; x++) {
-			if (s[x] != (char)hash_str[i][x]) {
+			if (s[x] != Strings::hash[i][x]) {
 				break;
 			}
 		}
@@ -2196,15 +2324,15 @@ crypt::Mode crypt::help::getModeByIndex(crypt::Cipher cipher, int index)
 	if (index < int(Mode::eax))	{
 		return Mode(index);
 	} else if (index == int(Mode::eax))	{
-		if ((cipher_flags[int(cipher)] & MODE_EAX) == MODE_EAX) {
+		if ((cipher_properties[int(cipher)] & CipherProperties::eax) == CipherProperties::eax) {
 			return Mode::eax;
 		}
 	} else if (index == int(Mode::ccm))	{
-		if ((cipher_flags[int(cipher)] & MODE_CCM) == MODE_CCM) {
+		if ((cipher_properties[int(cipher)] & CipherProperties::ccm) == CipherProperties::ccm) {
 			return Mode::ccm;
 		}
 	} else if (index == int(Mode::gcm))	{
-		if ((cipher_flags[int(cipher)] & MODE_GCM) == MODE_GCM) {
+		if ((cipher_properties[int(cipher)] & CipherProperties::gcm) == CipherProperties::gcm) {
 			return Mode::gcm;
 		}
 	}
@@ -2214,15 +2342,15 @@ crypt::Mode crypt::help::getModeByIndex(crypt::Cipher cipher, int index)
 int crypt::help::getIndexByMode(crypt::Cipher cipher, crypt::Mode mode)
 {
 	if (mode == Mode::eax) {
-		if ((cipher_flags[int(cipher)] & MODE_EAX) == MODE_EAX) {
+		if ((cipher_properties[int(cipher)] & CipherProperties::eax) == CipherProperties::eax) {
 			return int(Mode::eax);
 		}
 	} else if (mode == Mode::ccm) {
-		if ((cipher_flags[int(cipher)] & MODE_CCM) == MODE_CCM) {
+		if ((cipher_properties[int(cipher)] & CipherProperties::ccm) == CipherProperties::ccm) {
 			return int(Mode::ccm);
 		}
 	} else if (mode == Mode::gcm) {
-		if ((cipher_flags[int(cipher)] & MODE_GCM) == MODE_GCM) {
+		if ((cipher_properties[int(cipher)] & CipherProperties::gcm) == CipherProperties::gcm) {
 			return int(Mode::gcm);
 		}
 	} else {
@@ -2234,15 +2362,15 @@ int crypt::help::getIndexByMode(crypt::Cipher cipher, crypt::Mode mode)
 bool crypt::help::validCipherMode(crypt::Cipher cipher, crypt::Mode mode)
 {
 	if (mode == Mode::eax) {
-		if ((cipher_flags[int(cipher)] & MODE_EAX) == MODE_EAX) {
+		if ((cipher_properties[int(cipher)] & CipherProperties::eax) == CipherProperties::eax) {
 			return true;
 		}
 	} else if (mode == Mode::ccm) {
-		if ((cipher_flags[int(cipher)] & MODE_CCM) == MODE_CCM) {
+		if ((cipher_properties[int(cipher)] & CipherProperties::ccm) == CipherProperties::ccm) {
 			return true;
 		}
 	} else if (mode == Mode::gcm) {
-		if ((cipher_flags[int(cipher)] & MODE_GCM) == MODE_GCM) {
+		if ((cipher_properties[int(cipher)] & CipherProperties::gcm) == CipherProperties::gcm) {
 			return true;
 		}
 	} else {
@@ -2253,13 +2381,13 @@ bool crypt::help::validCipherMode(crypt::Cipher cipher, crypt::Mode mode)
 
 int crypt::help::getCipherCategory(Cipher cipher)
 {
-	if ((cipher_flags[int(cipher)] & C_AES) == C_AES) {
+	if ((cipher_properties[int(cipher)] & CipherProperties::c_aes) == CipherProperties::c_aes) {
 		return 0;
-	} else if ((cipher_flags[int(cipher)] & C_OTHER) == C_OTHER) {
+	} else if ((cipher_properties[int(cipher)] & CipherProperties::c_other) == CipherProperties::c_other) {
 		return 1;
-	} else if ((cipher_flags[int(cipher)] & C_STREAM) == C_STREAM) {
+	} else if ((cipher_properties[int(cipher)] & CipherProperties::c_stream) == CipherProperties::c_stream) {
 		return 2;
-	} else if ((cipher_flags[int(cipher)] & C_WEAK) == C_WEAK) {
+	} else if ((cipher_properties[int(cipher)] & CipherProperties::c_weak) == CipherProperties::c_weak) {
 		return 3;
 	}
 	return -1;
@@ -2274,13 +2402,13 @@ crypt::Cipher crypt::help::getCipherByIndex(CipherCat category, int index)
 		return (index < int(Cipher::COUNT)) ? Cipher(index) : Cipher::rijndael256;
 	}
 	switch (category) {
-	case CipherCat::aes: cat = C_AES; break;
-	case CipherCat::other: cat = C_OTHER; break;
-	case CipherCat::stream: cat = C_STREAM; break;
-	case CipherCat::weak: cat = C_WEAK; break;
+	case CipherCat::aes: cat = CipherProperties::c_aes; break;
+	case CipherCat::other: cat = CipherProperties::c_other; break;
+	case CipherCat::stream: cat = CipherProperties::c_stream; break;
+	case CipherCat::weak: cat = CipherProperties::c_weak; break;
 	}
 	for (i = 0; i < int(Cipher::COUNT); i++) {
-		if ((cipher_flags[i] & cat) == cat) {
+		if ((cipher_properties[i] & cat) == cat) {
 			ii++;
 		}
 		if (ii == index) {
@@ -2293,18 +2421,18 @@ crypt::Cipher crypt::help::getCipherByIndex(CipherCat category, int index)
 int crypt::help::getCipherIndex(Cipher cipher)
 {
 	int cat;
-	if ((cipher_flags[int(cipher)] & C_AES) == C_AES) {
-		cat = C_AES;
-	} else if ((cipher_flags[int(cipher)] & C_OTHER) == C_OTHER) {
-		cat = C_OTHER;
-	} else if ((cipher_flags[int(cipher)] & C_STREAM) == C_STREAM) {
-		cat = C_STREAM;
+	if ((cipher_properties[int(cipher)] & CipherProperties::c_aes) == CipherProperties::c_aes) {
+		cat = CipherProperties::c_aes;
+	} else if ((cipher_properties[int(cipher)] & CipherProperties::c_other) == CipherProperties::c_other) {
+		cat = CipherProperties::c_other;
+	} else if ((cipher_properties[int(cipher)] & CipherProperties::c_stream) == CipherProperties::c_stream) {
+		cat = CipherProperties::c_stream;
 	} else {
-		cat = C_WEAK;
+		cat = CipherProperties::c_weak;
 	}
 	int index = -1;
 	for (int i = 0; i < int(Cipher::COUNT); i++) {
-		if ((cipher_flags[i] & cat) == cat) {
+		if ((cipher_properties[i] & cat) == cat) {
 			index++;
 		}
 		if (i == int(cipher)) {
@@ -2314,39 +2442,40 @@ int crypt::help::getCipherIndex(Cipher cipher)
 	return index;
 }
 
-bool crypt::help::checkFilter(crypt::Hash h, unsigned int filter)
+bool crypt::help::checkHashProperty(crypt::Hash h, int filter)
 {
-	if ((unsigned)h >= (unsigned)Hash::COUNT)
+	if ((unsigned)h >= (unsigned)Hash::COUNT) {
 		return false;
-	return ((hash_flags[(unsigned)h] & filter) == filter);
+	}
+	return ((hash_properties[(unsigned)h] & filter) == filter);
 }
 
-const TCHAR* crypt::help::getHelpURL(crypt::Encoding enc)
+const char* crypt::help::getHelpURL(crypt::Encoding enc)
 {
-	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, encoding_help_url[unsigned(enc)]);
-	return help_url_wikipedia;
+	strcpy(Strings::help_url_wikipedia + Strings::help_url_wikipedia_len, Strings::encoding_help_url[unsigned(enc)]);
+	return Strings::help_url_wikipedia;
 }
 
-const TCHAR* crypt::help::getHelpURL(crypt::Cipher cipher)
+const char*	crypt::help::getHelpURL(crypt::Cipher cipher)
 {
-	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, cipher_help_url[unsigned(cipher)]);
-	return help_url_wikipedia;
+	strcpy(Strings::help_url_wikipedia + Strings::help_url_wikipedia_len, Strings::cipher_help_url[unsigned(cipher)]);
+	return Strings::help_url_wikipedia;
 }
 
-const TCHAR* crypt::help::getHelpURL(crypt::Hash h)
+const char*	crypt::help::getHelpURL(crypt::Hash h)
 {
-	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, hash_help_url[unsigned(h)]);
-	return help_url_wikipedia;
+	strcpy(Strings::help_url_wikipedia + Strings::help_url_wikipedia_len, Strings::hash_help_url[unsigned(h)]);
+	return Strings::help_url_wikipedia;
 }
 
-const TCHAR* crypt::help::getHelpURL(crypt::KeyDerivation k)
+const char*	crypt::help::getHelpURL(crypt::KeyDerivation k)
 {
-	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, key_algo_help_url[unsigned(k)]);
-	return help_url_wikipedia;
+	strcpy(Strings::help_url_wikipedia + Strings::help_url_wikipedia_len, Strings::key_algo_help_url[unsigned(k)]);
+	return Strings::help_url_wikipedia;
 }
 
-const TCHAR* crypt::help::getHelpURL(crypt::Mode m)
+const char*	crypt::help::getHelpURL(crypt::Mode m)
 {
-	lstrcpy(help_url_wikipedia + help_url_wikipedia_len, mode_help_url[unsigned(m)]);
-	return help_url_wikipedia;
+	strcpy(Strings::help_url_wikipedia + Strings::help_url_wikipedia_len, Strings::mode_help_url[unsigned(m)]);
+	return Strings::help_url_wikipedia;
 }

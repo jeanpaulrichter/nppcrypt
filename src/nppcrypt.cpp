@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -11,14 +14,14 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
+
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <map>
-#include "npp\Definitions.h"
+#include "npp/Definitions.h"
 #include "nppcrypt.h"
 #include "exception.h"
-#include "unicode.h"
 #include "preferences.h"
 #include "crypt.h"
 #include "dlg_crypt.h"
@@ -33,7 +36,7 @@ GNU General Public License for more details.
 #include "resource.h"
 #include "help.h"
 
-typedef std::map<string, crypt::Options::Crypt> cryptfilemap;
+typedef std::map<std::wstring, CryptInfo> cryptfilemap;
 
 const TCHAR				NPP_PLUGIN_NAME[] = TEXT(NPPC_NAME);
 const int				NPPCRYPT_VERSION = NPPC_VERSION;
@@ -62,18 +65,14 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD reasonForCall, LPVOID lpReserved )
 	case DLL_PROCESS_ATTACH:
 	{
 		#ifdef _DEBUG
-		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+			_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 		#endif
 		m_hInstance = (HINSTANCE)hModule;
 		break;
 	}
 	case DLL_PROCESS_DETACH:
 	{
-		try {
-			preferences.save(current);
-		} catch (CExc& ) {
-			// log error
-		}
+		preferences.save(current);
 		dlg_random.destroy();
 		dlg_hash.destroy();
 		dlg_crypt.destroy();
@@ -123,24 +122,14 @@ extern "C" __declspec(dllexport) void setInfo(NppData notpadPlusData)
 	::SendMessage(nppData._nppHandle, NPPM_GETPLUGINSCONFIGDIR, MAX_PATH, (LPARAM)preffile_s);
 	int preffile_len = lstrlen(preffile_s);
 	if (preffile_len + 16 < MAX_PATH) {
-		lstrcpy(preffile_s + preffile_len, TEXT("\\nppcrypt.conf"));
-		try {
-			preferences.load(preffile_s, current);
-		} catch (CExc& exc) {
-			if (exc.getCode() != CExc::Code::preffile_missing) {
-				::MessageBox(nppData._nppHandle, exc.getMsg(), TEXT("nppcrypt error"), MB_OK);
-			}
-		}
+		lstrcpy(preffile_s + preffile_len, TEXT("\\nppcrypt.xml"));
+		preferences.load(preffile_s, current);
 	}
 }
 
 extern "C" __declspec(dllexport) BOOL isUnicode()
 {
-	#ifdef UNICODE
 	return TRUE;
-	#else
-	return FALSE;
-	#endif
 }
 
 extern "C" __declspec(dllexport) const TCHAR * getName()
@@ -169,7 +158,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 			return;
 		}
 		try {
-			string path, filename, extension;
+			std::wstring path, filename, extension;
 			helper::Buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
 
 			if(preferences.files.extension.compare(extension) == 0) {
@@ -178,40 +167,46 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 				int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
 				if (data_length <= 0) {
-					throw CExc(CExc::Code::file_empty);
+					throw CExc(CExc::Code::input_null);
+				}
+				byte* pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER, 0, 0);
+				if (!pData) {
+					throw CExc(CExc::Code::unexpected);
 				}
 
-				crypt::Options::Crypt	options;
-				byte*					pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
-				CryptHeaderReader		header(options);
+				CryptInfo				crypt;
+				CryptHeaderReader		header(crypt.options, crypt.hmac);
 
 				if (!header.parse(pData, data_length)) {
-					throw CExc(CExc::Code::parse_header);
+					throw CExc(CExc::Code::header_not_found);
 				}
 
-				if(options.hmac.enable) {
-					crypt::Options::Crypt::HMAC hmac = options.hmac;
-					if (hmac.key_id == -1) {
+				if(crypt.hmac.enable) {
+					if (crypt.hmac.keypreset_id < 0) {
 						if (!dlg_auth.doDialog()) {
 							return;
 						}
-						dlg_auth.getKeyString(hmac.key_input);
-					}
-					helper::BC::prepareHMAC(hmac, header.getVersion());
-					std::string s_hmac_cmp;
-					crypt::hmac_header(header.body(), header.body_size(), header.cdata(), header.cdata_size(), hmac, s_hmac_cmp);
-					if (!header.checkHMAC(s_hmac_cmp)) {
-						throw CExc(CExc::Code::authentication);
+						dlg_auth.getInput(crypt.hmac.password);
+						if (!header.checkHMAC(crypt.hmac.password)) {
+							throw CExc(CExc::Code::hmac_auth_failed);
+						}
+					} else {
+						if (crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
+							throw CExc(CExc::Code::invalid_presetkey);
+						} else {
+							if (!header.checkHMAC(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16)) {
+								throw CExc(CExc::Code::hmac_auth_failed);
+							}
+						}
 					}
 				}
 
 				int encoding = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
 				bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
 
-				if(dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &options, no_ascii, &filename)) {
+				if (dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &crypt, no_ascii, &filename)) {
 					std::basic_string<byte> buffer;
-					helper::BC::preparePassword(options.password, header.getVersion());
-					crypt::decrypt(header.cdata(), header.cdata_size(), buffer, options, header.init_strings());
+					crypt::decrypt(header.encryptedData(), header.encryptedDataLength(), buffer, crypt.options, header.initData());
 
 					::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
 					::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
@@ -219,11 +214,11 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
 					::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
 
-					crypt_files.insert(std::pair<string, crypt::Options::Crypt>(path, options));
+					crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
 				}
 			}
 		} catch(CExc& exc) {
-			::MessageBox(nppData._nppHandle, exc.getMsg(), TEXT("Error"), MB_OK);
+			helper::Windows::error(nppData._nppHandle, exc.what());
 		} catch(...) {
 			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 		}
@@ -247,33 +242,34 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 				::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
 				UndoFileEncryption = false;
 			} else {
-				string path, filename, extension;
+				std::wstring path, filename, extension;
 				helper::Buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
 
 				if (preferences.files.extension.compare(extension) == 0) {
-					cryptfilemap::iterator fiter = crypt_files.find(path);
-					crypt::Options::Crypt& options = (fiter != crypt_files.end()) ? fiter->second : current.crypt;
+
+					cryptfilemap::iterator	fiter = crypt_files.find(path);
+					CryptInfo& crypt = (fiter != crypt_files.end()) ? fiter->second : current.crypt;
 
 					::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
 					HWND hCurScintilla = helper::Scintilla::getCurrent();
 
 					int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
 					if (data_length <= 0) {
-						throw CExc(CExc::Code::file_empty);
+						throw CExc(CExc::Code::input_null);
 					}
 
 					byte* pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
 					if (!pData) {
-						throw CExc(CExc::File::nppcrypt, __LINE__);
+						throw CExc(CExc::Code::unexpected);
 					}
 
-					CryptHeaderWriter		header(options);
+					CryptHeaderWriter		header(crypt.options, crypt.hmac);
 					std::basic_string<byte>	buffer;
 					bool					autoencrypt = false;
 
 					if(fiter != crypt_files.end()) {					
 						if(preferences.files.askonsave)	{
-							string	asksave_msg;
+							std::wstring asksave_msg;
 							if (filename.size() > 32) {
 								asksave_msg = TEXT("change encryption of ") + filename.substr(0,32) + TEXT("...?");
 							} else {
@@ -286,33 +282,25 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 							autoencrypt = true;
 						}
 						if(autoencrypt)	{
-							helper::BC::preparePassword(options.password, NPPCRYPT_VERSION);
-							crypt::encrypt(pData, data_length, buffer, options, header.init_strings());
-							header.create();
-							if(options.hmac.enable)	{
-								std::string s_hmac;
-								helper::BC::prepareHMAC(options.hmac, NPPCRYPT_VERSION);
-								crypt::hmac_header(header.body(), header.body_size(), &buffer[0], buffer.size(), options.hmac, s_hmac);
-								header.updateHMAC(s_hmac);
+							crypt::encrypt(pData, data_length, buffer, crypt.options, header.initData());
+							if (crypt.hmac.enable && crypt.hmac.keypreset_id >= 0) {
+								header.setHMACKey(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16);
 							}
+							header.create(&buffer[0], buffer.size());
 						}
 					}						
 					if(!autoencrypt) {
 						int encoding = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
 						bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
 
-						if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &options, no_ascii, &filename)) {
-							helper::BC::preparePassword(options.password, NPPCRYPT_VERSION);
-							crypt::encrypt(pData, data_length, buffer, options, header.init_strings());
-							header.create();
-							if(options.hmac.enable) {
-								std::string s_hmac;
-								helper::BC::prepareHMAC(options.hmac, NPPCRYPT_VERSION);
-								crypt::hmac_header(header.body(), header.body_size(), &buffer[0], buffer.size(), options.hmac, s_hmac);
-								header.updateHMAC(s_hmac);
+						if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &crypt, no_ascii, &filename)) {
+							crypt::encrypt(pData, data_length, buffer, crypt.options, header.initData());
+							if (crypt.hmac.enable && crypt.hmac.keypreset_id >= 0) {
+								header.setHMACKey(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16);
 							}
+							header.create(&buffer[0], buffer.size());
 							if(fiter!=crypt_files.end()) {
-								crypt_files.insert(std::pair<string, crypt::Options::Crypt>(path, current.crypt));
+								crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
 							}
 						} else {
 							return;
@@ -329,7 +317,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 				}
 			}
 		} catch(CExc& exc) {
-			::MessageBox(nppData._nppHandle, exc.getMsg(), TEXT("Error"), MB_OK);
+			helper::Windows::error(nppData._nppHandle, exc.what());
 		} catch(...) {
 			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 		}
@@ -352,19 +340,14 @@ void EncryptDlg()
 		}
 	
 		if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &current.crypt, !helper::Buffer::isCurrent8Bit())) {
-			CryptHeaderWriter			header(current.crypt);
+			CryptHeaderWriter			header(current.crypt.options, current.crypt.hmac);
 			std::basic_string<byte>		buffer;
 
-			helper::BC::preparePassword(current.crypt.password, NPPCRYPT_VERSION);
-			crypt::encrypt(pData, data_length, buffer, current.crypt, header.init_strings());
-
-			header.create();
-			if(current.crypt.hmac.enable) {
-				helper::BC::prepareHMAC(current.crypt.hmac, NPPCRYPT_VERSION);
-				std::string s_hmac;
-				crypt::hmac_header(header.body(), header.body_size(), &buffer[0], buffer.size(), current.crypt.hmac, s_hmac);
-				header.updateHMAC(s_hmac);
+			crypt::encrypt(pData, data_length, buffer, current.crypt.options, header.initData());
+			if (current.crypt.hmac.enable && current.crypt.hmac.keypreset_id >= 0) {
+				header.setHMACKey(preferences.getKey((size_t)current.crypt.hmac.keypreset_id), 16);
 			}
+			header.create(&buffer[0], buffer.size());
 
 			HWND hCurScintilla = helper::Scintilla::getCurrent();
 			::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
@@ -376,13 +359,13 @@ void EncryptDlg()
 			::SendMessage(hCurScintilla, SCI_SETSEL, sel_start, sel_start + header.size() +buffer.size());
 			::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
 
-			for (size_t i = 0; i < current.crypt.password.size(); i++) {
-				current.crypt.password[i] = 0;
+			for (size_t i = 0; i < current.crypt.options.password.size(); i++) {
+				current.crypt.options.password[i] = 0;
 			}
-			current.crypt.password.clear();
+			current.crypt.options.password.clear();
 		}
 	} catch (CExc& exc) {
-		::MessageBox(nppData._nppHandle, exc.getMsg(), TEXT("Error"), MB_OK);
+		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 	}
@@ -399,29 +382,35 @@ void DecryptDlg()
 		if (!helper::Scintilla::getSelection(&pData, &data_length, &sel_start)) {
 			return;
 		}
-		CryptHeaderReader	header(current.crypt);
-		bool				found_header = header.parse(pData, data_length);
-		if(found_header && current.crypt.hmac.enable) {
-			crypt::Options::Crypt::HMAC hmac = current.crypt.hmac;
-			if(hmac.key_id == -1) {
-				if (!dlg_auth.doDialog()) {
-					return;
+		CryptHeaderReader	header(current.crypt.options, current.crypt.hmac);		
+
+		if (header.parse(pData, data_length)) {
+			if (current.crypt.hmac.enable) {
+				if (current.crypt.hmac.keypreset_id < 0) {
+					if (!dlg_auth.doDialog()) {
+						return;
+					}
+					dlg_auth.getInput(current.crypt.hmac.password);
+					if (!header.checkHMAC(current.crypt.hmac.password)) {
+						throw CExc(CExc::Code::hmac_auth_failed);
+					}
+				} else {
+					if (current.crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
+						throw CExc(CExc::Code::invalid_presetkey);
+					} else {
+						if (!header.checkHMAC(preferences.getKey((size_t)current.crypt.hmac.keypreset_id), 16)) {
+							throw CExc(CExc::Code::hmac_auth_failed);
+						}
+					}
 				}
-				dlg_auth.getKeyString(hmac.key_input);
-			}
-			helper::BC::prepareHMAC(hmac, header.getVersion());
-			std::string s_hmac_cmp;
-			crypt::hmac_header((const char*)header.body(), header.body_size(), header.cdata(), header.cdata_size(), hmac, s_hmac_cmp);
-			if (!header.checkHMAC(s_hmac_cmp)) {
-				throw CExc(CExc::Code::authentication);
 			}
 		}
 
 		if(dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &current.crypt, !helper::Buffer::isCurrent8Bit())) {
-			crypt::InitStrings& s_init = header.init_strings();
-			bool need_salt = (current.crypt.key.salt_bytes > 0 && s_init.salt.size() == 0);
-			bool need_iv = (current.crypt.iv == crypt::IV::random && s_init.iv.size() == 0);
-			bool need_tag = ((current.crypt.mode == crypt::Mode::gcm || current.crypt.mode == crypt::Mode::ccm || current.crypt.mode == crypt::Mode::eax) && s_init.tag.size() == 0);
+			crypt::InitData& s_init = header.initData();
+			bool need_salt = (current.crypt.options.key.salt_bytes > 0 && s_init.salt.size() == 0);
+			bool need_iv = (current.crypt.options.iv == crypt::IV::random && s_init.iv.size() == 0);
+			bool need_tag = ((current.crypt.options.mode == crypt::Mode::gcm || current.crypt.options.mode == crypt::Mode::ccm || current.crypt.options.mode == crypt::Mode::eax) && s_init.tag.size() == 0);
 			if (need_salt || need_iv || need_tag) {
 				if (!dlg_initdata.doDialog(&s_init, need_salt, need_iv, need_tag)) {
 					return;
@@ -429,17 +418,16 @@ void DecryptDlg()
 			}
 
 			std::basic_string<byte>	buffer;
-			helper::BC::preparePassword(current.crypt.password, header.getVersion());
-			decrypt(header.cdata(), header.cdata_size(), buffer, current.crypt, header.init_strings());
+			decrypt(header.encryptedData(), header.encryptedDataLength(), buffer, current.crypt.options, header.initData());
 			helper::Scintilla::replaceSelection(buffer);
 
-			for (size_t i = 0; i < current.crypt.password.size(); i++) {
-				current.crypt.password[i] = 0;
+			for (size_t i = 0; i < current.crypt.options.password.size(); i++) {
+				current.crypt.options.password[i] = 0;
 			}
-			current.crypt.password.clear();
+			current.crypt.options.password.clear();
 		}
 	} catch(CExc& exc) {
-		::MessageBox(nppData._nppHandle, exc.getMsg(), TEXT("Error"), MB_OK);
+		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch(...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 	}
@@ -458,7 +446,7 @@ void HashDlg()
 		}
 		dlg_hash.display();
 	} catch (CExc& exc) {
-		::MessageBox(nppData._nppHandle, exc.getMsg(), TEXT("Error"), MB_OK);
+		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 	}
@@ -477,7 +465,7 @@ void RandomDlg()
 		}
 		dlg_random.display();
 	} catch (CExc& exc) {
-		::MessageBox(nppData._nppHandle, exc.getMsg(), TEXT("Error"), MB_OK);
+		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown exception!"), TEXT("Error"), MB_OK);
 	}
@@ -496,7 +484,7 @@ void ConvertDlg()
 		}
 		dlg_convert.display();
 	} catch (CExc& exc) {
-		::MessageBox(nppData._nppHandle, exc.getMsg(), TEXT("Error"), MB_OK);
+		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 	}

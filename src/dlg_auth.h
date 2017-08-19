@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -16,20 +19,20 @@ GNU General Public License for more details.
 #define DLG_AUTH_H_DEF
 
 #include "npp/ModalDialog.h"
-#include "unicode.h"
+#include "help.h"
 
 class DlgAuth: public ModalDialog
 {
 public:    
 						DlgAuth() : ModalDialog() {};
    	bool				doDialog(const TCHAR* filename=NULL);
-	void				getKeyString(std::string& out);
+	void				getInput(std::string& out);
 
 private:
 	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	std::string			keystring;
-	string				caption;
+	std::string			input;
+	std::wstring		caption;
 };
 
 

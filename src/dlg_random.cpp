@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -67,7 +70,7 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
 		{
 			switch (LOWORD(wParam))
 			{
-			case IDC_OK: case IDC_COPY:
+			case IDC_OK: case IDC_RANDOM_TOCLIPBOARD:
 			{
 				try {
 					if (!updateOptions()) {
@@ -83,7 +86,7 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
 					}
 					return TRUE;
 				} catch (CExc& exc) {
-					::MessageBox(_hSelf, exc.getMsg(), TEXT("Error"), MB_OK);
+					helper::Windows::error(_hSelf, exc.what());
 				} catch (...) {
 					::MessageBox(_hSelf, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 				}
@@ -99,13 +102,10 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
 				int temp;
 				int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_RANDOM_EDIT));
 				if (len > 0) {
-					std::vector<TCHAR> tstr(len + 1);
-					::GetDlgItemText(_hSelf, IDC_RANDOM_EDIT, tstr.data(), (int)tstr.size());
-					#ifdef UNICODE
-					temp = std::stoi(tstr.data());
-					#else
-					temp = std::atoi(str.data());
-					#endif
+					std::wstring temp_str;
+					temp_str.resize(len + 1);
+					::GetDlgItemText(_hSelf, IDC_RANDOM_EDIT, &temp_str[0], (int)temp_str.size());
+					temp = std::stoi(temp_str.c_str());
 					if (temp > crypt::Constants::rand_char_max) {
 						::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETPOS32, 0, crypt::Constants::rand_char_max);
 					} else if (temp < 1) {

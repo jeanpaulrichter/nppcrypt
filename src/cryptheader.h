@@ -1,5 +1,6 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,53 +22,62 @@ GNU General Public License for more details.
 class CryptHeader
 {
 public:
-						CryptHeader() : version(NPPC_VERSION), pContent(NULL), content_len(0) {};
+
+	struct HMAC {
+		HMAC() : enable(false), hash(crypt::Hash::sha3_256), keypreset_id(-1) {};
+		bool			enable;
+		crypt::Hash		hash;
+		int				keypreset_id;
+		std::string		password;
+	};
+
+						CryptHeader() : version(NPPC_VERSION) {};
 	int					getVersion() { return version; };
-	const char*			body() { return pContent; };
-	size_t				body_size() { return content_len; };
 
 protected:
-	crypt::InitStrings	s_init;
+	crypt::InitData		s_init;
 	int					version;
-	const char*			pContent;
-	size_t				content_len;
+	const byte*			pBody;
+	size_t				bodyLength;
 };
 
 class CryptHeaderReader : public CryptHeader
 {
 public:
-								CryptHeaderReader(crypt::Options::Crypt& opt) : options(opt), pCData(NULL), cdata_len(0) {};
-	bool						parse(const byte* in, size_t in_len);
-	bool						checkHMAC(const std::string& hmac);
-	const unsigned char*		cdata() { return pCData; };
-	size_t						cdata_size() { return cdata_len; };
-	crypt::InitStrings&			init_strings() { return s_init; };
+								CryptHeaderReader(crypt::Options::Crypt& opt, CryptHeader::HMAC& h) : options(opt), hmac(h), pEncryptedData(NULL), encryptedDataLen(0) {};
+	bool						parse(const byte* in, size_t in_len);	
+	const unsigned char*		encryptedData() { return pEncryptedData; };
+	size_t						encryptedDataLength() { return encryptedDataLen; };
+	crypt::InitData&			initData() { return s_init; };
+	bool						checkHMAC(const std::string& password);
+	bool						checkHMAC(const byte* key, size_t key_length);
 
 private:
-	void						parse_old(const byte* in, size_t in_len);
-
 	crypt::Options::Crypt&		options;
-	std::string					s_hmac;
-	const unsigned char* 		pCData;
-	size_t						cdata_len;
+	CryptHeader::HMAC&			hmac;
+	const unsigned char* 		pEncryptedData;
+	size_t						encryptedDataLen;	
+	std::string					hmac_data;
 };
 
 class CryptHeaderWriter : public CryptHeader
 {
 public:
-							CryptHeaderWriter(const crypt::Options::Crypt& opt) : options(opt), hmac_offset(0) {};
-	void					create();
-	void					updateHMAC(const std::string& hmac);
-	const char*				c_str() { return s_header.c_str(); };
-	size_t					size() { return s_header.size(); };
-	crypt::InitStrings&		init_strings() { return s_init;	};
+
+							CryptHeaderWriter(const crypt::Options::Crypt& opt, const HMAC& hmac_opt, const byte* h_key = NULL, size_t h_len = 0);
+	void					create(const byte* data, size_t data_length);
+	const char*				c_str() { return buffer.c_str(); };
+	size_t					size() { return buffer.size(); };
+	crypt::InitData&		initData() { return s_init;	};
+	void					setHMACKey(const byte* h_key = NULL, size_t h_len = 0);
 
 private:
 	size_t					base64length(size_t bin_length, bool linebreaks=false, size_t line_length=0, bool windows=false);
 
+	const CryptHeader::HMAC&		hmac;
 	const crypt::Options::Crypt&	options;
-	std::string						s_header;
-	size_t							hmac_offset;
+	std::vector<byte>				hmac_key;
+	std::string						buffer;
 };
 
 #endif

@@ -38,15 +38,19 @@
     <ClCompile Include="..\..\src\keccak\KeccakSponge.cpp" />
     <ClCompile Include="..\..\src\npp\ModalDialog.cpp" />
     <ClCompile Include="..\..\src\npp\StaticDialog.cpp" />
-    <ClCompile Include="..\..\src\unicode.cpp" />
     <ClCompile Include="..\..\src\exception.cpp" />
     <ClCompile Include="..\..\src\cryptheader.cpp" />
     <ClCompile Include="..\..\src\nppcrypt.cpp" />
     <ClCompile Include="..\..\src\npp\URLCtrl.cpp" />
     <ClCompile Include="..\..\src\preferences.cpp" />
-    <ClCompile Include="..\..\src\scrypt\crypto_scrypt-ref.cpp" />
-    <ClCompile Include="..\..\src\scrypt\insecure_memzero.cpp" />
-    <ClCompile Include="..\..\src\scrypt\sha256.cpp" />
+    <ClCompile Include="..\..\src\scrypt\cpusupport_x86_aesni.c" />
+    <ClCompile Include="..\..\src\scrypt\cpusupport_x86_sse2.c" />
+    <ClCompile Include="..\..\src\scrypt\crypto_scrypt.c" />
+    <ClCompile Include="..\..\src\scrypt\crypto_scrypt_smix.c" />
+    <ClCompile Include="..\..\src\scrypt\crypto_scrypt_smix_sse2.c" />
+    <ClCompile Include="..\..\src\scrypt\insecure_memzero.c" />
+    <ClCompile Include="..\..\src\scrypt\sha256.c" />
+    <ClCompile Include="..\..\src\scrypt\warnp.c" />
     <ClCompile Include="..\..\src\tinyxml2\tinyxml2.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -71,7 +75,6 @@
     <ClInclude Include="..\..\src\npp\dockingResource.h" />
     <ClInclude Include="..\..\src\npp\ModalDialog.h" />
     <ClInclude Include="..\..\src\npp\StaticDialog.h" />
-    <ClInclude Include="..\..\src\unicode.h" />
     <ClInclude Include="..\..\src\exception.h" />
     <ClInclude Include="..\..\src\cryptheader.h" />
     <ClInclude Include="..\..\src\mdef.h" />
@@ -84,12 +87,20 @@
     <ClInclude Include="..\..\src\preferences.h" />
     <ClInclude Include="..\..\src\resource.h" />
     <ClInclude Include="..\..\src\scrypt\config.h" />
+    <ClInclude Include="..\..\src\scrypt\cpusupport.h" />
     <ClInclude Include="..\..\src\scrypt\crypto_scrypt.h" />
+    <ClInclude Include="..\..\src\scrypt\crypto_scrypt_smix.h" />
+    <ClInclude Include="..\..\src\scrypt\crypto_scrypt_smix_sse2.h" />
     <ClInclude Include="..\..\src\scrypt\insecure_memzero.h" />
-    <ClInclude Include="..\..\src\scrypt\scrypt_platform.h" />
     <ClInclude Include="..\..\src\scrypt\sha256.h" />
     <ClInclude Include="..\..\src\scrypt\sysendian.h" />
+    <ClInclude Include="..\..\src\scrypt\warnp.h" />
     <ClInclude Include="..\..\src\tinyxml2\tinyxml2.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="cryptlib.vcxproj">
+      <Project>{c39f4b46-6e89-4074-902e-ca57073044d2}</Project>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1590D7CD-7D3A-4AB7-A355-EE02F7FB987D}</ProjectGuid>
@@ -144,34 +155,36 @@
     <_ProjectFileVersion>11.0.50727.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)..\..\build\$(PlatformShortName)\</OutDir>
-    <IntDir>$(SolutionDir)..\..\obj\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)..\..\bin\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\..\obj\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\..\..\libs\cryptopp\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\libs\cryptopp\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <TargetName>nppcrypt</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\..\..\libs\cryptopp\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\libs\cryptopp\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)..\..\build\$(PlatformShortName)\</OutDir>
-    <IntDir>$(SolutionDir)..\..\obj\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)..\..\bin\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\..\obj\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <TargetName>nppcrypt</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)..\..\build\$(PlatformShortName)\</OutDir>
-    <IntDir>$(SolutionDir)..\..\obj\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)..\..\bin\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\..\obj\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\..\libs\cryptopp\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\libs\cryptopp\lib;$(LibraryPath)</LibraryPath>
-    <TargetName>$(ProjectName)_debug</TargetName>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <TargetName>nppcrypt</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\..\libs\cryptopp\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\libs\cryptopp\lib;$(LibraryPath)</LibraryPath>
-    <TargetName>$(ProjectName)_debug</TargetName>
-    <IntDir>$(SolutionDir)..\..\obj\$(PlatformShortName)\$(Configuration)\</IntDir>
-    <OutDir>..\..\..\..\..\..\..\..\Program Files\Notepad++\plugins</OutDir>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <TargetName>nppcrypt</TargetName>
+    <IntDir>$(SolutionDir)..\..\obj\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)..\..\bin\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -184,7 +197,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>cryptlib_x86_mt_s.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)nppcrypt.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -207,7 +220,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>cryptlib_x64_mt_s.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)nppcrypt.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -230,8 +243,8 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>cryptlib_x86_mtd_s.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)nppcrypt_debug.dll</OutputFile>
+      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)nppcrypt.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)nppcrypt.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -250,10 +263,11 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalOptions>/D "_CRTDBG_MAP_ALLOC" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>cryptlib_x64_mtd_s.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)nppcrypt_debug.dll</OutputFile>
+      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)nppcrypt.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)nppcrypt.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>

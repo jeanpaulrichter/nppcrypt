@@ -28,6 +28,7 @@
 
 //#include "precompiledHeaders.h"
 #include "URLCtrl.h"
+#include "../help.h"
 #include <Commctrl.h>
 
 static BYTE XORMask[128] =
@@ -106,14 +107,15 @@ static BYTE ANDMask[128] =
 
 
 
-void URLCtrl::create(HWND itemHandle, const TCHAR * link, COLORREF linkColor, bool tooltip)
+void URLCtrl::create(HWND itemHandle, const char* link, COLORREF linkColor, bool tooltip)
 {
 	// turn on notify style
     ::SetWindowLongPtr(itemHandle, GWL_STYLE, ::GetWindowLongPtr(itemHandle, GWL_STYLE) | SS_NOTIFY);
 
-	// set the URL text (not the display text)
-	if (link)
-		_URL = link;
+	// set the URL text (not the display text)	
+	if (link) {
+		helper::Windows::utf8_to_wchar(link, (int)strlen(link), _URL);
+	}
 
 	// set the hyperlink colour
     _linkColor = linkColor;
@@ -172,13 +174,18 @@ void URLCtrl::create(HWND itemHandle, int cmd, HWND msgDest)
 	_hSelf = itemHandle;
 }
 
-void URLCtrl::changeURL(const TCHAR* url)
+void URLCtrl::changeURL(const char* url)
 {
-	_URL = url ? url : TEXT("");
+	if (url) {
+		helper::Windows::utf8_to_wchar(url, (int)strlen(url), _URL);
+	} else {
+		_URL.clear();
+	}
+
 	_linkColor = RGB(0, 0, 255);
 	if (hwndTip) 
 	{
-		if (_URL != TEXT("")) {
+		if (_URL.size()) {
 			TOOLINFO toolInfo = { 0 };
 			toolInfo.cbSize = sizeof(toolInfo);
 			toolInfo.hwnd = _hParent;

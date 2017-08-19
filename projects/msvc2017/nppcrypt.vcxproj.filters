@@ -80,12 +80,6 @@
     <ClCompile Include="..\..\src\tinyxml2\tinyxml2.cpp">
       <Filter>Source Files\tinyxml2</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\scrypt\crypto_scrypt-ref.cpp">
-      <Filter>Source Files\scrypt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\scrypt\sha256.cpp">
-      <Filter>Source Files\scrypt</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\npp\URLCtrl.cpp">
       <Filter>Source Files\notepad++</Filter>
     </ClCompile>
@@ -95,13 +89,7 @@
     <ClCompile Include="..\..\src\dlg_preferences.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\scrypt\insecure_memzero.cpp">
-      <Filter>Source Files\scrypt</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\dlg_convert.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\unicode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\keccak\KeccakF-1600-inplace32BI.cpp">
@@ -127,6 +115,30 @@
     </ClCompile>
     <ClCompile Include="..\..\src\cryptheader.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\cpusupport_x86_aesni.c">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\cpusupport_x86_sse2.c">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\crypto_scrypt.c">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\crypto_scrypt_smix.c">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\crypto_scrypt_smix_sse2.c">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\insecure_memzero.c">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\sha256.c">
+      <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\warnp.c">
+      <Filter>Source Files\scrypt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -163,21 +175,6 @@
     <ClInclude Include="..\..\src\tinyxml2\tinyxml2.h">
       <Filter>Header Files\tinyxml2</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\scrypt\config.h">
-      <Filter>Header Files\scrypt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\scrypt\crypto_scrypt.h">
-      <Filter>Header Files\scrypt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\scrypt\scrypt_platform.h">
-      <Filter>Header Files\scrypt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\scrypt\sha256.h">
-      <Filter>Header Files\scrypt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\scrypt\sysendian.h">
-      <Filter>Header Files\scrypt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\npp\Notepad_plus_msgs.h">
       <Filter>Header Files\notepad++</Filter>
     </ClInclude>
@@ -202,13 +199,7 @@
     <ClInclude Include="..\..\src\mdef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\scrypt\insecure_memzero.h">
-      <Filter>Header Files\scrypt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\dlg_convert.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\unicode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\keccak\brg_endian.h">
@@ -249,6 +240,33 @@
     </ClInclude>
     <ClInclude Include="..\..\src\cryptheader.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\config.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\cpusupport.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\crypto_scrypt.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\crypto_scrypt_smix.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\crypto_scrypt_smix_sse2.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\insecure_memzero.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\sha256.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\sysendian.h">
+      <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\warnp.h">
+      <Filter>Header Files\scrypt</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

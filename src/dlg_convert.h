@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -28,7 +31,8 @@ private:
 	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 	void				updateOptions();
 	void				enableOptions(bool v) const;
-	void				OnFromChanged(crypt::Encoding enc) const;
+	void				OnSourceChanged(crypt::Encoding enc) const;
+	void				OnTargetChanged(crypt::Encoding enc) const;
 
 	crypt::Options::Convert&	options;
 };

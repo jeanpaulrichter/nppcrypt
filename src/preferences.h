@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -17,10 +20,17 @@ GNU General Public License for more details.
 
 #include "crypt.h"
 #include "mdef.h"
+#include "cryptheader.h"
+#include "help.h"
+
+struct CryptInfo {
+	crypt::Options::Crypt	options;
+	CryptHeader::HMAC		hmac;
+};
 
 struct CurrentOptions
 {
-	crypt::Options::Crypt	crypt;
+	CryptInfo				crypt;
 	crypt::Options::Hash	hash;
 	crypt::Options::Random	random;
 	crypt::Options::Convert	convert;
@@ -32,21 +42,22 @@ public:
 	struct KeyPreset
 	{
 		TCHAR			label[31];
-		unsigned char	data[16];
+		byte			data[16];
 	};
 
 	struct
 	{
-		bool	enable;
-		bool	askonsave;
-		string	extension;
+		bool			enable;
+		bool			askonsave;
+		std::wstring	extension;
 	} files;
 
 							CPreferences();
 	static CPreferences&	Instance() { static CPreferences single; return single; };
 
-	void					load(const TCHAR* path, CurrentOptions& current);
+	void					load(const std::wstring& path, CurrentOptions& current);
 	void					save(CurrentOptions& current);
+	bool					failed() { return !file_loaded; };
 
 	size_t					getKeyNum() const;
 	bool					addKey(const KeyPreset& key);
@@ -58,11 +69,11 @@ private:
 	CPreferences(CPreferences const&);
 	CPreferences& operator=(CPreferences const&);
 
-	void load_1010(std::ifstream& f, CurrentOptions& current);
 	void validate(CurrentOptions& current);
 
 	std::vector<KeyPreset>	keys;
-	std::string				filepath;
+	std::wstring			filepath;
+	bool					file_loaded;
 };
 
 extern CPreferences&		preferences;

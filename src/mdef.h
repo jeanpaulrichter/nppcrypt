@@ -1,5 +1,6 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -16,20 +17,19 @@ GNU General Public License for more details.
 #define MDEF_DEFINE_H
 
 #define		NPPC_NAME					"NppCrypt"
-#define		NPPC_VERSION				1014
+#define		NPPC_VERSION				1015
 
 #define		NPPC_FUNC_COUNT				9
 #define		NPPC_FUNC_HASH_ID			2
 #define		NPPC_FUNC_RANDOM_ID			3
 #define		NPPC_FUNC_CONVERT_ID		4
 
-#define		NPPC_ABOUT_TEXT				"nppcrypt v1.0.1.4"
-#define		NPPC_ABOUT_LINK				"www.cerberus-design.de/nppcrypt/readme"
-#define		NPPC_ABOUT_URL				"http://www.cerberus-design.de/nppcrypt/readme.txt"
-
-#define		NPPC_PREFFILE_HEADER		"nppcrypt.config.v1012"
-#define		NPPC_PREFFILE_HEADER_1010	"nppcrypt.config.v1010"
-#define		NPPC_PREFFILE_HEADER_LEN	21
+#define		NPPC_ABOUT_VERSION			"1.0.1.5"
+#define		NPPC_ABOUT_GITHUB			"https://www.github.com/jeanpaulrichter/nppcrypt"
+#define		NPPC_ABOUT_CRYPTOPP			"https://www.cryptopp.com"
+#define		NPPC_ABOUT_TINYXML2			"https://github.com/leethomason/tinyxml2"
+#define		NPPC_ABOUT_BCRYPT			"http://www.openwall.com/crypt"
+#define		NPPC_ABOUT_SCRYPT			"https://www.tarsnap.com/scrypt.html"
 
 #define		NPPC_DEF_HMAC_KEY			"bJmX/AokoOlC}my."
 #define		NPPC_DEF_HMAC_LABEL			"nppcrypt default"
@@ -45,6 +45,5 @@ GNU General Public License for more details.
 #define		NPPC_CRYPT_HMAC_HELP_URL	"https://en.wikipedia.org/wiki/Hash-based_message_authentication_code"
 #define		NPPC_CRYPT_IV_HELP_URL		"https://en.wikipedia.org/wiki/Initialization_vector"
 #define		NPPC_CRYPT_SALT_HELP_URL	"https://en.wikipedia.org/wiki/Salt_%28cryptography%29"
-#define		NPPC_PREFERENCES_HELP_URL	"http://www.cerberus-design.de/nppcrypt/readme.txt"
 
 #endif

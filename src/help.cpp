@@ -1,3 +1,20 @@
+/*
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
+
 #include "help.h"
 #include "exception.h"
 #include "mdef.h"
@@ -18,7 +35,7 @@ HWND helper::Scintilla::getCurrent()
 	} else if (which == 1) {
 		return nppData._scintillaSecondHandle;
 	} else {
-		throw CExc(CExc::File::help, __LINE__);
+		throw CExc(CExc::Code::unexpected);
 	}
 }
 
@@ -84,11 +101,12 @@ bool helper::Buffer::isCurrent8Bit()
 	return (cur_buffer_enc == uni8Bit || cur_buffer_enc == uniUTF8 || cur_buffer_enc == uniCookie);
 }
 
-void helper::Buffer::getPath(uptr_t bufferid, string& path, string& filename, string& extension)
+void helper::Buffer::getPath(uptr_t bufferid, std::wstring& path, std::wstring& filename, std::wstring& extension)
 {
 	int path_length = (int)::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, bufferid, NULL);
-	if (path_length <= 0)
-		throw CExc(CExc::File::nppcrypt, __LINE__);
+	if (path_length <= 0) {
+		throw CExc(CExc::Code::unexpected);
+	}
 	path.resize(path_length + 1);
 	::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, bufferid, (LPARAM)&path[0]);
 	path.pop_back();
@@ -142,6 +160,49 @@ void helper::Windows::copyToClipboard(const std::basic_string<byte>& buffer)
 	CloseClipboard();
 }
 
+void helper::Windows::wchar_to_utf8(const wchar_t* i, int i_len, std::string& o)
+{
+	if (i_len < -1) {
+		i_len = -1;
+	}
+	int bytelen = WideCharToMultiByte(CP_UTF8, 0, i, i_len, NULL, 0, NULL, false);
+	if (bytelen < 1) {
+		throw CExc(CExc::Code::utf8conversion);
+	}
+	o.resize((size_t)bytelen);
+	if (!WideCharToMultiByte(CP_UTF8, 0, i, i_len, &o[0], bytelen, NULL, false)) {
+		throw CExc(CExc::Code::utf8conversion);
+	}
+	if (o.size() > 0 && i_len == -1) {
+		o.pop_back();
+	}
+}
+
+void helper::Windows::utf8_to_wchar(const char* i, int i_len, std::wstring& o)
+{
+	if (i_len < -1) {
+		i_len = -1;
+	}
+	int charlen = ::MultiByteToWideChar(CP_UTF8, 0, i, i_len, NULL, 0);
+	if (charlen < 1) {
+		throw CExc(CExc::Code::utf8conversion);
+	}
+	o.resize((size_t)charlen);
+	if (!MultiByteToWideChar(CP_UTF8, 0, i, i_len, &o[0], charlen)) {
+		throw CExc(CExc::Code::utf8conversion);
+	}
+	if (o.size() > 0 && i_len == -1) {
+		o.pop_back();
+	}
+}
+
+void helper::Windows::error(HWND hwnd, const char* msg)
+{
+	std::wstring temp;
+	helper::Windows::utf8_to_wchar(msg, -1, temp);
+	::MessageBox(hwnd, temp.c_str(), TEXT("Error"), MB_OK);
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 HINSTANCE helper::NPP::getDLLHandle()
@@ -169,36 +230,4 @@ bool helper::NPP::setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc,
 	funcItem[index]._pShKey = sk;
 
 	return true;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void helper::BC::prepareHMAC(crypt::Options::Crypt::HMAC& hmac, int header_version)
-{
-	if (hmac.enable) {
-		if (hmac.key_id >= 0) {
-			const unsigned char* tkey = preferences.getKey(hmac.key_id);
-			hmac.key.assign(tkey, tkey + 16);
-		} else {
-			hmac.key.resize(16);
-			if (header_version <= 101) {
-				hmac.key_input.push_back(0);
-			}
-			crypt::shake128((const unsigned char*)hmac.key_input.c_str(), hmac.key_input.size(), &hmac.key[0], 16);
-			if (header_version <= 101) {
-				hmac.key_input.pop_back();
-			}
-		}
-	}
-}
-
-void helper::BC::preparePassword(std::string& password, int header_version)
-{
-	if (header_version <= 101) {
-		password.push_back(0);
-	}
-	else {
-		if (password.size() > 0 && password.back() == 0)
-			password.pop_back();
-	}
 }

@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -15,13 +18,13 @@ GNU General Public License for more details.
 #include "dlg_initdata.h"
 #include "exception.h"
 #include "resource.h"
-#include "unicode.h"
+#include "help.h"
 
 DlgInitdata::DlgInitdata() : ModalDialog()
 {
 };
 
-bool DlgInitdata::doDialog(crypt::InitStrings* data, bool salt, bool iv, bool tag)
+bool DlgInitdata::doDialog(crypt::InitData* data, bool salt, bool iv, bool tag)
 {
 	_data = data;
 	_salt = salt;
@@ -65,7 +68,7 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 					std::vector<TCHAR> tstr(len + 1);
 					::GetDlgItemText(_hSelf, IDC_INITDATA_SALT, tstr.data(), (int)tstr.size());
 					tstr.pop_back();
-					unicode::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->salt);
+					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->salt);
 				}
 			}
 			if (_iv) {
@@ -78,7 +81,7 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 					std::vector<TCHAR> tstr(len + 1);
 					::GetDlgItemText(_hSelf, IDC_INITDATA_IV, tstr.data(), (int)tstr.size());
 					tstr.pop_back();
-					unicode::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->iv);
+					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->iv);
 				}
 			}
 			if (_tag) {
@@ -91,7 +94,7 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 					std::vector<TCHAR> tstr(len + 1);
 					::GetDlgItemText(_hSelf, IDC_INITDATA_TAG, tstr.data(), (int)tstr.size());
 					tstr.pop_back();
-					unicode::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->tag);
+					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->tag);
 				}
 			}
 			EndDialog(_hSelf, IDC_OK);

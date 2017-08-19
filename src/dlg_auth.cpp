@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,7 +25,7 @@ bool DlgAuth::doDialog(const TCHAR* filename)
 	if (filename == NULL) {
 		caption = TEXT("authentication");
 	} else {
-		caption = TEXT("authentication (") + string(filename) + TEXT(")");
+		caption = TEXT("authentication (") + std::wstring(filename) + TEXT(")");
 	}
 	return ModalDialog::doDialog();
 }
@@ -50,13 +53,9 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 			::GetDlgItemText(_hSelf, IDC_AUTH_KEY, temp_key, NPPC_HMAC_INPUT_MAX + 1);
 
 			try {
-				#ifdef UNICODE
-				unicode::wchar_to_utf8(temp_key, -1, keystring);
-				#else
-				keystring.assign(temp_key);
-				#endif
+				helper::Windows::wchar_to_utf8(temp_key, -1, input);
 			} catch (CExc& exc) {
-				::MessageBox(_hSelf, exc.getMsg(), TEXT("Error"), MB_OK);
+				helper::Windows::error(_hSelf, exc.what());
 				break;
 			}
 
@@ -73,6 +72,7 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 			char c = ::SendDlgItemMessage(_hSelf, IDC_AUTH_SHOW, BM_GETCHECK, 0, 0) ? 0 : '*';
 			::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, c, 0);
 			InvalidateRect(::GetDlgItem(_hSelf, IDC_AUTH_KEY), 0, TRUE);
+			::SetFocus(::GetDlgItem(_hSelf, IDC_AUTH_KEY));
 			break;
 		}
 		}
@@ -82,8 +82,8 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 	return FALSE;
 }
 
-void DlgAuth::getKeyString(std::string& out)
+void DlgAuth::getInput(std::string& out)
 {
-	out.assign(keystring);
-	keystring.clear();
+	out.assign(input);
+	input.clear();
 }

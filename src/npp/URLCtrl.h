@@ -31,23 +31,21 @@
 
 #include <string>
 #include "Window.h"
-typedef std::basic_string<TCHAR> generic_string;
-
 
 class URLCtrl : public Window
 {
 public:
     URLCtrl():_hfUnderlined(0),_hCursor(0), _msgDest(NULL), _cmdID(0), _oldproc(NULL), \
-		_linkColor(), _visitedColor(), _clicking(false), _URL(TEXT("")), hwndTip(NULL) {};
+		_linkColor(), _visitedColor(), _clicking(false), hwndTip(NULL) {};
 
-    void create(HWND itemHandle, const TCHAR * link, COLORREF linkColor = RGB(50,50,155), bool tooltip = true);
+    void create(HWND itemHandle, const char* link = NULL, COLORREF linkColor = RGB(50,50,155), bool tooltip = true);
 	void create(HWND itemHandle, int cmd, HWND msgDest = NULL);
-	void changeURL(const TCHAR* url);
+	void changeURL(const char* url);
     void destroy();
 private:
 	void action();
 protected :
-    generic_string _URL;
+    std::wstring _URL;
     HFONT	_hfUnderlined;
     HCURSOR	_hCursor;
 

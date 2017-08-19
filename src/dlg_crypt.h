@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -24,7 +27,8 @@ GNU General Public License for more details.
 #include "npp/ModalDialog.h"
 #include "npp/URLCtrl.h"
 #include "crypt.h"
-#include "unicode.h"
+#include "cryptheader.h"
+#include "preferences.h"
 
 class DlgCrypt : public ModalDialog
 {
@@ -33,7 +37,7 @@ public:
 
 						DlgCrypt();
     void				destroy();
-	bool				doDialog(Operation operation, crypt::Options::Crypt* options, bool no_bin_output = false, const string* filename = NULL);
+	bool				doDialog(Operation operation, CryptInfo* crypt, bool no_bin_output = false, const std::wstring* filename = NULL);
 
 private:
 	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
@@ -51,14 +55,14 @@ private:
 	
 	
 	Operation				operation;
-	const string*			filename;
+	const std::wstring*		filename;
 	bool					no_bin_output;
-	crypt::Options::Crypt*	options;
+	CryptInfo*				crypt;
 
 	bool					confirm_password;	
 	crypt::Cipher			t_cipher;
 	crypt::KeyDerivation	t_key_derivation;
-	string					t_password;
+	std::wstring			t_password;
 
 	HWND					hwnd_basic;
 	HWND					hwnd_auth;
@@ -67,7 +71,7 @@ private:
 	HWND					hwnd_encoding;
 
 	URLCtrl					url_help[7];
-	enum HelpURL { encoding, cipher, mode, salt, keyalgo, hmac, iv };
+	enum class HelpURL : unsigned { encoding, cipher, mode, salt, keyalgo, hmac, iv };
 };
 
 

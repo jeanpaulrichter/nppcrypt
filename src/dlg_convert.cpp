@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -46,15 +49,15 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 		::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE16, BM_SETCHECK, (options.to == Encoding::base16), 0);
 		::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE32, BM_SETCHECK, (options.to == Encoding::base32), 0);
 		::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE64, BM_SETCHECK, (options.to == Encoding::base64), 0);
-		OnFromChanged(options.from);
+		OnSourceChanged(options.from);
 
 		::SendDlgItemMessage(_hSelf, IDC_CONVERT_UPPERCASE, BM_SETCHECK, options.uppercase, 0);
 		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINEBREAKS, BM_SETCHECK, options.linebreaks, 0);
-		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETRANGE32, 1, NPPC_MAX_LINE_LENGTH);
-		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf, IDC_CONVERT_LINELEN), 0);
-		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETPOS32, 0, options.linelength);
-		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_WINDOWS, BM_SETCHECK, options.windows, 0);
-		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_UNIX, BM_SETCHECK, !options.windows, 0);
+		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_SETRANGE32, 1, NPPC_MAX_LINE_LENGTH);
+		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH), 0);
+		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_SETPOS32, 0, options.linelength);
+		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_WINDOWS, BM_SETCHECK, (options.eol == crypt::EOL::windows), 0);
+		::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_UNIX, BM_SETCHECK, !(options.eol == crypt::EOL::windows), 0);
 
 		enableOptions((options.to != Encoding::ascii));
 		goToCenter();
@@ -68,7 +71,7 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 		{
 			switch (LOWORD(wParam))
 			{
-			case IDC_OK: case IDC_COPY:
+			case IDC_OK: case IDC_CONVERT_TOCLIPBOARD:
 			{
 				try {
 					const byte*				pdata;
@@ -86,7 +89,7 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 						helper::Windows::copyToClipboard(buffer);
 					}
 				} catch (CExc& exc) {
-					::MessageBox(_hSelf, exc.getMsg(), TEXT("Error"), MB_OK);
+					helper::Windows::error(_hSelf, exc.what());
 				} catch (...) {
 					::MessageBox(_hSelf, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 				}
@@ -99,39 +102,53 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 			}
 			case IDC_CONVERT_FROM_ASCII:
 			{
-				OnFromChanged(crypt::Encoding::ascii);
+				OnSourceChanged(crypt::Encoding::ascii);
 				break;
 			}
 			case IDC_CONVERT_FROM_BASE16:
 			{
-				OnFromChanged(crypt::Encoding::base16);
+				OnSourceChanged(crypt::Encoding::base16);
 				break;
 			}
 			case IDC_CONVERT_FROM_BASE32:
 			{
-				OnFromChanged(crypt::Encoding::base32);
+				OnSourceChanged(crypt::Encoding::base32);
 				break;
 			}
 			case IDC_CONVERT_FROM_BASE64:
 			{
-				OnFromChanged(crypt::Encoding::base64);
+				OnSourceChanged(crypt::Encoding::base64);
 				break;
 			}
 			case IDC_CONVERT_TO_ASCII:
 			{
+				OnTargetChanged(crypt::Encoding::ascii);
 				enableOptions(false);
 				break;
 			}
-			case IDC_CONVERT_TO_BASE16: case IDC_CONVERT_TO_BASE32: case IDC_CONVERT_TO_BASE64:
+			case IDC_CONVERT_TO_BASE16:
 			{
+				OnTargetChanged(crypt::Encoding::base16);
+				enableOptions(true);
+				break;
+			}
+			case IDC_CONVERT_TO_BASE32:
+			{
+				OnTargetChanged(crypt::Encoding::base32);
+				enableOptions(true);
+				break;
+			}
+			case IDC_CONVERT_TO_BASE64:
+			{
+				OnTargetChanged(crypt::Encoding::base64);
 				enableOptions(true);
 				break;
 			}
 			case IDC_CONVERT_LINEBREAKS:
 			{
 				bool linebreaks = !!::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINEBREAKS, BM_GETCHECK, 0, 0);
-				::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELEN), linebreaks);
-				::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELEN_SPIN), linebreaks);
+				::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH), linebreaks);
+				::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH_SPIN), linebreaks);
 				::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_WINDOWS), linebreaks);
 				::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_UNIX), linebreaks);
 				break;
@@ -142,24 +159,21 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 		case EN_CHANGE:
 		{
 			/* prevent out of bounds user input to line-length spin-control */
-			if (LOWORD(wParam) == IDC_CONVERT_LINELEN) {
+			if (LOWORD(wParam) == IDC_CONVERT_LINELENGTH) {
 				int temp_length;
-				int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_CONVERT_LINELEN));
+				int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH));
 				if (len > 0) {
-					std::vector<TCHAR> tstr(len + 1);
-					::GetDlgItemText(_hSelf, IDC_CONVERT_LINELEN, tstr.data(), (int)tstr.size());
-					#ifdef UNICODE
-					temp_length = std::stoi(tstr.data());
-					#else
-					temp = std::atoi(str.data());
-					#endif
+					std::wstring temp_str;
+					temp_str.resize(len + 1);
+					::GetDlgItemText(_hSelf, IDC_CONVERT_LINELENGTH, &temp_str[0], (int)temp_str.size());
+					temp_length = std::stoi(temp_str.c_str());
 					if (temp_length > NPPC_MAX_LINE_LENGTH) {
-						::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETPOS32, 0, NPPC_MAX_LINE_LENGTH);
+						::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_SETPOS32, 0, NPPC_MAX_LINE_LENGTH);
 					} else if (temp_length < 1) {
-						::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETPOS32, 0, 1);
+						::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_SETPOS32, 0, 1);
 					}
 				} else {
-					::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_SETPOS32, 0, 1);
+					::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_SETPOS32, 0, 1);
 				}
 			}
 			break;
@@ -194,8 +208,8 @@ void DlgConvert::updateOptions()
 	if (options.to != crypt::Encoding::ascii) {
 		options.uppercase = !!::SendDlgItemMessage(_hSelf, IDC_CONVERT_UPPERCASE, BM_GETCHECK, 0, 0);
 		options.linebreaks = !!::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINEBREAKS, BM_GETCHECK, 0, 0);
-		options.windows = !!::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_WINDOWS, BM_GETCHECK, 0, 0);
-		options.linelength = (int)::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELEN_SPIN, UDM_GETPOS32, 0, 0);
+		options.eol = !!::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_WINDOWS, BM_GETCHECK, 0, 0) ? crypt::EOL::windows : crypt::EOL::unix;
+		options.linelength = (int)::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_GETPOS32, 0, 0);
 	}
 }
 
@@ -206,21 +220,21 @@ void DlgConvert::enableOptions(bool v) const
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_UPPERCASE), !base64);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINEBREAKS), true);
 		bool linebreaks = !!::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINEBREAKS, BM_GETCHECK, 0, 0);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELEN), linebreaks);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELEN_SPIN), linebreaks);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH), linebreaks);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH_SPIN), linebreaks);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_WINDOWS), linebreaks);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_UNIX), linebreaks);
 	} else {
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_UPPERCASE), false);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINEBREAKS), false);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELEN), false);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELEN_SPIN), false);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH), false);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH_SPIN), false);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_WINDOWS), false);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_UNIX), false);
 	}
 }
 
-void DlgConvert::OnFromChanged(crypt::Encoding enc) const
+void DlgConvert::OnSourceChanged(crypt::Encoding enc) const
 {
 	switch (enc)
 	{
@@ -261,4 +275,43 @@ void DlgConvert::OnFromChanged(crypt::Encoding enc) const
 	}
 }
 
-
+void DlgConvert::OnTargetChanged(crypt::Encoding enc) const
+{
+	switch (enc)
+	{
+	case crypt::Encoding::ascii:
+	{
+		if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_ASCII, BM_GETCHECK, 0, 0)) {
+			::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE16, BM_SETCHECK, true, 0);
+			::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_ASCII, BM_SETCHECK, false, 0);
+			enableOptions(true);
+		}
+		break;
+	}
+	case crypt::Encoding::base16:
+	{
+		if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE16, BM_GETCHECK, 0, 0)) {
+			::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE32, BM_SETCHECK, true, 0);
+			::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE16, BM_SETCHECK, false, 0);
+		}
+		break;
+	}
+	case crypt::Encoding::base32:
+	{
+		if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE32, BM_GETCHECK, 0, 0)) {
+			::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE64, BM_SETCHECK, true, 0);
+			::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE32, BM_SETCHECK, false, 0);
+			enableOptions(true);
+		}
+		break;
+	}
+	case crypt::Encoding::base64:
+	{
+		if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE64, BM_GETCHECK, 0, 0)) {
+			::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE32, BM_SETCHECK, true, 0);
+			::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE64, BM_SETCHECK, false, 0);
+		}
+		break;
+	}
+	}
+}

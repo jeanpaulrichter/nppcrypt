@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -35,8 +38,9 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 	case WM_INITDIALOG:
 	{
 		if(!helper::Buffer::isCurrent8Bit()) {
-			if(options.encoding == crypt::Encoding::ascii)
+			if (options.encoding == crypt::Encoding::ascii) {
 				options.encoding = crypt::Encoding::base16;
+			}
 		}
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_SETCHECK, (options.encoding == crypt::Encoding::ascii), 0);
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_SETCHECK, (options.encoding == crypt::Encoding::base16), 0);
@@ -44,34 +48,30 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE64, BM_SETCHECK, (options.encoding == crypt::Encoding::base64), 0);
 
 		crypt::help::Iter::setup_hash();
+		std::wstring temp_str;
 		while (crypt::help::Iter::next()) {
-			::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)crypt::help::Iter::getString());
+			helper::Windows::utf8_to_wchar(crypt::help::Iter::getString(), -1, temp_str);
+			::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)temp_str.c_str());
 		}
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_SETCURSEL, (int)options.algorithm, 0);
 			
 		::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_SETCHECK, options.use_key, 0);
 		::SendDlgItemMessage(_hSelf, IDC_HASH_PWEDIT, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
 
-		for (size_t i = 0; i < preferences.getKeyNum(); i++) {
+		for (size_t i = 0; i < preferences.getKeyNum(); i++) {			
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
 		}			
-		if (options.key_id >= 0) {
-			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_SETCURSEL, options.key_id, 0);
+		if (options.keypreset_id >= 0) {
+			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_SETCURSEL, options.keypreset_id, 0);
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO1, BM_SETCHECK, true, 0);
 		} else {
-			string tstr;
-			#ifdef UNICODE
-			unicode::utf8_to_wchar(options.key_input.c_str(), (int)options.key_input.size(), tstr);
-			#else
-			tstr.assign(options.key_input);
-			#endif
-			::SetDlgItemText(_hSelf, IDC_HASH_PWEDIT, tstr.c_str());
+			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_SETCURSEL, 0, 0);
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_SETCHECK, true, 0);
 		}
-		if (crypt::help::checkFilter(options.algorithm, crypt::HASH_HMAC) || crypt::help::checkFilter(options.algorithm, crypt::HASH_KEY)) {
+		if (crypt::help::checkHashProperty(options.algorithm, crypt::HashProperties::hmac_possible) || crypt::help::checkHashProperty(options.algorithm, crypt::HashProperties::key)) {
 			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), true);
-			enableKeyControls(options.use_key);
-			if (crypt::help::checkFilter(options.algorithm, crypt::HASH_HMAC)) {
+			enableKeyControls(options.use_key); 
+			if (crypt::help::checkHashProperty(options.algorithm, crypt::HashProperties::hmac_possible)) {
 				::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key (hmac):"));
 			} else {
 				::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key:"));
@@ -96,7 +96,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		{
 			switch (LOWORD(wParam))
 			{
-			case IDC_OK: case IDC_COPY:
+			case IDC_OK: case IDC_HASH_TOCLIPBOARD:
 			{
 				try {
 					const byte*				pdata;
@@ -107,14 +107,14 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 						return TRUE;
 					}
 					helper::Scintilla::getSelection(&pdata, &data_length);
-					crypt::hash(pdata, data_length, buffer, options);
+					crypt::hash(options, buffer, { { pdata, data_length} });
 					if (LOWORD(wParam) == IDC_OK) {
 						helper::Scintilla::replaceSelection(buffer);
 					} else {
 						helper::Windows::copyToClipboard(buffer);
 					}
 				} catch (CExc& exc) {
-					::MessageBox(_hSelf, exc.getMsg(), TEXT("Error"), MB_OK);
+					helper::Windows::error(_hSelf, exc.what());
 				} catch (...) {
 					::MessageBox(_hSelf, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 				}
@@ -124,6 +124,28 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 			{
 				bool use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
 				enableKeyControls(use_key);
+				if (::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_GETCHECK, 0, 0)) {
+					::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_PWEDIT));
+				}
+				break;
+			}
+			case IDC_HASH_PW_STATIC:
+			{
+				::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO1, BM_SETCHECK, false, 0);
+				::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_SETCHECK, true, 0);
+				::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_PWEDIT));
+				break;
+			}
+			case IDC_HASH_KEY_STATIC:
+			{
+				::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO1, BM_SETCHECK, true, 0);
+				::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_SETCHECK, false, 0);
+				::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_KEYLIST));
+				break;
+			}
+			case IDC_HASH_KEYRADIO2:
+			{
+				::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_PWEDIT));
 				break;
 			}
 			}
@@ -142,8 +164,8 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 			case IDC_HASH_ALGO:
 			{
 				crypt::Hash cur_sel = crypt::Hash(::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0));
-				if (crypt::help::checkFilter(cur_sel, crypt::HASH_HMAC) || crypt::help::checkFilter(cur_sel, crypt::HASH_KEY)) {
-					if (crypt::help::checkFilter(cur_sel, crypt::HASH_HMAC)) {
+				if (crypt::help::checkHashProperty(cur_sel, crypt::HashProperties::hmac_possible) || crypt::help::checkHashProperty(cur_sel, crypt::HashProperties::key)) {
+					if (crypt::help::checkHashProperty(cur_sel, crypt::HashProperties::hmac_possible)) {
 						::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key (hmac):"));
 					} else {
 						::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key:"));
@@ -206,28 +228,22 @@ bool DlgHash::updateOptions()
 
 	if (options.use_key) {
 		if (!!::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_GETCHECK, 0, 0)) {
-			TCHAR temp_key[NPPC_HMAC_INPUT_MAX + 1];
-			::GetDlgItemText(_hSelf, IDC_HASH_PWEDIT, temp_key, NPPC_HMAC_INPUT_MAX + 1);
-			if (!lstrlen(temp_key))	{
-				::MessageBox(_hSelf, TEXT("Please enter a key."), TEXT("Error"), MB_OK);
+			TCHAR temp_pw[NPPC_HMAC_INPUT_MAX + 1];
+			std::string pw;
+			::GetDlgItemText(_hSelf, IDC_HASH_PWEDIT, temp_pw, NPPC_HMAC_INPUT_MAX + 1);
+			if (!lstrlen(temp_pw))	{
+				::MessageBox(_hSelf, TEXT("Please enter a password."), TEXT("Error"), MB_OK);
 				return false;
 			}
-			#ifdef UNICODE
-			unicode::wchar_to_utf8(temp_key, -1, options.key_input);
-			#else
-			options.key.assign(temp_key);
-			#endif
-			options.key_id = -1;
-		} else {
-			options.key_id = (int)::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_GETCURSEL, 0, 0);
-		}
-		if (options.key_id >= 0) {
+			helper::Windows::wchar_to_utf8(temp_pw, -1, pw);
+			options.keypreset_id = -1;
 			options.key.resize(16);
-			const unsigned char* tkey = preferences.getKey(options.key_id);
+			crypt::shake128((const unsigned char*)pw.c_str(), pw.size(), &options.key[0], options.key.size());
+		} else {
+			options.keypreset_id = (int)::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_GETCURSEL, 0, 0);
+			options.key.resize(16);
+			const unsigned char* tkey = preferences.getKey(options.keypreset_id);
 			options.key.assign(tkey, tkey + 16);
-		} else {
-			options.key.resize(16);
-			crypt::shake128((const unsigned char*)options.key_input.c_str(), options.key_input.size(), &options.key[0], options.key.size());
 		}
 	}
 	return true;

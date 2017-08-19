@@ -1,0 +1,180 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Quelldateien">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Headerdateien">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Ressourcendateien">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Headerdateien\bcrypt">
+      <UniqueIdentifier>{44d4ccc9-4d8f-49af-a9dc-4307d9a5ec78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\keccak">
+      <UniqueIdentifier>{803bb6af-4f25-4d72-819a-124a4fa92a6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\scrypt">
+      <UniqueIdentifier>{872e9bb5-82c4-4a14-bf58-7d84362a32c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\tinyxml2">
+      <UniqueIdentifier>{e6342039-a4a6-4028-841e-6012de7fe78f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\bcrypt">
+      <UniqueIdentifier>{2166089d-6c93-4fb6-929d-3044a0bb0dab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\keccak">
+      <UniqueIdentifier>{e1ef27bc-b522-4523-b7d2-71e4374688e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\tinyxml2">
+      <UniqueIdentifier>{2b47b7c0-c8ef-4ede-84fb-9799a082fd1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\scrypt">
+      <UniqueIdentifier>{692faaeb-5c3f-4f9c-8692-182f69868e03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\utf8cpp">
+      <UniqueIdentifier>{d71d3559-6f96-418b-8afd-268dac00bc8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\cli11">
+      <UniqueIdentifier>{f0ca0b8b-25e5-493e-b154-490c300ed2ac}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\cmdline.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\bcrypt\crypt_blowfish.cpp">
+      <Filter>Quelldateien\bcrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\keccak\KeccakF-1600-inplace32BI.cpp">
+      <Filter>Quelldateien\keccak</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\keccak\KeccakHash.cpp">
+      <Filter>Quelldateien\keccak</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\keccak\KeccakSponge.cpp">
+      <Filter>Quelldateien\keccak</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\tinyxml2\tinyxml2.cpp">
+      <Filter>Quelldateien\tinyxml2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\crypt.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptheader.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\exception.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\clihelp.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\cpusupport_x86_aesni.c">
+      <Filter>Quelldateien\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\cpusupport_x86_sse2.c">
+      <Filter>Quelldateien\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\crypto_scrypt.c">
+      <Filter>Quelldateien\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\crypto_scrypt_smix.c">
+      <Filter>Quelldateien\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\crypto_scrypt_smix_sse2.c">
+      <Filter>Quelldateien\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\insecure_memzero.c">
+      <Filter>Quelldateien\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\sha256.c">
+      <Filter>Quelldateien\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\scrypt\warnp.c">
+      <Filter>Quelldateien\scrypt</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\bcrypt\crypt_blowfish.h">
+      <Filter>Headerdateien\bcrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\brg_endian.h">
+      <Filter>Headerdateien\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\KeccakF-1600-interface.h">
+      <Filter>Headerdateien\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\KeccakHash.h">
+      <Filter>Headerdateien\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\keccak\KeccakSponge.h">
+      <Filter>Headerdateien\keccak</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\tinyxml2\tinyxml2.h">
+      <Filter>Headerdateien\tinyxml2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\crypt.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptheader.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\mdef.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\exception.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utf8cpp\utf8.h">
+      <Filter>Headerdateien\utf8cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utf8cpp\utf8\checked.h">
+      <Filter>Headerdateien\utf8cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utf8cpp\utf8\core.h">
+      <Filter>Headerdateien\utf8cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utf8cpp\utf8\unchecked.h">
+      <Filter>Headerdateien\utf8cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cli11\CLI11.hpp">
+      <Filter>Headerdateien\cli11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\clihelp.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\config.h">
+      <Filter>Headerdateien\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\cpusupport.h">
+      <Filter>Headerdateien\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\crypto_scrypt.h">
+      <Filter>Headerdateien\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\crypto_scrypt_smix.h">
+      <Filter>Headerdateien\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\crypto_scrypt_smix_sse2.h">
+      <Filter>Headerdateien\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\insecure_memzero.h">
+      <Filter>Headerdateien\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\sha256.h">
+      <Filter>Headerdateien\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\sysendian.h">
+      <Filter>Headerdateien\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\scrypt\warnp.h">
+      <Filter>Headerdateien\scrypt</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

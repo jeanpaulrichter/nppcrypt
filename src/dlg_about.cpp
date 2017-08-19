@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,12 +25,18 @@ INT_PTR CALLBACK DlgAbout::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 	{
         case WM_INITDIALOG :
 		{
-			SetDlgItemText(_hSelf, IDC_ABOUT_TEXT, TEXT(NPPC_ABOUT_TEXT));
-			SetDlgItemText(_hSelf, IDC_ABOUT_CERBERUS_URL, TEXT(NPPC_ABOUT_LINK));
+			SetDlgItemText(_hSelf, IDC_ABOUT_VERSION, TEXT(NPPC_ABOUT_VERSION));
 
-            cerberus.init(_hInst, _hSelf);
-            cerberus.create(::GetDlgItem(_hSelf, IDC_ABOUT_CERBERUS_URL), TEXT(NPPC_ABOUT_URL));
-
+            github.init(_hInst, _hSelf);
+			github.create(::GetDlgItem(_hSelf, IDC_ABOUT_GITHUB), NPPC_ABOUT_GITHUB);
+			cryptopp.init(_hInst, _hSelf);
+			cryptopp.create(::GetDlgItem(_hSelf, IDC_ABOUT_CRYPTOPP), NPPC_ABOUT_CRYPTOPP);
+			tinyxml2.init(_hInst, _hSelf);
+			tinyxml2.create(::GetDlgItem(_hSelf, IDC_ABOUT_TINYXML2), NPPC_ABOUT_TINYXML2);
+			bcrypt.init(_hInst, _hSelf);
+			bcrypt.create(::GetDlgItem(_hSelf, IDC_ABOUT_BCRYPT), NPPC_ABOUT_BCRYPT);
+			scrypt.init(_hInst, _hSelf);
+			scrypt.create(::GetDlgItem(_hSelf, IDC_ABOUT_SCRYPT), NPPC_ABOUT_SCRYPT);
 			goToCenter();
 
 			return TRUE;

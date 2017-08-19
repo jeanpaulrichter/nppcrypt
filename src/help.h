@@ -1,5 +1,8 @@
 /*
-This file is part of the NppCrypt Plugin [www.cerberus-design.de] for Notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+This file is part of the nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -15,7 +18,7 @@ GNU General Public License for more details.
 #ifndef HELP_H_DEF
 #define HELP_H_DEF
 
-#include "unicode.h"
+#include <string>
 #include "npp\Scintilla.h"
 #include "npp\PluginInterface.h"
 #include "crypt.h"
@@ -34,12 +37,15 @@ namespace helper
 		uptr_t			getCurrent();
 		bool			is8Bit(uptr_t);
 		bool			isCurrent8Bit();
-		void			getPath(uptr_t bufferid, string& path, string& filename, string& extension);
+		void			getPath(uptr_t bufferid, std::wstring& path, std::wstring& filename, std::wstring& extension);
 	};
 
 	namespace Windows
 	{
 		void			copyToClipboard(const std::basic_string<byte>& buffer);
+		void			wchar_to_utf8(const wchar_t* i, int i_len, std::string& o);
+		void			utf8_to_wchar(const char* i, int i_len, std::wstring& o);
+		void			error(HWND hwnd, const char* msg);
 	};
 
 	namespace NPP
@@ -47,12 +53,6 @@ namespace helper
 		HINSTANCE		getDLLHandle();
 		HWND			getWindow();
 		bool			setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *sk, bool check0nInit = false);
-	};
-
-	namespace BC
-	{
-		void			prepareHMAC(crypt::Options::Crypt::HMAC& hmac, int header_version);
-		void			preparePassword(std::string& password, int header_version);
 	};
 };
 
