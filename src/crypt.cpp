@@ -366,8 +366,9 @@ void crypt::encrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL) {
 			throw CExc(CExc::File::crypt, __LINE__);
 		}
-
-		shake128((unsigned char*)output, 24, &tKey[0], tKey.size());
+		byte hashdata[23];
+		ArraySource ss((const byte*)output + 29, 31, true, new Base64Decoder(new ArraySink(hashdata, 23)));
+		shake128(hashdata, 23, &tKey[0], tKey.size());
 		break;
 	}
 	case crypt::KeyDerivation::scrypt:
@@ -1012,7 +1013,9 @@ void crypt::decrypt(const unsigned char* in, size_t in_len, std::basic_string<by
 		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL) {
 			throw CExc(CExc::File::crypt, __LINE__);
 		}
-		shake128((unsigned char*)output, 24, &tKey[0], tKey.size());
+		byte hashdata[23];
+		ArraySource ss((const byte*)output + 29, 31, true, new Base64Decoder(new ArraySink(hashdata, 23)));
+		shake128(hashdata, 23, &tKey[0], tKey.size());
 		break;
 	}
 	case crypt::KeyDerivation::scrypt:
