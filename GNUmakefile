@@ -16,7 +16,6 @@ DEP_SRC += $(shell find $(SRCDIR)/tinyxml2 -type f -name *.cpp)
 MAIN_SRC := src/clihelp.cpp src/cmdline.cpp src/crypt.cpp src/exception.cpp src/cryptheader.cpp
 
 ifeq ($(mode),debug)
-	mode = debug
 	CFLAGS += -g3 -ggdb -O0 -Wall -Wextra -Wno-unused -DDEBUG
 	CXXFLAGS += -g3 -ggdb -O0 -Wall -Wextra -Wno-unused -DDEBUG
 	SUBDIR := debug
@@ -35,12 +34,10 @@ all: info directories $(CRYPTOPP) bin/$(SUBDIR)/$(TARGET)
 
 .PHONY: info
 info:
-ifneq ($(mode),release)
-ifneq ($(mode),debug)
-	@echo "Invalid build mode." 
-	@echo "Please use 'make mode=release' or 'make mode=debug'"
-	@exit 1
-endif
+ifeq ($(mode),debug)
+	@echo "building nppcrypt in debug mode..."
+else
+	@echo "building nppcrypt in release mode..."
 endif
 
 .PHONY: directories
@@ -59,12 +56,20 @@ clean:
 
 .PHONY: install
 install: bin/release/$(TARGET)
+ifeq ($(target),global)
+	@cp $< /usr/bin/$(TARGET)
+else
 	@mkdir -p $(DESTDIR)$(PREFIX)/bin
 	@cp $< $(DESTDIR)$(PREFIX)/bin/$(TARGET)
+endif
 
 .PHONY: uninstall
 uninstall:
+ifeq ($(target),global)
+	@rm -f /usr/bin/$(TARGET)
+else
 	@rm -f $(DESTDIR)$(PREFIX)/bin/$(TARGET)
+endif
 
 $(CRYPTOPP):
 	@make -C src/cryptopp
