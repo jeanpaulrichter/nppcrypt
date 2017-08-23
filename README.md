@@ -9,11 +9,12 @@ features: encryption/decryption with symmetric ciphers like aes. hash-functions 
 Although one might not notice it when using only the notepad++ plugin, but 1.0.1.5 is quite a big change. the result (hopefully) is: cleaner code, easier compiling ([FAQ](#faq_6)) and finally the introduction of a cmdline version of nppcrypt (with linux support!). For more information on the latter see [FAQ](#faq_7). A lot of changes mean potentially a lot of bugs. I would be thankful for everybody who has the time to test the new version and especially the commandline tool.
 
 ##### download:
-###### test/alpha (1.0.1.5)
+###### 1.0.1.5 (test/alpha)
 * npp plugin x86:: [download](http://www.cerberus-design.de/nppcrypt/nppcryptv1015a.x86.zip) (md5: AC7DC0F77189905F3BA875286A1269E8)
 * npp plugin x64:: [download](http://www.cerberus-design.de/nppcrypt/nppcryptv1015a.x64.zip) (md5: F5C907FAA558B1A02F433010252BBD51)
 * commandline tool x86:: [download](http://www.cerberus-design.de/nppcrypt/clnppcryptv1015a.x86.zip) (md5: 097A5D5F7D60A90C0C030F3C8C2B0494)
 * commandline tool x64:: [download](http://www.cerberus-design.de/nppcrypt/clnppcryptv1015a.x64.zip) (md5: 474BF0490ACB1580BC304F20938E4F81)
+* Linux version: see [FAQ: compiling nppcrypt](#faq_6)
 ###### 1.0.1.4
 * x86:: [download](http://www.cerberus-design.de/nppcrypt/nppcryptv1014.x86.zip) (md5: 038E4EF7D01858A3ED32F49ACAAADAC5)
 * x64:: [download](http://www.cerberus-design.de/nppcrypt/nppcryptv1014.x64.zip) (md5: 0CE1EE405A930D083F74CB085667E73F)
@@ -27,7 +28,7 @@ kontakt (at) cerberus-design . de
 - [2] [tinyxml2](http://www.grinninglizard.com/tinyxml2) version 2.1.0, part of this project under [tinyxml2](src/tinyxml2)
 - [3] [bcrypt](http://www.openwall.com/crypt/) version 1.3, part of this project under [bcrypt](src/bcrypt)
 - [4] [scrypt](https://www.tarsnap.com/scrypt.html) version 1.2.1, part of this project under [scrypt](src/scrypt)
-- [5] [cli11](https://github.com/CLIUtils/CLI11)  part of this project under [scrypt](src/cli11)
+- [5] [cli11](https://github.com/CLIUtils/CLI11)  part of this project under [cli11](src/cli11)
 
 #### important:
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -78,11 +79,40 @@ well, that should not happen, but... please downgrade to the older version (www.
 4) nppcrypt can add an additional hmac value to authenticate the data (see auth-tab in encryption-dialog). for this purpose everything beween <nppcrypt> and </nppcrypt> in the header and the encrypted data is hashed.
 
 ##### <a name="faq_6"></a>6. compiling nppcrypt
-*Windows*: open nppcrypt.sln under projects/msvc2017 and compile the project "nppcrypt" or the project "cmdline" (Microsoft Visual Studio 2017 needed)
-*Linux*: just run *make mode=release* in the root directory (and possible *make install* after that).
+- *Windows*: 
+
+Download repository, open nppcrypt.sln under projects/msvc2017 and compile the project "nppcrypt" or the project "cmdline" (Microsoft Visual Studio 2017 needed)
+
+
+- *Linux*:
+```
+git clone https://github.com/jeanpaulrichter/nppcrypt.git
+cd nppcrypt
+make
+sudo make install
+(OR: sudo make install target=global to copy nppcrypt to /usr/bin instead of /usr/local/bin)
+```
 
 ##### <a name="faq_7"></a>7. the commandline tool
 the two most basic options are: -a --action , where you can specify if you want to "hash", "encrypt" or "decrypt" and -o --output, where you specify an output file. Some options allow for additonal information to be passed via the seperator ":". i.e. "-k scrypt:16:9:2" means scrypt with (N=2^16,r=9,p=2) instead of the default values (N=14,r=8,p=1) you would get with "-k scrypt". see --help for more information.
+examples:
+
+decrypt .nppcrypt file:
+```
+nppcrypt -a decrypt test.nppcrypt
+```
+encrypt file "test.txt" with default settings:
+```
+nppcrypt -a encrypt -o test.nppcrypt test.txt
+```
+get md5, sha1 and sha3 hash of file "download.zip" (and optionally check hex-string against it):
+```
+nppcrypt download.zip
+```
+get blake2s hash of "teststring"
+```
+nppcrypt --hash blake2s teststring
+```
 
 ##### <a name="faq_8"></a>8. text encodings
 the notepad++ plugin will work with utf16/ucs-2 files, but if you want to use nppcrypt it is recommended that you only use utf8 files. the commandline tool writes only utf8 files and cannot read utf8-encoded nppcrypt-files.
