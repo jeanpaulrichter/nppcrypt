@@ -1,5 +1,5 @@
 ## nppcrypt
-
+[![Build status](https://ci.appveyor.com/api/projects/status/x5fsebx1ofk0qync?svg=true)](https://ci.appveyor.com/project/jeanpaulrichter/nppcrypt)
 
 encryption-tool / plugin for notepad++ (https://notepad-plus-plus.org).
 
@@ -9,6 +9,9 @@ features: encryption/decryption with symmetric ciphers like aes. hash-functions 
 Although one might not notice it when using only the notepad++ plugin, but 1.0.1.5 is quite a big change. the result (hopefully) is: cleaner code, easier compiling ([FAQ](#faq_6)) and finally the introduction of a cmdline version of nppcrypt (with linux support!). For more information on the latter see [FAQ](#faq_7). A lot of changes mean potentially a lot of bugs. I would be thankful for everybody who has the time to test the new version and especially the commandline tool.
 
 ##### download:
+1.0.1.5 from github:
+* x64:: [download](https://github.com/jeanpaulrichter/nppcrypt/releases/download/1.0.1.5/nppcrypt_1.0.1.5_x64.zip)
+* x86:: [download](https://github.com/jeanpaulrichter/nppcrypt/releases/download/1.0.1.5/nppcrypt_1.0.1.5_x86.zip)
 ###### 1.0.1.5 (test/alpha)
 * npp plugin x86:: [download](http://www.cerberus-design.de/nppcrypt/nppcryptv1015a.x86.zip) (md5: AC7DC0F77189905F3BA875286A1269E8)
 * npp plugin x64:: [download](http://www.cerberus-design.de/nppcrypt/nppcryptv1015a.x64.zip) (md5: F5C907FAA558B1A02F433010252BBD51)
