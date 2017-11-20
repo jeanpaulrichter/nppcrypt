@@ -41,11 +41,11 @@ after_build:
         if ($($env:APPVEYOR_REPO_TAG) -eq "true" -and $env:CONFIGURATION -eq "Release" -and $env:PLATFORMTOOLSET -eq "v141_xp") {
             if($env:PLATFORM -eq "x64"){
             $ZipFileName = "nppcrypt_$($env:APPVEYOR_REPO_TAG_NAME)_x64.zip"
-            7z a $ZipFileName bin\nppcrypt\$env:PLATFORM\$env:CONFIGURATION\nppcrypt.dll
+            7z a $ZipFileName .\bin\nppcrypt\$env:PLATFORM\$env:CONFIGURATION\nppcrypt.dll
             }
             if($env:PLATFORM -eq "x86"){
             $ZipFileName = "nppcrypt_$($env:APPVEYOR_REPO_TAG_NAME)_x86.zip"
-            7z a $ZipFileName bin\nppcrypt\$env:PLATFORM\$env:CONFIGURATION\nppcrypt.dll
+            7z a $ZipFileName .\bin\nppcrypt\$env:PLATFORM\$env:CONFIGURATION\nppcrypt.dll
             }
         }
  
