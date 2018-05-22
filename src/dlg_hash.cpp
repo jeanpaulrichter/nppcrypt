@@ -83,7 +83,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 
  		url_help_hash.init(_hInst, _hSelf);
 		url_help_hash.create(::GetDlgItem(_hSelf, IDC_HASH_HELP_HASH), crypt::help::getHelpURL(options.algorithm));
-		AddToolTip(IDC_HASH_PWEDIT, TEXT("utf8 > keccak shake128 > 16 byte"));
+		//AddToolTip(IDC_HASH_PWEDIT, TEXT("utf8 > keccak shake128 > 16 byte"));
 
 		goToCenter();
 		return TRUE;

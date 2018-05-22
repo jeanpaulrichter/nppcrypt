@@ -1,6 +1,6 @@
-// hmac.cpp - written and placed in the public domain by Wei Dai
+// hmac.cpp - originally written and placed in the public domain by Wei Dai
 
-#include "pch.h"
+
 
 #ifndef CRYPTOPP_IMPORTS
 

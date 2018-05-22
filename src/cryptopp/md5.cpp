@@ -1,7 +1,7 @@
 // md5.cpp - modified by Wei Dai from Colin Plumb's public domain md5.c
 // any modifications are placed in the public domain
 
-#include "pch.h"
+
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 #include "md5.h"
 #include "misc.h"
@@ -9,7 +9,7 @@
 NAMESPACE_BEGIN(CryptoPP)
 namespace Weak1 {
 
-#if CRYPTOPP_DEBUG && !defined(CRYPTOPP_DOXYGEN_PROCESSING)
+#if defined(CRYPTOPP_DEBUG) && !defined(CRYPTOPP_DOXYGEN_PROCESSING)
 void MD5_TestInstantiations()
 {
 	MD5 x;

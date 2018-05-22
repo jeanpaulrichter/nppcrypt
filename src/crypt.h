@@ -18,7 +18,9 @@ GNU General Public License for more details.
 
 #include <string>
 #include <vector>
-#include "cryptopp/config.h"
+#include "cryptopp\config.h"
+
+typedef CryptoPP::byte byte;
 
 namespace crypt
 {
@@ -53,7 +55,7 @@ namespace crypt
 	};
 
 	enum class EOL : unsigned { 
-		windows, unix, COUNT
+		windows, unix, oldmac, COUNT
 	};
 
 	enum class KeyDerivation : unsigned {

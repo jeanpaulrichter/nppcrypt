@@ -382,7 +382,10 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Keccak_512 >); break;
 		default: throw CExc(CExc::Code::invalid_pbkdf2_hash);
 		}
-		pbkdf2->DeriveKey(&tKey[0], tKey.size(), 0, (const byte*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, options.key.options[1]);
+		pbkdf2->DeriveKey(&tKey[0], tKey.size(), 
+						(const byte*)options.password.c_str(), options.password.size(), 
+						MakeParameters(Name::Salt(), ConstByteArrayParameter(ptSalt, options.key.salt_bytes))
+						("Iterations", options.key.options[1]));
 		break;
 	}
 	case KeyDerivation::bcrypt:
@@ -495,9 +498,8 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			{
 				std::vector<byte> temp(in_len);
 				pEnc->ProcessData(temp.data(), in, in_len);
-				CryptoPP::EOL eol = ((options.encoding.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
 				ArraySource(temp.data(), temp.size(), true,
-					new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, eol, (int)options.encoding.linelength)
+					new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, (int)options.encoding.linelength, CryptoPP::EOL(options.encoding.eol))
 				);
 				if (options.encoding.linebreaks) {
 					buffer.pop_back();
@@ -647,9 +649,8 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 				}
 				case Encoding::base64:
 				{
-					CryptoPP::EOL eol = ((options.encoding.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
 					StringSource(temp.data(), temp.size() - tag_size, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
-						options.encoding.linebreaks, eol, (int)options.encoding.linelength));
+						options.encoding.linebreaks, (int)options.encoding.linelength, CryptoPP::EOL(options.encoding.eol)));
 					if (options.encoding.linebreaks) {
 						buffer.pop_back();
 						if (options.encoding.eol == crypt::EOL::windows) {
@@ -919,9 +920,8 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 				}
 				case crypt::Encoding::base64:
 				{
-					CryptoPP::EOL eol = ((options.encoding.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
 					StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
-							new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, eol, (int)options.encoding.linelength)
+							new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, (int)options.encoding.linelength, CryptoPP::EOL(options.encoding.eol))
 							));
 					if (options.encoding.linebreaks) {
 						buffer.pop_back();
@@ -1099,7 +1099,10 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			pbkdf2.reset(new PKCS5_PBKDF2_HMAC< Keccak_512 >); break;
 		default: throw CExc(CExc::Code::invalid_pbkdf2_hash);
 		}
-		pbkdf2->DeriveKey(tKey.data(), tKey.size(), 0, (const byte*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, options.key.options[1]);
+		pbkdf2->DeriveKey(&tKey[0], tKey.size(),
+			(const byte*)options.password.c_str(), options.password.size(),
+			MakeParameters(Name::Salt(), ConstByteArrayParameter(ptSalt, options.key.salt_bytes))
+			("Iterations", options.key.options[1]));
 		break;
 	}
 	case crypt::KeyDerivation::bcrypt:
@@ -1959,8 +1962,7 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		case Encoding::base64:
 		{
-			CryptoPP::EOL eol = ((options.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
-			StringSource(in, in_len, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, eol, options.linelength));
+			StringSource(in, in_len, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, options.linelength, CryptoPP::EOL(options.eol)));
 			break;
 		}
 		}
@@ -1982,8 +1984,7 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		case Encoding::base64:
 		{
-			CryptoPP::EOL eol = ((options.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
-			StringSource(in, in_len, true, new HexDecoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, eol, options.linelength)));
+			StringSource(in, in_len, true, new HexDecoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, options.linelength, CryptoPP::EOL(options.eol))));
 			break;
 		}
 		}
@@ -2005,8 +2006,7 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		case Encoding::base64:
 		{
-			CryptoPP::EOL eol = ((options.eol == crypt::EOL::windows) ? CryptoPP::EOL::Windows : CryptoPP::EOL::Unix);
-			StringSource(in, in_len, true, new Base32Decoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, eol, options.linelength)));
+			StringSource(in, in_len, true, new Base32Decoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, options.linelength, CryptoPP::EOL(options.eol))));
 			break;
 		}
 		}

@@ -30,7 +30,7 @@
 #define URLCTRL_INCLUDED
 
 #include <string>
-#include "Window.h"
+#include "DockingFeature/Window.h"
 
 class URLCtrl : public Window
 {

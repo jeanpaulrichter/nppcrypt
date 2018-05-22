@@ -1,4 +1,4 @@
-#include "pch.h"
+
 #include "tiger.h"
 
 NAMESPACE_BEGIN(CryptoPP)

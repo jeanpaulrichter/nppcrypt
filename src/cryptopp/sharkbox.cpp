@@ -1,4 +1,4 @@
-#include "pch.h"
+
 #include "shark.h"
 
 #if CRYPTOPP_GCC_DIAGNOSTIC_AVAILABLE

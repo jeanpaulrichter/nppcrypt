@@ -436,6 +436,7 @@ void DecryptDlg()
 void HashDlg()
 {
 	try	{
+		dlg_hash.setParent(nppData._nppHandle);
 		if (!dlg_hash.isCreated()) {
 			tTbData	data = { 0 };
 			dlg_hash.create(&data);
@@ -455,6 +456,7 @@ void HashDlg()
 void RandomDlg()
 {
 	try	{
+		dlg_random.setParent(nppData._nppHandle);
 		if (!dlg_random.isCreated()) {
 			tTbData	data = { 0 };
 			dlg_random.create(&data);
@@ -474,6 +476,7 @@ void RandomDlg()
 void ConvertDlg()
 {
 	try	{
+		dlg_convert.setParent(nppData._nppHandle);
 		if (!dlg_convert.isCreated()) {
 			tTbData	data = { 0 };
 			dlg_convert.create(&data);

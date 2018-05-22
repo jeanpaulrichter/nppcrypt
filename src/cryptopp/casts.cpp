@@ -1,4 +1,4 @@
-#include "pch.h"
+
 #include "cast.h"
 
 NAMESPACE_BEGIN(CryptoPP)

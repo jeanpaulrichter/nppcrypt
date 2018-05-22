@@ -1,6 +1,4 @@
-// simple.cpp - written and placed in the public domain by Wei Dai
-
-#include "pch.h"
+// simple.cpp - originally written and placed in the public domain by Wei Dai
 
 #ifndef CRYPTOPP_IMPORTS
 

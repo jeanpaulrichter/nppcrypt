@@ -1,6 +1,6 @@
-// blumshub.cpp - written and placed in the public domain by Wei Dai
+// blumshub.cpp - originally written and placed in the public domain by Wei Dai
 
-#include "pch.h"
+
 #include "blumshub.h"
 #include "integer.h"
 
@@ -22,7 +22,7 @@ unsigned int PublicBlumBlumShub::GenerateBit()
 		bitsLeft = maxBits;
 	}
 
-	return current.GetBit(--bitsLeft);
+	return static_cast<unsigned int>(current.GetBit(--bitsLeft));
 }
 
 byte PublicBlumBlumShub::GenerateByte()

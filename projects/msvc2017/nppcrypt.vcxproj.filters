@@ -104,9 +104,6 @@
     <ClCompile Include="..\..\src\dlg_initdata.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\npp\StaticDialog.cpp">
-      <Filter>Source Files\notepad++</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\npp\ModalDialog.cpp">
       <Filter>Source Files\notepad++</Filter>
     </ClCompile>
@@ -139,6 +136,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\scrypt\warnp.c">
       <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\npp\DockingFeature\StaticDialog.cpp">
+      <Filter>Source Files\notepad++</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -187,9 +187,6 @@
     <ClInclude Include="..\..\src\npp\URLCtrl.h">
       <Filter>Header Files\notepad++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\npp\Window.h">
-      <Filter>Header Files\notepad++</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\bcrypt\crypt_blowfish.h">
       <Filter>Header Files\bcrypt</Filter>
     </ClInclude>
@@ -217,19 +214,7 @@
     <ClInclude Include="..\..\src\dlg_initdata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\npp\StaticDialog.h">
-      <Filter>Header Files\notepad++</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\npp\ModalDialog.h">
-      <Filter>Header Files\notepad++</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\npp\Docking.h">
-      <Filter>Header Files\notepad++</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\npp\DockingDlgInterface.h">
-      <Filter>Header Files\notepad++</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\npp\dockingResource.h">
       <Filter>Header Files\notepad++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\npp\Definitions.h">
@@ -267,6 +252,21 @@
     </ClInclude>
     <ClInclude Include="..\..\src\scrypt\warnp.h">
       <Filter>Header Files\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\DockingFeature\Docking.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\DockingFeature\DockingDlgInterface.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\DockingFeature\dockingResource.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\DockingFeature\StaticDialog.h">
+      <Filter>Header Files\notepad++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\npp\DockingFeature\Window.h">
+      <Filter>Header Files\notepad++</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

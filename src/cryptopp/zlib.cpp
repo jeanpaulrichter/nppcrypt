@@ -1,11 +1,11 @@
-// zlib.cpp - written and placed in the public domain by Wei Dai
+// zlib.cpp - originally written and placed in the public domain by Wei Dai
 
 // "zlib" is the name of a well known C language compression library
 // (http://www.zlib.org) and also the name of a compression format
 // (RFC 1950) that the library implements. This file is part of a
 // complete reimplementation of the zlib compression format.
 
-#include "pch.h"
+
 #include "zlib.h"
 #include "zdeflate.h"
 #include "zinflate.h"

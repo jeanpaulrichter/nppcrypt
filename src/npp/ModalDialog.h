@@ -15,7 +15,7 @@ GNU General Public License for more details.
 #ifndef MODALDIALOG_H_DEF
 #define MODALDIALOG_H_DEF
 
-#include "Window.h"
+#include "DockingFeature/Window.h"
 #include "Notepad_plus_msgs.h"
 
 class ModalDialog : public Window
