@@ -31,10 +31,15 @@ bool ModalDialog::doDialog()
 		return true;
 	}
 	if (ret == 0 || ret == -1) {
-		DWORD err = ::GetLastError();
-		char errMsg[256];
-		sprintf(errMsg, "CreateDialogParam() return NULL.\rGetLastError() == %u", err);
-		::MessageBoxA(NULL, errMsg, "In StaticDialog::create()", MB_OK);
+		DWORD err = GetLastError();
+		LPTSTR Error = 0;
+		if (!::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL,	err, 0,	(LPTSTR)&Error,	0, NULL) == 0) {
+			MessageBox(_hParent, Error, _T("Error: failed to create dialog"), MB_OK | MB_ICONWARNING);
+		}
+		if (Error) {
+			::LocalFree(Error);
+			Error = 0;
+		}
 	}
 	return false;
 }
@@ -90,7 +95,6 @@ INT_PTR CALLBACK ModalDialog::dlgProc(HWND hwnd, UINT message, WPARAM wParam, LP
 		}
 		return TRUE;
 	}
-
 	default:
 	{
 		ModalDialog *pModalDlg = reinterpret_cast<ModalDialog *>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
