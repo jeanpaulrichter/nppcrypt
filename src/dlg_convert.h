@@ -18,18 +18,13 @@ GNU General Public License for more details.
 #ifndef DLG_CONVERT_H_DEF
 #define DLG_CONVERT_H_DEF
 
-#include "npp/DockingFeature/DockingDlgInterface.h"
+#include "npp/ModalDialog.h"
 #include "crypt.h"
 
-class DlgConvert : public DockingDlgInterface
+class DlgConvert : public ModalDialog
 {
 public:
 						DlgConvert(crypt::Options::Convert& opt);
-	void				display(bool toShow = true) const;
-
-	void setParent(HWND parent2set) {
-		_hParent = parent2set;
-	};
 
 private:
 	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);

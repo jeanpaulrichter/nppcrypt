@@ -109,13 +109,13 @@ extern "C" __declspec(dllexport) void setInfo(NppData notpadPlusData)
 	helper::NPP::setCommand(7, TEXT("---"), NULL, NULL, false);
 	helper::NPP::setCommand(8, TEXT("About"), AboutDlg, NULL, false);
 
-	dlg_random.init(m_hInstance, nppData._nppHandle);
-	dlg_hash.init(m_hInstance, nppData._nppHandle);
+	dlg_random.init(m_hInstance, nppData._nppHandle, IDD_RANDOM, IDC_OK);
+	dlg_hash.init(m_hInstance, nppData._nppHandle, IDD_HASH, IDC_OK);
 	dlg_crypt.init(m_hInstance, nppData._nppHandle, IDD_CRYPT, IDC_OK);
 	dlg_about.init(m_hInstance, nppData._nppHandle, IDD_ABOUT, IDC_OK);
 	dlg_preferences.init(m_hInstance, nppData._nppHandle, IDD_PREFERENCES, IDC_OK);
 	dlg_auth.init(m_hInstance, nppData._nppHandle, IDD_AUTH, IDC_OK);
-	dlg_convert.init(m_hInstance, nppData._nppHandle);
+	dlg_convert.init(m_hInstance, nppData._nppHandle, IDD_CONVERT, IDC_OK);
 	dlg_initdata.init(m_hInstance, nppData._nppHandle, IDD_INITDATA, IDC_OK);
 
 	TCHAR preffile_s[MAX_PATH];
@@ -436,16 +436,7 @@ void DecryptDlg()
 void HashDlg()
 {
 	try	{
-		dlg_hash.setParent(nppData._nppHandle);
-		if (!dlg_hash.isCreated()) {
-			tTbData	data = { 0 };
-			dlg_hash.create(&data);
-			data.uMask = DWS_DF_FLOATING;
-			data.pszModuleName = dlg_hash.getPluginFileName();
-			data.dlgID = NPPC_FUNC_HASH_ID;
-			::SendMessage(nppData._nppHandle, NPPM_DMMREGASDCKDLG, 0, (LPARAM)&data);
-		}
-		dlg_hash.display();
+		dlg_hash.doDialog();
 	} catch (CExc& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
@@ -456,16 +447,7 @@ void HashDlg()
 void RandomDlg()
 {
 	try	{
-		dlg_random.setParent(nppData._nppHandle);
-		if (!dlg_random.isCreated()) {
-			tTbData	data = { 0 };
-			dlg_random.create(&data);
-			data.uMask = DWS_DF_FLOATING;
-			data.pszModuleName = dlg_random.getPluginFileName();
-			data.dlgID = NPPC_FUNC_RANDOM_ID;
-			::SendMessage(nppData._nppHandle, NPPM_DMMREGASDCKDLG, 0, (LPARAM)&data);
-		}
-		dlg_random.display();
+		dlg_random.doDialog();
 	} catch (CExc& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
@@ -476,16 +458,9 @@ void RandomDlg()
 void ConvertDlg()
 {
 	try	{
-		dlg_convert.setParent(nppData._nppHandle);
-		if (!dlg_convert.isCreated()) {
-			tTbData	data = { 0 };
-			dlg_convert.create(&data);
-			data.uMask = DWS_DF_FLOATING;
-			data.pszModuleName = dlg_convert.getPluginFileName();
-			data.dlgID = NPPC_FUNC_CONVERT_ID;
-			::SendMessage(nppData._nppHandle, NPPM_DMMREGASDCKDLG, 0, (LPARAM)&data);
+		if (helper::Scintilla::getSelectionLength()) {
+			dlg_convert.doDialog();
 		}
-		dlg_convert.display();
 	} catch (CExc& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {

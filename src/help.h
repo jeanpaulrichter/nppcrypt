@@ -29,6 +29,7 @@ namespace helper
 	{
 		HWND			getCurrent();
 		void			replaceSelection(const std::basic_string<byte>& buffer);
+		size_t			getSelectionLength();
 		bool			getSelection(const byte** pdata, size_t* length, size_t* start = NULL, size_t* end = NULL);
 	};
 

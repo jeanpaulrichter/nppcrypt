@@ -475,7 +475,6 @@ void DlgCrypt::initDialog()
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), crypt->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW), crypt->hmac.enable);
 	}
-	//AddToolTip(IDC_CRYPT_AUTH_PW_VALUE, TEXT("utf8 > keccak shake128 > 16 byte"), hwnd_auth);
 
 	url_help[int(HelpURL::hmac)].init(_hInst, hwnd_auth);
 	url_help[int(HelpURL::hmac)].create(::GetDlgItem(hwnd_auth, IDC_CRYPT_HELP_HMAC), NPPC_CRYPT_HMAC_HELP_URL);

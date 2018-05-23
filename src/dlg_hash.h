@@ -18,20 +18,15 @@ GNU General Public License for more details.
 #ifndef DLG_HASH_H_DEF
 #define DLG_HASH_H_DEF
 
-#include "npp/DockingFeature/DockingDlgInterface.h"
+#include "npp/ModalDialog.h"
 #include "npp/URLCtrl.h"
 #include "exception.h"
 #include "crypt.h"
 
-class DlgHash : public DockingDlgInterface
+class DlgHash : public ModalDialog
 {
 public:
 						DlgHash(crypt::Options::Hash& opt);
-	void				display(bool toShow = true) const;
-
-	void setParent(HWND parent2set) {
-		_hParent = parent2set;
-	};
 
 private:
 	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);

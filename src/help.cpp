@@ -39,6 +39,14 @@ HWND helper::Scintilla::getCurrent()
 	}
 }
 
+size_t helper::Scintilla::getSelectionLength()
+{
+	HWND hCurScintilla = helper::Scintilla::getCurrent();
+	size_t selStart = ::SendMessage(hCurScintilla, SCI_GETSELECTIONSTART, 0, 0);
+	size_t selEnd = ::SendMessage(hCurScintilla, SCI_GETSELECTIONEND, 0, 0);
+	return selEnd - selStart;
+}
+
 bool helper::Scintilla::getSelection(const byte** pdata, size_t* length, size_t* start, size_t* end)
 {
 	if (pdata == NULL || length == NULL) {

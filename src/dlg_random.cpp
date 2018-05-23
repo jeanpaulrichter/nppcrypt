@@ -21,21 +21,8 @@ GNU General Public License for more details.
 #include "exception.h"
 #include "help.h"
 
-DlgRandom::DlgRandom(crypt::Options::Random& opt) : DockingDlgInterface(IDD_RANDOM), options(opt)
+DlgRandom::DlgRandom(crypt::Options::Random& opt) : ModalDialog(), options(opt)
 {
-};
-
-void DlgRandom::display(bool toShow) const
-{
-	if (toShow) {
-		if (!helper::Buffer::isCurrent8Bit()) {
-			if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R3, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-				::SendDlgItemMessage(_hSelf, IDC_RANDOM_R3, BM_SETCHECK, BST_UNCHECKED, 0);
-				::SendDlgItemMessage(_hSelf, IDC_RANDOM_R4, BM_SETCHECK, BST_CHECKED, 0);
-			}
-		}
-	}
-	DockingDlgInterface::display(toShow);
 };
 
 INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
@@ -59,11 +46,21 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
 		case crypt::Random::base64: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_R6, BM_SETCHECK, BST_CHECKED, 0); break;
 		}
 
+		if (!helper::Buffer::isCurrent8Bit()) {
+			if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R3, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+				::SendDlgItemMessage(_hSelf, IDC_RANDOM_R3, BM_SETCHECK, BST_UNCHECKED, 0);
+				::SendDlgItemMessage(_hSelf, IDC_RANDOM_R4, BM_SETCHECK, BST_CHECKED, 0);
+			}
+		}
+
 		goToCenter();
 		return TRUE;
 	}
 	case WM_COMMAND : 
 	{
+		if (LOWORD(wParam) == IDCANCEL) {
+			EndDialog(_hSelf, IDC_CANCEL);
+		}
 		switch (HIWORD(wParam))
 		{
 		case BN_CLICKED:
@@ -84,6 +81,7 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
 					} else {
 						helper::Windows::copyToClipboard(buffer);
 					}
+					EndDialog(_hSelf, IDC_OK);
 					return TRUE;
 				} catch (CExc& exc) {
 					helper::Windows::error(_hSelf, exc.what());
@@ -126,18 +124,19 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
 
 bool DlgRandom::updateOptions()
 {
-	if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R1, BM_GETCHECK, 0, 0) == BST_CHECKED)
+	if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R1, BM_GETCHECK, 0, 0) == BST_CHECKED) {
 		options.mode = crypt::Random::charnum;
-	else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R2, BM_GETCHECK, 0, 0) == BST_CHECKED)
+	} else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R2, BM_GETCHECK, 0, 0) == BST_CHECKED) {
 		options.mode = crypt::Random::specials;
-	else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R3, BM_GETCHECK, 0, 0) == BST_CHECKED)
+	} else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R3, BM_GETCHECK, 0, 0) == BST_CHECKED) {
 		options.mode = crypt::Random::ascii;
-	else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R4, BM_GETCHECK, 0, 0) == BST_CHECKED)
+	} else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R4, BM_GETCHECK, 0, 0) == BST_CHECKED) {
 		options.mode = crypt::Random::base16;
-	else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R5, BM_GETCHECK, 0, 0) == BST_CHECKED)
+	} else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_R5, BM_GETCHECK, 0, 0) == BST_CHECKED) {
 		options.mode = crypt::Random::base32;
-	else
+	} else {
 		options.mode = crypt::Random::base64;
+	}
 
 	options.length = ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_GETPOS32, 0, 0);
 

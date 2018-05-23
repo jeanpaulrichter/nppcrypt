@@ -36,7 +36,6 @@
     <ClCompile Include="..\..\src\keccak\KeccakF-1600-inplace32BI.cpp" />
     <ClCompile Include="..\..\src\keccak\KeccakHash.cpp" />
     <ClCompile Include="..\..\src\keccak\KeccakSponge.cpp" />
-    <ClCompile Include="..\..\src\npp\DockingFeature\StaticDialog.cpp" />
     <ClCompile Include="..\..\src\npp\ModalDialog.cpp" />
     <ClCompile Include="..\..\src\exception.cpp" />
     <ClCompile Include="..\..\src\cryptheader.cpp" />
@@ -70,11 +69,6 @@
     <ClInclude Include="..\..\src\keccak\KeccakHash.h" />
     <ClInclude Include="..\..\src\keccak\KeccakSponge.h" />
     <ClInclude Include="..\..\src\npp\Definitions.h" />
-    <ClInclude Include="..\..\src\npp\DockingFeature\Docking.h" />
-    <ClInclude Include="..\..\src\npp\DockingFeature\DockingDlgInterface.h" />
-    <ClInclude Include="..\..\src\npp\DockingFeature\dockingResource.h" />
-    <ClInclude Include="..\..\src\npp\DockingFeature\StaticDialog.h" />
-    <ClInclude Include="..\..\src\npp\DockingFeature\Window.h" />
     <ClInclude Include="..\..\src\npp\ModalDialog.h" />
     <ClInclude Include="..\..\src\exception.h" />
     <ClInclude Include="..\..\src\cryptheader.h" />
@@ -84,6 +78,7 @@
     <ClInclude Include="..\..\src\npp\PluginInterface.h" />
     <ClInclude Include="..\..\src\npp\Scintilla.h" />
     <ClInclude Include="..\..\src\npp\URLCtrl.h" />
+    <ClInclude Include="..\..\src\npp\Window.h" />
     <ClInclude Include="..\..\src\preferences.h" />
     <ClInclude Include="..\..\src\resource.h" />
     <ClInclude Include="..\..\src\scrypt\config.h" />
@@ -166,7 +161,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)..\..\bin\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <OutDir>..\..\..\..\..\..\..\..\Program Files\Notepad++\plugins</OutDir>
     <IntDir>$(SolutionDir)..\..\obj\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</IntDir>
     <TargetName>nppcrypt</TargetName>
   </PropertyGroup>
@@ -184,7 +179,7 @@
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <TargetName>nppcrypt</TargetName>
     <IntDir>$(SolutionDir)..\..\obj\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)..\..\bin\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <OutDir>..\..\..\..\..\..\..\..\Program Files\Notepad++\plugins</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

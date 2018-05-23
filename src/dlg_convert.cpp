@@ -24,14 +24,9 @@ GNU General Public License for more details.
 #include <commctrl.h>
 #include "help.h"
 
-DlgConvert::DlgConvert(crypt::Options::Convert& opt) : DockingDlgInterface(IDD_CONVERT), options(opt)
+DlgConvert::DlgConvert(crypt::Options::Convert& opt) : ModalDialog(), options(opt)
 {
-};
-
-void DlgConvert::display(bool toShow) const
-{
-	DockingDlgInterface::display(toShow);
-};
+}
 
 INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -65,6 +60,9 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 	}
 	case WM_COMMAND:
 	{
+		if (LOWORD(wParam) == IDCANCEL) {
+			EndDialog(_hSelf, IDC_CANCEL);
+		}
 		switch (HIWORD(wParam))
 		{
 		case BN_CLICKED:
@@ -88,6 +86,7 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 					} else {
 						helper::Windows::copyToClipboard(buffer);
 					}
+					EndDialog(_hSelf, IDC_OK);
 				} catch (CExc& exc) {
 					helper::Windows::error(_hSelf, exc.what());
 				} catch (...) {

@@ -18,18 +18,13 @@ GNU General Public License for more details.
 #ifndef DLG_RANDOM_H_DEF
 #define DLG_RANDOM_H_DEF
 
-#include "npp/DockingFeature/DockingDlgInterface.h"
+#include "npp/ModalDialog.h"
 #include "crypt.h"
 
-class DlgRandom : public DockingDlgInterface
+class DlgRandom : public ModalDialog
 {
 public:
 						DlgRandom(crypt::Options::Random& opt);
-	void				display(bool toShow = true) const;
-
-	void setParent(HWND parent2set) {
-		_hParent = parent2set;
-	};
 
 private:
 	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);

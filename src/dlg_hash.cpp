@@ -22,14 +22,9 @@ GNU General Public License for more details.
 #include "npp/Definitions.h"
 #include "help.h"
 
-DlgHash::DlgHash(crypt::Options::Hash& opt) : DockingDlgInterface(IDD_HASH), options(opt)
+DlgHash::DlgHash(crypt::Options::Hash& opt) : ModalDialog(), options(opt)
 {
 }
-
-void DlgHash::display(bool toShow) const
-{
-	DockingDlgInterface::display(toShow);
-};
 
 INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -83,13 +78,15 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 
  		url_help_hash.init(_hInst, _hSelf);
 		url_help_hash.create(::GetDlgItem(_hSelf, IDC_HASH_HELP_HASH), crypt::help::getHelpURL(options.algorithm));
-		//AddToolTip(IDC_HASH_PWEDIT, TEXT("utf8 > keccak shake128 > 16 byte"));
 
 		goToCenter();
 		return TRUE;
 	}
 	case WM_COMMAND: 
 	{
+		if (LOWORD(wParam) == IDCANCEL) {
+			EndDialog(_hSelf, IDC_CANCEL);
+		}
 		switch (HIWORD(wParam))
 		{
 		case BN_CLICKED:
@@ -113,6 +110,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 					} else {
 						helper::Windows::copyToClipboard(buffer);
 					}
+					EndDialog(_hSelf, IDC_OK);
 				} catch (CExc& exc) {
 					helper::Windows::error(_hSelf, exc.what());
 				} catch (...) {
