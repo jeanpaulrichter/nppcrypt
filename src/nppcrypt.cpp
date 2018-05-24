@@ -81,7 +81,11 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD reasonForCall, LPVOID lpReserved )
 		dlg_auth.destroy();
 		dlg_convert.destroy();
 		dlg_initdata.destroy();
-		break;
+		for (cryptfilemap::iterator i = crypt_files.begin(); i != crypt_files.end(); i++) {
+			std::fill(i->second.options.password.begin(), i->second.options.password.end(), 0);
+		}
+		crypt_files.clear();
+  		break;
 	}
 	case DLL_THREAD_ATTACH:
 	{
