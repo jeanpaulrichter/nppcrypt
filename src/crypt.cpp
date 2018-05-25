@@ -13,12 +13,34 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
+#include <iostream>
+#include <chrono>
+
+template<typename TimeT = std::chrono::milliseconds>
+struct measure
+{
+	template<typename F, typename ...Args>
+	static typename TimeT::rep execution(F func, Args&&... args)
+	{
+		auto start = std::chrono::system_clock::now();
+
+		// Now call the function with all the parameters you need.
+		func(std::forward<Args>(args)...);
+
+		auto duration = std::chrono::duration_cast< TimeT>
+			(std::chrono::system_clock::now() - start);
+
+		return duration.count();
+	}
+};
+
 #include <cmath>
 #include "crypt.h"
 #include "exception.h"
 
 #include "bcrypt/crypt_blowfish.h"
 #include "keccak/KeccakHash.h"
+
 extern "C" {
 #include "scrypt/crypto_scrypt.h"
 }
@@ -70,6 +92,7 @@ extern "C" {
 #include "cryptopp/panama.h"
 #include "cryptopp/eax.h"
 #include "cryptopp/files.h"
+#include "cryptopp/scrypt.h"
 
 template<typename T>
 T ipow(T base, T exp)
@@ -150,7 +173,7 @@ namespace Strings {
 	static const char*	cipher_help_url[] = { "Data_Encryption_Standard", "Data_Encryption_Standard", "Data_Encryption_Standard", "DES-X", "GOST_(block_cipher)", "CAST-128", "CAST-256", "RC2", "RC4", "RC5", "RC6", "International_Data_Encryption_Algorithm", "Blowfish_(cipher)", "Camellia_(cipher)", "SEED", "Tiny_Encryption_Algorithm", "XTEA", "SHACAL", "MARS_(cryptography)", "Twofish", "Serpent_(cipher)", "Advanced_Encryption_Standard", "Advanced_Encryption_Standard", "Advanced_Encryption_Standard", "SOSEMANUK", "Salsa20", "Salsa20", "Salsa20#ChaCha_variant", "Panama_(cryptography)" };
 
 	static const char*	mode[] = { "ecb", "cbc", "cfb", "ofb", "ctr", "eax", "ccm", "gcm" };
-	static const char*	mode_help_url[] = { "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "EAX_mode", "CCM_mode", "Galois/Counter_Mode" };
+	static const char*	mode_help_url[] = { "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "Block_cipher_mode_of_operation", "EAX_mode", "CCM_mode", "Galois/Counter_Mode" };
 
 	static const char*	iv[] = { "random", "keyderivation", "zero" };
 
@@ -1124,9 +1147,34 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	}
 	case crypt::KeyDerivation::scrypt:
 	{
-		if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
-			throw CExc(CExc::Code::scrypt_failed);
-		}
+		//if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
+		//	throw CExc(CExc::Code::scrypt_failed);
+		//}
+		//using namespace CryptoPP;
+		std::string encoded;
+		std::ostringstream out;
+
+		auto start = std::chrono::system_clock::now();
+		crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size());
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>	(std::chrono::system_clock::now() - start);
+
+
+		StringSource ss(&tKey[0], tKey.size(), true, new HexEncoder(new StringSink(encoded)));
+		out << "Old = " << duration.count() << " = " << encoded << std::endl;
+
+		Scrypt scrypt;
+		encoded.clear();
+		start = std::chrono::system_clock::now();
+		scrypt.DeriveKey(&tKey[0], tKey.size(), (unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2]);
+		duration = std::chrono::duration_cast<std::chrono::milliseconds>	(std::chrono::system_clock::now() - start);
+		StringSource ssss(&tKey[0], tKey.size(), true, new HexEncoder(new StringSink(encoded)));
+		out << "New = " << duration.count() << " = " << encoded << std::endl;
+
+		std::string fuck = out.str();
+		std::cerr << fuck;
+		//if (!scrypt.DeriveKey(&tKey[0], tKey.size(), (unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2])) {
+		//	throw CExc(CExc::Code::scrypt_failed);
+		//}
 		break;
 	}
 	}
