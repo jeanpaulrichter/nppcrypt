@@ -103,12 +103,13 @@ namespace crypt
 	{
 		struct Crypt
 		{
-			Crypt() : cipher(Cipher::rijndael256), mode(Mode::gcm), iv(IV::random) {};
+			Crypt() : cipher(Cipher::rijndael256), mode(Mode::gcm), iv(IV::random), password_encoding(crypt::Encoding::ascii) {};
 
 			crypt::Cipher			cipher;
 			crypt::Mode				mode;
 			crypt::IV				iv;
 			std::string				password;
+			crypt::Encoding			password_encoding;
 
 			struct Key
 			{

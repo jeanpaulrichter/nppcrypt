@@ -85,6 +85,7 @@ GNU General Public License for more details.
 #define IDC_CRYPT_HELP_IV               1048
 #define IDC_CRYPT_HELP_KEYALGO          1049
 #define IDC_CRYPT_HELP_HMAC             1050
+#define IDC_CRYPT_PASSWORD_ENC          1051
 
 #define IDC_HASH_ALGO                   1000
 #define IDC_HASH_ENC_ASCII              1001

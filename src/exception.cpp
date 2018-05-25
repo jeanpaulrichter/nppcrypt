@@ -66,7 +66,8 @@ static const char* error_msgs[] =
 	/* preffile_corrupted			*/ "Preferences file corrupted.",
 	/* inputfile_read_fail			*/ "Failed to read input-file.",
 	/* outputfile_write_fail		*/ "Failed to write output-file.",
-	/* only_utf8_decrypt			*/ "utf16/utf32 bom present: nppcrypt creates only utf8 files."
+	/* only_utf8_decrypt			*/ "utf16/utf32 bom present: nppcrypt creates only utf8 files.",
+	/* password_decode				*/ "Failed to decode password"
 };
 
 const char* CExc::what() const throw()

@@ -74,7 +74,8 @@ public:
 		preffile_corrupted,
 		inputfile_read_fail,
 		outputfile_write_fail,
-		only_utf8_decrypt
+		only_utf8_decrypt,
+		password_decode
 	};
 
 	CExc(Code err_code=Code::unexpected);

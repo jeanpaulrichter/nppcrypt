@@ -323,6 +323,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		throw CExc(CExc::Code::input_null);
 	}
 	
+	SecByteBlock		password;
 	std::vector<byte>	tKey;
 	std::vector<byte>	tVec;
 	std::vector<byte>	tSalt;
@@ -332,6 +333,29 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	int					block_size;
 
 	getCipherInfo(options.cipher, options.mode, key_len, iv_len, block_size);
+
+	// --------------------------- prepare password:
+	if(options.password_encoding == Encoding::ascii) {
+		password.Assign((const byte*)options.password.c_str(), options.password.size());
+	} else {
+		std::unique_ptr<BaseN_Decoder> decoder;
+		if (options.password_encoding == Encoding::base16) {
+			decoder.reset(new HexDecoder);
+		} else if(options.password_encoding == Encoding::base16) {
+			decoder.reset(new Base32Decoder);
+		} else {
+			decoder.reset(new Base64Decoder);
+		}
+		decoder->Put((const byte*)options.password.data(), options.password.size());
+		decoder->MessageEnd();
+		word64 size = decoder->MaxRetrievable();
+		if (size && size <= SIZE_MAX) {
+			password.resize(size);
+			decoder->Get(&password[0], password.size());
+		} else {
+			throw CExc(CExc::Code::password_decode);
+		}
+	}
 
 	// --------------------------- prepare salt vector:
 	if (options.key.salt_bytes > 0)	{
@@ -406,7 +430,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		default: throw CExc(CExc::Code::invalid_pbkdf2_hash);
 		}
 		pbkdf2->DeriveKey(&tKey[0], tKey.size(), 
-						(const byte*)options.password.c_str(), options.password.size(), 
+						password.BytePtr(), password.size(), 
 						MakeParameters(Name::Salt(), ConstByteArrayParameter(ptSalt, options.key.salt_bytes))
 						("Iterations", options.key.options[1]));
 		break;
@@ -420,7 +444,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		memset(output, 0, sizeof(output));
-		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL) {
+		if (_crypt_blowfish_rn((const char*)password.BytePtr(), settings, output, 64) == NULL) {
 			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		byte hashdata[23];
@@ -430,7 +454,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	}
 	case KeyDerivation::scrypt:
 	{
-		if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
+		if (crypto_scrypt(password.BytePtr(), password.size(), ptSalt, options.key.salt_bytes, ipow(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
 			throw CExc(CExc::Code::scrypt_failed);
 		}
 		break;
@@ -986,6 +1010,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	using namespace crypt;
 	using namespace	CryptoPP;
 
+	SecByteBlock		password;
 	std::vector<byte>	tKey;
 	std::vector<byte>	tVec;
 	std::vector<byte>	tSalt;
@@ -996,6 +1021,28 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 
 	getCipherInfo(options.cipher, options.mode, key_len, iv_len, block_size);
 
+	// --------------------------- prepare password:
+	if (options.password_encoding == Encoding::ascii) {
+		password.Assign((const byte*)options.password.c_str(), options.password.size());
+	} else {
+		std::unique_ptr<BaseN_Decoder> decoder;
+		if (options.password_encoding == Encoding::base16) {
+			decoder.reset(new HexDecoder);
+		} else if (options.password_encoding == Encoding::base16) {
+			decoder.reset(new Base32Decoder);
+		} else {
+			decoder.reset(new Base64Decoder);
+		}
+		decoder->Put((const byte*)options.password.data(), options.password.size());
+		decoder->MessageEnd();
+		word64 size = decoder->MaxRetrievable();
+		if (size && size <= SIZE_MAX) {
+			password.resize(size);
+			decoder->Get(&password[0], password.size());
+		} else {
+			throw CExc(CExc::Code::password_decode);
+		}
+	}
 	// --------------------------- prepare salt vector:
 	if (options.key.salt_bytes > 0)	{
 		if (options.key.algorithm == crypt::KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
@@ -1123,7 +1170,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		default: throw CExc(CExc::Code::invalid_pbkdf2_hash);
 		}
 		pbkdf2->DeriveKey(&tKey[0], tKey.size(),
-			(const byte*)options.password.c_str(), options.password.size(),
+			password.BytePtr(), password.size(),
 			MakeParameters(Name::Salt(), ConstByteArrayParameter(ptSalt, options.key.salt_bytes))
 			("Iterations", options.key.options[1]));
 		break;
@@ -1137,7 +1184,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		memset(output, 0, sizeof(output));
-		if (_crypt_blowfish_rn(options.password.c_str(), settings, output, 64) == NULL) {
+		if (_crypt_blowfish_rn((const char*)password.BytePtr(), settings, output, 64) == NULL) {
 			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		byte hashdata[23];
@@ -1147,32 +1194,11 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	}
 	case crypt::KeyDerivation::scrypt:
 	{
-		//if (crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
-		//	throw CExc(CExc::Code::scrypt_failed);
-		//}
-		//using namespace CryptoPP;
-		std::string encoded;
-		std::ostringstream out;
-
-		auto start = std::chrono::system_clock::now();
-		crypto_scrypt((unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size());
-		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>	(std::chrono::system_clock::now() - start);
-
-
-		StringSource ss(&tKey[0], tKey.size(), true, new HexEncoder(new StringSink(encoded)));
-		out << "Old = " << duration.count() << " = " << encoded << std::endl;
-
-		Scrypt scrypt;
-		encoded.clear();
-		start = std::chrono::system_clock::now();
-		scrypt.DeriveKey(&tKey[0], tKey.size(), (unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2]);
-		duration = std::chrono::duration_cast<std::chrono::milliseconds>	(std::chrono::system_clock::now() - start);
-		StringSource ssss(&tKey[0], tKey.size(), true, new HexEncoder(new StringSink(encoded)));
-		out << "New = " << duration.count() << " = " << encoded << std::endl;
-
-		std::string fuck = out.str();
-		std::cerr << fuck;
-		//if (!scrypt.DeriveKey(&tKey[0], tKey.size(), (unsigned char*)options.password.c_str(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2])) {
+		if (crypto_scrypt(password.BytePtr(), password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
+			throw CExc(CExc::Code::scrypt_failed);
+		}
+		//CryptoPP::Scrypt scrypt;
+		//if (!scrypt.DeriveKey(&tKey[0], tKey.size(), password.BytePtr(), password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2])) {
 		//	throw CExc(CExc::Code::scrypt_failed);
 		//}
 		break;

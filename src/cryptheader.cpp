@@ -50,6 +50,7 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 	crypt::Options::Crypt	t_options;
 
 	t_options.encoding = options.encoding;
+	t_options.password_encoding = options.password_encoding;
 	t_options.password = options.password;
 
 	// find header body start:
