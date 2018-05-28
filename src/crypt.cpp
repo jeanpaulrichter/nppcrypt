@@ -15,25 +15,6 @@ GNU General Public License for more details.
 
 #include <iostream>
 #include <chrono>
-
-template<typename TimeT = std::chrono::milliseconds>
-struct measure
-{
-	template<typename F, typename ...Args>
-	static typename TimeT::rep execution(F func, Args&&... args)
-	{
-		auto start = std::chrono::system_clock::now();
-
-		// Now call the function with all the parameters you need.
-		func(std::forward<Args>(args)...);
-
-		auto duration = std::chrono::duration_cast< TimeT>
-			(std::chrono::system_clock::now() - start);
-
-		return duration.count();
-	}
-};
-
 #include <cmath>
 #include "crypt.h"
 #include "exception.h"
@@ -196,6 +177,146 @@ namespace Strings {
 	static const std::string	eol_windows = "\r\n";
 	static const std::string	eol_unix = "\n";
 };
+
+// ===========================================================================================================================================================================================
+
+crypt::UserData::UserData()
+{
+}
+
+crypt::UserData::UserData(const char* s, Encoding enc)
+{
+	set(s, strlen(s), enc);
+}
+const byte* crypt::UserData::BytePtr() const
+{
+	return data.BytePtr();
+}
+
+size_t crypt::UserData::size() const
+{
+	return data.size();
+}
+
+size_t crypt::UserData::set(std::string& s, Encoding enc)
+{
+	if(enc == Encoding::ascii) {
+		data.Assign((const byte*)s.c_str(), s.size());
+	} else {
+		std::unique_ptr<CryptoPP::BaseN_Decoder> decoder;
+		if (enc == Encoding::base16) {
+			decoder.reset(new CryptoPP::HexDecoder);
+		} else if (enc == Encoding::base16) {
+			decoder.reset(new CryptoPP::Base32Decoder);
+		} else {
+			decoder.reset(new CryptoPP::Base64Decoder);
+		}
+		decoder->Put((const byte*)s.data(), s.size());
+		decoder->MessageEnd();
+		CryptoPP::word64 size = decoder->MaxRetrievable();
+		if (size && size <= SIZE_MAX) {
+			data.resize(size);
+			decoder->Get(&data[0], data.size());
+		}
+	}
+	return data.size();
+}
+
+size_t crypt::UserData::set(const char* s, size_t length, Encoding enc)
+{
+	if (enc == Encoding::ascii) {
+		data.Assign((const byte*)s, length);
+	} else {
+		std::unique_ptr<CryptoPP::BaseN_Decoder> decoder;
+		if (enc == Encoding::base16) {
+			decoder.reset(new CryptoPP::HexDecoder);
+		} else if (enc == Encoding::base16) {
+			decoder.reset(new CryptoPP::Base32Decoder);
+		} else {
+			decoder.reset(new CryptoPP::Base64Decoder);
+		}
+		decoder->Put((const byte*)s, length);
+		decoder->MessageEnd();
+		CryptoPP::word64 size = decoder->MaxRetrievable();
+		if (size && size <= SIZE_MAX) {
+			data.resize(size);
+			decoder->Get(&data[0], data.size());
+		}
+	}
+	return data.size();
+}
+
+size_t crypt::UserData::set(const byte* s, size_t length)
+{
+	if (s && length) {
+		data.Assign(s, length);
+	}
+	return data.size();
+}
+
+void crypt::UserData::get(std::string& s, Encoding enc) const
+{
+	if (data.size()) {
+		if (enc == Encoding::ascii) {
+			s.assign((const char*)data.BytePtr(), data.size());
+		} else {
+			std::unique_ptr<CryptoPP::SimpleProxyFilter> encoder;
+			if (enc == Encoding::base16) {
+				encoder.reset(new CryptoPP::HexEncoder);
+			} else if (enc == Encoding::base16) {
+				encoder.reset(new CryptoPP::Base32Encoder);
+			} else {
+				encoder.reset(new CryptoPP::Base64Encoder(0,false));
+			}
+			encoder->Put(data.BytePtr(), data.size());
+			encoder->MessageEnd();
+			CryptoPP::word64 size = encoder->MaxRetrievable();
+			if (size && size <= SIZE_MAX) {
+				s.resize(size);
+				encoder->Get((byte*)&s[0], s.size());
+			} else {
+				s.clear();
+			}
+		}
+	} else {
+		s.clear();
+	}
+}
+
+void crypt::UserData::get(secure_string& s, Encoding enc) const
+{
+	if (data.size()) {
+		if (enc == Encoding::ascii) {
+			s.assign((const char*)data.BytePtr(), data.size());
+		} else {
+			std::unique_ptr<CryptoPP::SimpleProxyFilter> encoder;
+			if (enc == Encoding::base16) {
+				encoder.reset(new CryptoPP::HexEncoder);
+			} else if (enc == Encoding::base16) {
+				encoder.reset(new CryptoPP::Base32Encoder);
+			} else {
+				encoder.reset(new CryptoPP::Base64Encoder(0, false));
+			}
+			encoder->Put(data.BytePtr(), data.size());
+			encoder->MessageEnd();
+			CryptoPP::word64 size = encoder->MaxRetrievable();
+			if (size && size <= SIZE_MAX) {
+				s.resize(size);
+				encoder->Get((byte*)&s[0], s.size());
+			} else {
+				s.clear();
+			}
+		}
+	} else {
+		s.clear();
+	}
+}
+
+void crypt::UserData::clear()
+{
+	data.New(0);
+}
+
 // ===========================================================================================================================================================================================
 
 bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, int& key_length, int& iv_length, int& block_size)
@@ -323,39 +444,15 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		throw CExc(CExc::Code::input_null);
 	}
 	
-	SecByteBlock		password;
-	std::vector<byte>	tKey;
-	std::vector<byte>	tVec;
-	std::vector<byte>	tSalt;
+	SecByteBlock		tKey;
+	SecByteBlock		tVec;
+	SecByteBlock		tSalt;
 	const byte*			ptVec = NULL;
 	const byte*			ptSalt = NULL;
 	int					key_len, iv_len;
 	int					block_size;
 
 	getCipherInfo(options.cipher, options.mode, key_len, iv_len, block_size);
-
-	// --------------------------- prepare password:
-	if(options.password_encoding == Encoding::ascii) {
-		password.Assign((const byte*)options.password.c_str(), options.password.size());
-	} else {
-		std::unique_ptr<BaseN_Decoder> decoder;
-		if (options.password_encoding == Encoding::base16) {
-			decoder.reset(new HexDecoder);
-		} else if(options.password_encoding == Encoding::base16) {
-			decoder.reset(new Base32Decoder);
-		} else {
-			decoder.reset(new Base64Decoder);
-		}
-		decoder->Put((const byte*)options.password.data(), options.password.size());
-		decoder->MessageEnd();
-		word64 size = decoder->MaxRetrievable();
-		if (size && size <= SIZE_MAX) {
-			password.resize(size);
-			decoder->Get(&password[0], password.size());
-		} else {
-			throw CExc(CExc::Code::password_decode);
-		}
-	}
 
 	// --------------------------- prepare salt vector:
 	if (options.key.salt_bytes > 0)	{
@@ -382,8 +479,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	} else if (options.iv == crypt::IV::zero) {
 		tKey.resize(key_len);
 		if (iv_len)	{
-			tVec.resize(iv_len);
-			memset(&tVec[0], 0, tVec.size());
+			tVec.Assign(iv_len, 0);
 			ptVec = &tVec[0];
 		}
 	}
@@ -430,7 +526,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		default: throw CExc(CExc::Code::invalid_pbkdf2_hash);
 		}
 		pbkdf2->DeriveKey(&tKey[0], tKey.size(), 
-						password.BytePtr(), password.size(), 
+						options.password.BytePtr(), options.password.size(), 
 						MakeParameters(Name::Salt(), ConstByteArrayParameter(ptSalt, options.key.salt_bytes))
 						("Iterations", options.key.options[1]));
 		break;
@@ -444,7 +540,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		memset(output, 0, sizeof(output));
-		if (_crypt_blowfish_rn((const char*)password.BytePtr(), settings, output, 64) == NULL) {
+		if (_crypt_blowfish_rn((const char*)options.password.BytePtr(), settings, output, 64) == NULL) {
 			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		byte hashdata[23];
@@ -454,54 +550,18 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	}
 	case KeyDerivation::scrypt:
 	{
-		if (crypto_scrypt(password.BytePtr(), password.size(), ptSalt, options.key.salt_bytes, ipow(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
+		if (crypto_scrypt(options.password.BytePtr(), options.password.size(), ptSalt, options.key.salt_bytes, ipow(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
 			throw CExc(CExc::Code::scrypt_failed);
 		}
 		break;
 	}
 	}
 	// --------------------------- return encoded IV and Salt
-	switch (init.encoding) {
-	case Encoding::ascii:
-	{
-		if (options.iv == crypt::IV::random && tVec.size() > 0) {
-			init.iv.assign(tVec.begin(), tVec.end());
-		}
-		if (options.key.salt_bytes > 0) {
-			init.salt.assign(tSalt.begin(), tSalt.end());
-		}
-		break;
+	if (options.iv == crypt::IV::random && tVec.size() > 0) {
+		init.iv.set(tVec.BytePtr(), tVec.size());
 	}
-	case Encoding::base16:
-	{
-		if (options.iv == crypt::IV::random && tVec.size() > 0) {
-			StringSource ss(&tVec[0], tVec.size(), true, new HexEncoder(new StringSink(init.iv)));
-		}
-		if (options.key.salt_bytes > 0) {
-			StringSource ss(&tSalt[0], tSalt.size(), true, new HexEncoder(new StringSink(init.salt)));
-		}
-		break;
-	}
-	case Encoding::base32:
-	{
-		if (options.iv == crypt::IV::random && tVec.size() > 0) {
-			StringSource ss(&tVec[0], tVec.size(), true, new Base32Encoder(new StringSink(init.iv)));
-		}
-		if (options.key.salt_bytes > 0) {
-			StringSource ss(&tSalt[0], tSalt.size(), true, new Base32Encoder(new StringSink(init.salt)));
-		}
-		break;
-	}
-	case Encoding::base64:
-	{
-		if (options.iv == crypt::IV::random && tVec.size() > 0) {
-			StringSource ss(&tVec[0], tVec.size(), true, new Base64Encoder(new StringSink(init.iv), false));
-		}
-		if (options.key.salt_bytes > 0) {
-			StringSource ss(&tSalt[0], tSalt.size(), true, new Base64Encoder(new StringSink(init.salt), false));
-		}
-		break;
-	}
+	if (options.key.salt_bytes > 0) {
+		init.salt.set(tSalt.BytePtr(), tSalt.size());
 	}
 
 	try	{
@@ -666,8 +726,12 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 					ef.Attach(new StringSinkTemplate<std::basic_string<byte>>(temp));
 				}
 
-				ef.ChannelPut( AAD_CHANNEL, (const byte*)init.salt.c_str(), init.salt.size());
-				ef.ChannelPut( AAD_CHANNEL, (const byte*)init.iv.c_str(), init.iv.size());
+				// in order to not break backwards-comp.: add salt + iv as base64:
+				secure_string temp2;
+				init.salt.get(temp2, Encoding::base64);
+				ef.ChannelPut( AAD_CHANNEL, (const byte*)temp2.c_str(), temp2.size());
+				init.iv.get(temp2, Encoding::base64);
+				ef.ChannelPut( AAD_CHANNEL, (const byte*)temp2.c_str(), temp2.size());
 				ef.ChannelMessageEnd( AAD_CHANNEL );
 				ef.ChannelPut(DEFAULT_CHANNEL, in, in_len);
 				ef.ChannelMessageEnd( DEFAULT_CHANNEL );
@@ -676,7 +740,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 				{
 				case Encoding::ascii:
 				{
-					StringSource(&buffer[0] + buffer.size() - tag_size, tag_size, true, new Base64Encoder(new StringSink(init.tag), false));
+					init.tag.set(buffer.data() + buffer.size() - tag_size, tag_size);
 					buffer.resize(buffer.size() - tag_size);
 					break;
 				}
@@ -691,7 +755,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 						StringSource(temp.data(), temp.size() - tag_size, true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
 							options.encoding.uppercase, linelength, seperator));
 					}
-					StringSource(temp.data() + temp.size() - tag_size, tag_size, true, new Base64Encoder(new StringSink(init.tag), false));
+					init.tag.set(temp.data() + temp.size() - tag_size, tag_size);
 					break;
 				}
 				case Encoding::base64:
@@ -704,7 +768,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 							buffer.pop_back();
 						}
 					}
-					StringSource(temp.data() + (temp.size() - tag_size), tag_size, true, new Base64Encoder(new StringSink(init.tag), false));
+					init.tag.set(temp.data() + temp.size() - tag_size, tag_size);
 					break;
 				}
 				}
@@ -1003,17 +1067,12 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	if (!in || !in_len) {
 		throw CExc(CExc::Code::input_null);
 	}
-	//if (!options.password.size()) {
-	//	throw CExc(CExc::File::crypt, __LINE__);
-	//}
 
 	using namespace crypt;
 	using namespace	CryptoPP;
 
-	SecByteBlock		password;
-	std::vector<byte>	tKey;
-	std::vector<byte>	tVec;
-	std::vector<byte>	tSalt;
+	SecByteBlock		tVec;
+	SecByteBlock		tKey;
 	const byte*			ptVec = NULL;
 	const byte*			ptSalt = NULL;
 	int					iv_len, key_len;
@@ -1021,28 +1080,6 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 
 	getCipherInfo(options.cipher, options.mode, key_len, iv_len, block_size);
 
-	// --------------------------- prepare password:
-	if (options.password_encoding == Encoding::ascii) {
-		password.Assign((const byte*)options.password.c_str(), options.password.size());
-	} else {
-		std::unique_ptr<BaseN_Decoder> decoder;
-		if (options.password_encoding == Encoding::base16) {
-			decoder.reset(new HexDecoder);
-		} else if (options.password_encoding == Encoding::base16) {
-			decoder.reset(new Base32Decoder);
-		} else {
-			decoder.reset(new Base64Decoder);
-		}
-		decoder->Put((const byte*)options.password.data(), options.password.size());
-		decoder->MessageEnd();
-		word64 size = decoder->MaxRetrievable();
-		if (size && size <= SIZE_MAX) {
-			password.resize(size);
-			decoder->Get(&password[0], password.size());
-		} else {
-			throw CExc(CExc::Code::password_decode);
-		}
-	}
 	// --------------------------- prepare salt vector:
 	if (options.key.salt_bytes > 0)	{
 		if (options.key.algorithm == crypt::KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
@@ -1051,33 +1088,10 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		if (!init.salt.size()) {
 			throw CExc(CExc::Code::salt_missing);
 		}
-		tSalt.resize(options.key.salt_bytes);
-		switch (init.encoding) {
-		case Encoding::ascii:
-		{
-			tSalt.assign(init.salt.begin(), init.salt.end());
-			break;
-		}
-		case Encoding::base16:
-		{
-			StringSource ss(init.salt, true, new HexDecoder(new ArraySink(&tSalt[0], tSalt.size())));
-			break;
-		}
-		case Encoding::base32:
-		{
-			StringSource ss(init.salt, true, new Base32Decoder(new ArraySink(&tSalt[0], tSalt.size())));
-			break;
-		}
-		case Encoding::base64:
-		{
-			StringSource ss(init.salt, true, new Base64Decoder(new ArraySink(&tSalt[0], tSalt.size())));
-			break;
-		}
-		}		
-		if (tSalt.size() != (size_t)options.key.salt_bytes) {
+		if (init.salt.size() != (size_t)options.key.salt_bytes) {
 			throw CExc(CExc::Code::invalid_salt);
 		}
-		ptSalt = &tSalt[0];
+		ptSalt = init.salt.BytePtr();
 	}
 	// --------------------------- prepare iv vector:
 	if (options.iv == crypt::IV::keyderivation)	{
@@ -1091,33 +1105,10 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			if (!init.iv.size()) {
 				throw CExc(CExc::Code::iv_missing);
 			}			
-			tVec.resize(iv_len);
-			switch (init.encoding) {
-			case Encoding::ascii:
-			{
-				tVec.assign(init.iv.begin(), init.iv.end());
-				break;
-			}
-			case Encoding::base16:
-			{
-				StringSource ss(init.iv, true, new HexDecoder(new ArraySink(&tVec[0], tVec.size())));
-				break;
-			}
-			case Encoding::base32:
-			{
-				StringSource ss(init.iv, true, new Base32Decoder(new ArraySink(&tVec[0], tVec.size())));
-				break;
-			}
-			case Encoding::base64:
-			{
-				StringSource ss(init.iv, true, new Base64Decoder(new ArraySink(&tVec[0], tVec.size())));
-				break;
-			}
-			}
-			if (tVec.size() != iv_len) {
+			if (init.iv.size() != iv_len) {
 				throw CExc(CExc::Code::invalid_iv);
 			}
-			ptVec = &tVec[0];
+			ptVec = init.iv.BytePtr();
 		}
 	} else if (options.iv == crypt::IV::zero) {
 		tKey.resize(key_len);
@@ -1170,7 +1161,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		default: throw CExc(CExc::Code::invalid_pbkdf2_hash);
 		}
 		pbkdf2->DeriveKey(&tKey[0], tKey.size(),
-			password.BytePtr(), password.size(),
+			options.password.BytePtr(), options.password.size(),
 			MakeParameters(Name::Salt(), ConstByteArrayParameter(ptSalt, options.key.salt_bytes))
 			("Iterations", options.key.options[1]));
 		break;
@@ -1184,7 +1175,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		memset(output, 0, sizeof(output));
-		if (_crypt_blowfish_rn((const char*)password.BytePtr(), settings, output, 64) == NULL) {
+		if (_crypt_blowfish_rn((const char*)options.password.BytePtr(), settings, output, 64) == NULL) {
 			throw CExc(CExc::Code::bcrypt_failed);
 		}
 		byte hashdata[23];
@@ -1194,7 +1185,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	}
 	case crypt::KeyDerivation::scrypt:
 	{
-		if (crypto_scrypt(password.BytePtr(), password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
+		if (crypto_scrypt(options.password.BytePtr(), options.password.size(), ptSalt, options.key.salt_bytes, ipow<uint64_t>(2, options.key.options[0]), options.key.options[1], options.key.options[2], &tKey[0], tKey.size()) != 0) {
 			throw CExc(CExc::Code::scrypt_failed);
 		}
 		//CryptoPP::Scrypt scrypt;
@@ -1337,11 +1328,9 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 				}
 				penc->SetKeyWithIV(tKey.data(), key_len, ptVec, iv_len);
 
-				std::basic_string<byte> mac;
 				std::basic_string<byte> temp;
 				const byte*				pEncrypted;
 				size_t					Encrypted_size;
-				StringSource((const byte*)init.tag.c_str(), init.tag.size(), true, new Base64Decoder(new StringSinkTemplate<std::basic_string<byte>>(mac)));
 				
 				switch (options.encoding.enc)
 				{
@@ -1372,9 +1361,12 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 
 				AuthenticatedDecryptionFilter df(*penc, NULL, AuthenticatedDecryptionFilter::MAC_AT_BEGIN | AuthenticatedDecryptionFilter::THROW_EXCEPTION, tag_size);
 
-				df.ChannelPut( DEFAULT_CHANNEL, mac.c_str(), mac.size());
-				df.ChannelPut( AAD_CHANNEL, (const byte*)init.salt.c_str(), init.salt.size());
-				df.ChannelPut( AAD_CHANNEL, (const byte*)init.iv.c_str(), init.iv.size());
+				secure_string temp2;
+				df.ChannelPut( DEFAULT_CHANNEL, init.tag.BytePtr(), init.tag.size());
+				init.salt.get(temp2, Encoding::base64);
+				df.ChannelPut( AAD_CHANNEL, (const byte*)temp2.c_str(), temp2.size());
+				init.iv.get(temp2, Encoding::base64);
+				df.ChannelPut( AAD_CHANNEL, (const byte*)temp2.c_str(), temp2.size());
 				df.ChannelPut( DEFAULT_CHANNEL, pEncrypted, Encrypted_size);
 				df.ChannelMessageEnd( AAD_CHANNEL );
 				df.ChannelMessageEnd( DEFAULT_CHANNEL );

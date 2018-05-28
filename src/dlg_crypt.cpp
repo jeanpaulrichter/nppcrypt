@@ -19,9 +19,9 @@ GNU General Public License for more details.
 #include "resource.h"
 #include "help.h"
 #include "exception.h"
-#include "cryptopp/hex.h"
-#include "cryptopp/base32.h"
-#include "cryptopp/base64.h"
+//#include "cryptopp/hex.h"
+//#include "cryptopp/base32.h"
+//#include "cryptopp/base64.h"
 
 DlgCrypt::DlgCrypt(): ModalDialog(), hwnd_basic(NULL), hwnd_auth(NULL), hwnd_iv(NULL), hwnd_key(NULL), hwnd_encoding(NULL)
 {
@@ -800,12 +800,9 @@ bool DlgCrypt::updateOptions()
 		}
 
 		// ------- password
-		crypt->options.password.assign(t_password);
-		for (size_t i = 0; i < t_password.size(); i++) {
-			t_password[i] = 0;
-		}
-		t_password.clear();
 		crypt->options.password_encoding = (crypt::Encoding)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
+		crypt->options.password.set(t_password.c_str(), t_password.size(), crypt->options.password_encoding);
+		t_password.clear();
 	} catch (CExc& exc) {
 		helper::Windows::error(_hSelf, exc.what());
 		return false;
@@ -828,26 +825,17 @@ bool DlgCrypt::OnClickOK()
 
 	// get password
 	TCHAR temp_pw[crypt::Constants::password_max + 1];
-	std::string temp_pw_str;
+	crypt::secure_string temp_pw_str;
 	::GetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, temp_pw, crypt::Constants::password_max + 1);	
 	helper::Windows::wchar_to_utf8(temp_pw, lstrlen(temp_pw), temp_pw_str);
-	// if necessary: decode and reencode to get valid hex/base32/base64
-	int password_enc = ::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
-	if (password_enc > 0) {
-		std::string temp;
-		if (password_enc == 1) {
-			CryptoPP::StringSource((const byte*)temp_pw_str.c_str(), temp_pw_str.size(), true, new CryptoPP::HexDecoder(new CryptoPP::StringSink(temp)));
-			temp_pw_str.clear();
-			CryptoPP::StringSource((const byte*)temp.c_str(), temp.size(), true, new CryptoPP::HexEncoder(new CryptoPP::StringSink(temp_pw_str)));
-		} else if (password_enc == 2) {
-			CryptoPP::StringSource((const byte*)temp_pw_str.c_str(), temp_pw_str.size(), true, new CryptoPP::Base32Decoder(new CryptoPP::StringSink(temp)));
-			temp_pw_str.clear();
-			CryptoPP::StringSource((const byte*)temp.c_str(), temp.size(), true, new CryptoPP::Base32Encoder(new CryptoPP::StringSink(temp_pw_str)));
-		} else {
-			CryptoPP::StringSource((const byte*)temp_pw_str.c_str(), temp_pw_str.size(), true, new CryptoPP::Base64Decoder(new CryptoPP::StringSink(temp)));
-			temp_pw_str.clear();
-			CryptoPP::StringSource((const byte*)temp.c_str(), temp.size(), true, new CryptoPP::Base64Encoder(new CryptoPP::StringSink(temp_pw_str)));
-		}		
+	for (size_t i = 0; i < crypt::Constants::password_max; i++) {
+		temp_pw[i] = 0;
+	}
+	// if necessary: decode and reencode password to get valid hex/base32/base64
+	crypt::Encoding password_enc = (crypt::Encoding)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
+	if (password_enc != crypt::Encoding::ascii) {
+		crypt::UserData temp(temp_pw_str.c_str(), password_enc);
+		temp.get(temp_pw_str, password_enc);
 	}
 
 	if (operation == Operation::Enc && !confirm_password) {
@@ -855,20 +843,20 @@ bool DlgCrypt::OnClickOK()
 		t_password.assign(temp_pw_str);
 		if (t_password.size()) {
 			::SetDlgItemText(hwnd_basic, IDC_CRYPT_STATIC_PASSWORD, TEXT("Confirm:"));
-			if (password_enc == 0) {
+			if (password_enc == crypt::Encoding::ascii) {
 				// no password encoding: user has to reenter password for confirmation
 				::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, TEXT(""));
 				::SetFocus(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD));
 			} else {
 				// encoded password: present reencoded password to user for confirmation
 				std::wstring pwtest_w;
-				helper::Windows::utf8_to_wchar(t_password.c_str(), t_password.size(), pwtest_w);
+				helper::Windows::utf8_to_wchar(t_password.c_str(), (int)t_password.size(), pwtest_w);
 				::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, pwtest_w.c_str());
 				::EnableWindow(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD), false);
 				::EnableWindow(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD_ENC), false);
 			}
 			confirm_password = true;
-		} else if (password_enc > 0) {
+		} else if (password_enc != crypt::Encoding::ascii) {
 			// if password decode failed: set password to ""
 			::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, TEXT(""));
 			::SetFocus(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD));
@@ -876,7 +864,7 @@ bool DlgCrypt::OnClickOK()
 	} else {
 		if (operation == Operation::Enc) {
 			// encryption: confirm password
-			if (password_enc == 0) {
+			if (password_enc == crypt::Encoding::ascii) {
 				// no encoding: check if both entered password match
 				if (t_password.compare(temp_pw_str) == 0) {
 					if (updateOptions()) {

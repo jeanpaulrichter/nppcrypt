@@ -18,7 +18,8 @@ GNU General Public License for more details.
 
 #include <string>
 #include <vector>
-#include "cryptopp\config.h"
+#include "cryptopp/config.h"
+#include "cryptopp/secblock.h"
 
 typedef CryptoPP::byte byte;
 
@@ -99,6 +100,26 @@ namespace crypt
 		const int eax_tag_size =		16;				// eax tag size in bytes
 	};
 
+	typedef std::basic_string<char, std::char_traits<char>, CryptoPP::AllocatorWithCleanup<char> > secure_string;
+
+	class UserData
+	{
+	public:
+		UserData();
+		UserData(const char* s, Encoding enc);
+		const byte*		BytePtr() const;
+		size_t			size() const;
+		size_t			set(std::string& s, Encoding enc);
+		size_t			set(const char* s, size_t length, Encoding enc);
+		size_t			set(const byte* s, size_t length);
+		void			get(std::string& s, Encoding enc) const;
+		void			get(secure_string& s, Encoding enc) const;
+		void			clear();
+
+	private:
+		CryptoPP::SecByteBlock	data;
+	};
+
 	namespace Options
 	{
 		struct Crypt
@@ -108,7 +129,7 @@ namespace crypt
 			crypt::Cipher			cipher;
 			crypt::Mode				mode;
 			crypt::IV				iv;
-			std::string				password;
+			crypt::UserData			password;
 			crypt::Encoding			password_encoding;
 
 			struct Key
@@ -167,11 +188,9 @@ namespace crypt
 	/* -- used by encrypt() and decrypt() to recieve or return iv/salt/tag data -- */
 	struct InitData
 	{
-		InitData() : encoding(Encoding::base64) {};
-		Encoding		encoding;
-		std::string		iv;
-		std::string		salt;
-		std::string		tag;
+		UserData		iv;
+		UserData		salt;
+		UserData		tag;
 	};
 	
 	bool	getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, int& key_length, int& iv_length, int& block_size);

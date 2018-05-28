@@ -63,12 +63,13 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 				if (len <= 0) {
 					::MessageBox(_hSelf, TEXT("Please enter a salt-value!"), TEXT("Error"), MB_OK); break;
 					return FALSE;
-				}
-				else {
+				} else {
 					std::vector<TCHAR> tstr(len + 1);
 					::GetDlgItemText(_hSelf, IDC_INITDATA_SALT, tstr.data(), (int)tstr.size());
 					tstr.pop_back();
-					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->salt);
+					std::string temp;
+					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
+					_data->salt.set(temp, crypt::Encoding::base64);
 				}
 			}
 			if (_iv) {
@@ -81,7 +82,9 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 					std::vector<TCHAR> tstr(len + 1);
 					::GetDlgItemText(_hSelf, IDC_INITDATA_IV, tstr.data(), (int)tstr.size());
 					tstr.pop_back();
-					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->iv);
+					std::string temp;
+					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
+					_data->iv.set(temp, crypt::Encoding::base64);
 				}
 			}
 			if (_tag) {
@@ -94,7 +97,9 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 					std::vector<TCHAR> tstr(len + 1);
 					::GetDlgItemText(_hSelf, IDC_INITDATA_TAG, tstr.data(), (int)tstr.size());
 					tstr.pop_back();
-					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), _data->tag);
+					std::string temp;
+					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
+					_data->tag.set(temp, crypt::Encoding::base64);
 				}
 			}
 			EndDialog(_hSelf, IDC_OK);

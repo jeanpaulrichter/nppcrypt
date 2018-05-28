@@ -62,7 +62,7 @@ private:
 	bool					confirm_password;	
 	crypt::Cipher			t_cipher;
 	crypt::KeyDerivation	t_key_derivation;
-	std::string				t_password;
+	crypt::secure_string	t_password;
 
 	HWND					hwnd_basic;
 	HWND					hwnd_auth;

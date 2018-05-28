@@ -81,10 +81,6 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD reasonForCall, LPVOID lpReserved )
 		dlg_auth.destroy();
 		dlg_convert.destroy();
 		dlg_initdata.destroy();
-		for (cryptfilemap::iterator i = crypt_files.begin(); i != crypt_files.end(); i++) {
-			std::fill(i->second.options.password.begin(), i->second.options.password.end(), 0);
-		}
-		crypt_files.clear();
   		break;
 	}
 	case DLL_THREAD_ATTACH:
@@ -363,9 +359,6 @@ void EncryptDlg()
 			::SendMessage(hCurScintilla, SCI_SETSEL, sel_start, sel_start + header.size() +buffer.size());
 			::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
 
-			for (size_t i = 0; i < current.crypt.options.password.size(); i++) {
-				current.crypt.options.password[i] = 0;
-			}
 			current.crypt.options.password.clear();
 		}
 	} catch (CExc& exc) {
@@ -425,9 +418,6 @@ void DecryptDlg()
 			decrypt(header.encryptedData(), header.encryptedDataLength(), buffer, current.crypt.options, header.initData());
 			helper::Scintilla::replaceSelection(buffer);
 
-			for (size_t i = 0; i < current.crypt.options.password.size(); i++) {
-				current.crypt.options.password[i] = 0;
-			}
 			current.crypt.options.password.clear();
 		}
 	} catch(CExc& exc) {

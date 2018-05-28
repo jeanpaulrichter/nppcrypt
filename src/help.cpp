@@ -186,6 +186,24 @@ void helper::Windows::wchar_to_utf8(const wchar_t* i, int i_len, std::string& o)
 	}
 }
 
+void helper::Windows::wchar_to_utf8(const wchar_t* i, int i_len, crypt::secure_string& o)
+{
+	if (i_len < -1) {
+		i_len = -1;
+	}
+	int bytelen = WideCharToMultiByte(CP_UTF8, 0, i, i_len, NULL, 0, NULL, false);
+	if (bytelen < 1) {
+		throw CExc(CExc::Code::utf8conversion);
+	}
+	o.resize((size_t)bytelen);
+	if (!WideCharToMultiByte(CP_UTF8, 0, i, i_len, &o[0], bytelen, NULL, false)) {
+		throw CExc(CExc::Code::utf8conversion);
+	}
+	if (o.size() > 0 && i_len == -1) {
+		o.pop_back();
+	}
+}
+
 void helper::Windows::utf8_to_wchar(const char* i, int i_len, std::wstring& o)
 {
 	if (i_len < -1) {

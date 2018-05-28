@@ -108,14 +108,8 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			if (strlen(pSalt) > 2 * crypt::Constants::salt_max) {
 				throw CExc(CExc::Code::invalid_salt);
 			}
-			s_init.salt = std::string(pSalt);
-			try {
-				std::string tsalt;
-				CryptoPP::StringSource(s_init.salt, true, new CryptoPP::Base64Decoder(new CryptoPP::StringSink(tsalt)));
-				t_options.key.salt_bytes = (int)tsalt.size();
-			} catch (CryptoPP::Exception&) {
-				throw CExc(CExc::Code::invalid_salt);
-			}
+			s_init.salt.set(std::string(pSalt), crypt::Encoding::base64);
+			t_options.key.salt_bytes = s_init.salt.size();
 			if (t_options.key.salt_bytes < 1 || t_options.key.salt_bytes > crypt::Constants::salt_max) {
 				throw CExc(CExc::Code::invalid_salt);
 			}
@@ -125,7 +119,7 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			if (strlen(pIV) > 1024) {
 				throw CExc(CExc::Code::invalid_iv);
 			}
-			s_init.iv = std::string(pIV);
+			s_init.iv.set(std::string(pIV), crypt::Encoding::base64);
 		}
 	}
 	tinyxml2::XMLElement* xml_crypt = xml_nppcrypt->FirstChildElement("encryption");
@@ -146,7 +140,7 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			if (strlen(t) != 24) {
 				throw CExc(CExc::Code::invalid_tag);
 			}
-			s_init.tag = std::string(t);
+			s_init.tag.set(std::string(t), crypt::Encoding::base64);
 		}
 	}
 	tinyxml2::XMLElement* xml_key = xml_nppcrypt->FirstChildElement("key");
@@ -324,6 +318,7 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	size_t				body_start;
 	size_t				body_end;
 	size_t				hmac_offset;
+	crypt::secure_string temp_s;
 
 	static const char win[] = { '\r', '\n', 0 };
 	const char* linebreak;
@@ -353,16 +348,19 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	out << "<encryption cipher=\"" << crypt::help::getString(options.cipher) << "\" mode=\"" << crypt::help::getString(options.mode)
 		<< "\" encoding=\"" << crypt::help::getString(options.encoding.enc) << "\" ";
 	if (s_init.tag.size()) {
-		out << "tag=\"" << s_init.tag << "\" ";
+		s_init.tag.get(temp_s, crypt::Encoding::base64);
+		out << "tag=\"" << temp_s << "\" ";
 	}
 	out << "/>" << linebreak;
 	if ((options.iv == crypt::IV::random && s_init.iv.size()>0) || options.key.salt_bytes > 0) {
 		out << "<random ";
 		if ((options.iv == crypt::IV::random && s_init.iv.size() > 0)) {
-			out << "iv=\"" << s_init.iv << "\" ";
+			s_init.iv.get(temp_s, crypt::Encoding::base64);
+			out << "iv=\"" << temp_s << "\" ";
 		}
 		if (options.key.salt_bytes > 0) {
-			out << "salt=\"" << s_init.salt << "\" ";
+			s_init.salt.get(temp_s, crypt::Encoding::base64);
+			out << "salt=\"" << temp_s << "\" ";
 		}
 		out << "/>" << linebreak;
 	}
