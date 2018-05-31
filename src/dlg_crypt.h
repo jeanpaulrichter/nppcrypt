@@ -37,14 +37,15 @@ public:
 
 						DlgCrypt();
     void				destroy();
-	bool				doDialog(Operation operation, CryptInfo* crypt, bool no_bin_output = false, const std::wstring* filename = NULL);
+	bool				doDialog(Operation operation, CryptInfo* crypt, crypt::UserData* iv, bool no_bin_output = false, const std::wstring* filename = NULL);
 
 private:
 	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
 	void				initDialog();
 	void				checkSpinControlValue(int ctrlID);
-	void				changeActiveTab(int id);	
+	bool				checkCustomIV(crypt::UserData& data, bool reencode);
+	void				changeActiveTab(int id);
 	void				setCipherInfo(crypt::Cipher cipher, crypt::Mode mode);
 	void				enableKeyDeriControls();
 	bool				updateOptions();
@@ -58,11 +59,16 @@ private:
 	const std::wstring*		filename;
 	bool					no_bin_output;
 	CryptInfo*				crypt;
+	crypt::UserData*		ivdata;
 
 	bool					confirm_password;	
 	crypt::Cipher			t_cipher;
 	crypt::KeyDerivation	t_key_derivation;
 	crypt::secure_string	t_password;
+	int						cur_tab;
+	int						cur_ivlength;
+	bool					invalid_iv;
+	HBRUSH					brush_red;
 
 	HWND					hwnd_basic;
 	HWND					hwnd_auth;

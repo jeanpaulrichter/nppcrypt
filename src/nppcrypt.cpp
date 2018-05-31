@@ -204,7 +204,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 				int encoding = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
 				bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
 
-				if (dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &crypt, no_ascii, &filename)) {
+				if (dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &crypt, &header.initData().iv, no_ascii, &filename)) {
 					std::basic_string<byte> buffer;
 					crypt::decrypt(header.encryptedData(), header.encryptedDataLength(), buffer, crypt.options, header.initData());
 
@@ -293,7 +293,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						int encoding = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
 						bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
 
-						if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &crypt, no_ascii, &filename)) {
+						if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &crypt, &header.initData().iv, no_ascii, &filename)) {
 							crypt::encrypt(pData, data_length, buffer, crypt.options, header.initData());
 							if (crypt.hmac.enable && crypt.hmac.keypreset_id >= 0) {
 								header.setHMACKey(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16);
@@ -338,9 +338,9 @@ void EncryptDlg()
 		if (!helper::Scintilla::getSelection(&pData, &data_length, &sel_start)) {
 			return;
 		}
-	
-		if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &current.crypt, !helper::Buffer::isCurrent8Bit())) {
-			CryptHeaderWriter			header(current.crypt.options, current.crypt.hmac);
+		CryptHeaderWriter			header(current.crypt.options, current.crypt.hmac);
+
+		if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &current.crypt, &header.initData().iv, !helper::Buffer::isCurrent8Bit())) {			
 			std::basic_string<byte>		buffer;
 
 			crypt::encrypt(pData, data_length, buffer, current.crypt.options, header.initData());
@@ -403,7 +403,7 @@ void DecryptDlg()
 			}
 		}
 
-		if(dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &current.crypt, !helper::Buffer::isCurrent8Bit())) {
+		if(dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &current.crypt, &header.initData().iv, !helper::Buffer::isCurrent8Bit())) {
 			crypt::InitData& s_init = header.initData();
 			bool need_salt = (current.crypt.options.key.salt_bytes > 0 && s_init.salt.size() == 0);
 			bool need_iv = (current.crypt.options.iv == crypt::IV::random && s_init.iv.size() == 0);
@@ -415,7 +415,7 @@ void DecryptDlg()
 			}
 
 			std::basic_string<byte>	buffer;
-			decrypt(header.encryptedData(), header.encryptedDataLength(), buffer, current.crypt.options, header.initData());
+			decrypt(header.encryptedData(), header.encryptedDataLength(), buffer, current.crypt.options, s_init);
 			helper::Scintilla::replaceSelection(buffer);
 
 			current.crypt.options.password.clear();

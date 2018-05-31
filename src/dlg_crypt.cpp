@@ -23,7 +23,7 @@ GNU General Public License for more details.
 //#include "cryptopp/base32.h"
 //#include "cryptopp/base64.h"
 
-DlgCrypt::DlgCrypt(): ModalDialog(), hwnd_basic(NULL), hwnd_auth(NULL), hwnd_iv(NULL), hwnd_key(NULL), hwnd_encoding(NULL)
+DlgCrypt::DlgCrypt() : ModalDialog(), hwnd_basic(NULL), hwnd_auth(NULL), hwnd_iv(NULL), hwnd_key(NULL), hwnd_encoding(NULL), cur_tab(-1), invalid_iv(false), brush_red(NULL)
 {
 };
 
@@ -44,20 +44,31 @@ void DlgCrypt::destroy()
 	if (hwnd_encoding) {
 		::DestroyWindow(hwnd_encoding);
 	}
+	if (brush_red) {
+		DeleteObject(brush_red);
+	}
 	hwnd_basic = hwnd_auth = hwnd_key = hwnd_iv = NULL;
+
 	ModalDialog::destroy();
 };
 
-bool DlgCrypt::doDialog(Operation operation, CryptInfo* crypt, bool no_bin_output, const std::wstring* filename)
+bool DlgCrypt::doDialog(Operation operation, CryptInfo* crypt, crypt::UserData* iv, bool no_bin_output, const std::wstring* filename)
 {
-	if (!crypt) {
+	if (!crypt || !iv) {
 		return false;
 	}
+	if (!brush_red) {
+		brush_red = CreateSolidBrush(RGB(255, 0, 0));
+	}
 	this->crypt = crypt;
+	this->ivdata = iv;
 	this->operation = operation;
 	this->filename = filename;
 	this->no_bin_output = no_bin_output;
 	confirm_password = false;
+	cur_ivlength = 0;
+	cur_tab = -1;
+	invalid_iv = false;
 	return ModalDialog::doDialog();
 }
 
@@ -193,6 +204,19 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				}
 				break;
 			}
+			case IDC_CRYPT_IV_USER:
+			{
+				::EnableWindow(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT), true);
+				::EnableWindow(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_ENC), true);
+				::SetFocus(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT));
+				break;
+			}
+			case IDC_CRYPT_IV_RANDOM: case IDC_CRYPT_IV_KEY: case IDC_CRYPT_IV_ZERO:
+			{
+				::EnableWindow(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT), false);
+				::EnableWindow(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_ENC), false);
+				break;
+			}
 			}
 			break;
 		}
@@ -228,6 +252,15 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 					::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD, EM_SETPASSWORDCHAR, '*', 0);
 				}
 				PostMessage(hwnd_basic, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD), TRUE);
+				break;
+			}
+			case IDC_CRYPT_IV_ENC:
+			{
+				crypt::UserData ivdata;
+				invalid_iv = !checkCustomIV(ivdata, true);
+				InvalidateRect(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
+				::SetFocus(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT));
+				break;
 			}
 			case IDC_CRYPT_AUTH_KEY_LIST:
 			{
@@ -261,6 +294,11 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 		case EN_CHANGE:
 		{
 			checkSpinControlValue(LOWORD(wParam));
+			if (LOWORD(wParam) == IDC_CRYPT_IV_INPUT) {
+				crypt::UserData ivdata;
+				invalid_iv = !checkCustomIV(ivdata, true);
+				InvalidateRect(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
+			}
 			break;
 		}
 		}
@@ -270,6 +308,14 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 	{
 		if (((LPNMHDR)lParam)->code == TCN_SELCHANGE) {
 			changeActiveTab(TabCtrl_GetCurSel(((LPNMHDR)lParam)->hwndFrom));
+		}
+		break;
+	}
+	case WM_CTLCOLOREDIT:
+	{
+		if (invalid_iv && (HWND)lParam == GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT)) {
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (INT_PTR)brush_red;
 		}
 		break;
 	}
@@ -460,6 +506,19 @@ void DlgCrypt::initDialog()
 	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, (crypt->options.iv == crypt::IV::random), 0);
 	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_KEY, BM_SETCHECK, (crypt->options.iv == crypt::IV::keyderivation), 0);
 	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ZERO, BM_SETCHECK, (crypt->options.iv == crypt::IV::zero), 0);
+	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_USER, BM_SETCHECK, (crypt->options.iv == crypt::IV::custom), 0);
+
+	if (crypt->options.iv != crypt::IV::custom) {
+		::EnableWindow(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT), false);
+		::EnableWindow(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_ENC), false);
+	}
+
+	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
+	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
+	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));
+	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base64"));
+	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ENC, CB_SETCURSEL, 0, 0);
+	::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_INPUT, EM_LIMITTEXT, 512, 0);
 
 	url_help[int(HelpURL::iv)].init(_hInst, hwnd_iv);
 	url_help[int(HelpURL::iv)].create(::GetDlgItem(hwnd_iv, IDC_CRYPT_HELP_IV), NPPC_CRYPT_IV_HELP_URL);
@@ -594,8 +653,50 @@ void DlgCrypt::checkSpinControlValue(int ctrlID)
 	}
 }
 
+bool DlgCrypt::checkCustomIV(crypt::UserData& data, bool reencode)
+{
+	TCHAR temp1[513];
+	crypt::secure_string temp2;
+	::GetDlgItemText(hwnd_iv, IDC_CRYPT_IV_INPUT, temp1, 513);
+	if (lstrlen(temp1)) {
+		helper::Windows::wchar_to_utf8(temp1, lstrlen(temp1), temp2);
+		int temp1len = lstrlen(temp1);
+		for (int i = 0; i < temp1len; i++) {
+			temp1[i] = 0;
+		}
+		crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ENC, CB_GETCURSEL, 0, 0);
+		if (enc != crypt::Encoding::ascii) {
+			data.set(temp2.c_str(), temp2.size(), enc);
+			if (reencode && data.size() == cur_ivlength) {
+				data.get(temp2, enc);
+				std::wstring temp3;
+				helper::Windows::utf8_to_wchar(temp2.c_str(), (int)temp2.size(), temp3);
+				::SetDlgItemText(hwnd_iv, IDC_CRYPT_IV_INPUT, temp3.c_str());
+				for (size_t i = 0; i < temp3.size(); i++) {
+					temp3[i] = 0;
+				}
+			}
+		} else {
+			data.set((const byte*)temp2.c_str(), temp2.size());
+		}
+	}
+	return (data.size() == cur_ivlength);
+}
+
 void DlgCrypt::changeActiveTab(int id)
 {
+	if (cur_tab == 3 && id != 3) {
+		if (::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_USER, BM_GETCHECK, 0, 0)) {
+			crypt::UserData ivdata;
+			invalid_iv = !checkCustomIV(ivdata, true);
+			if (invalid_iv) {
+				TabCtrl_SetCurSel(::GetDlgItem(_hSelf, IDC_CRYPT_TAB), 3);
+				invalid_iv = true;
+				InvalidateRect(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
+				return;
+			}
+		}
+	}
 	switch (id)
 	{
 	case 0:
@@ -637,6 +738,9 @@ void DlgCrypt::changeActiveTab(int id)
 		ShowWindow(hwnd_iv, SW_SHOW);
 		ShowWindow(hwnd_auth, SW_HIDE);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_OK), false);
+		if (::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_USER, BM_GETCHECK, 0, 0)) {
+			::SetFocus(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT));
+		}
 		break;
 	}
 	case 4:
@@ -653,14 +757,20 @@ void DlgCrypt::changeActiveTab(int id)
 		break;
 	}
 	}
+	cur_tab = id;
 }
 
 void DlgCrypt::setCipherInfo(crypt::Cipher cipher, crypt::Mode mode)
 {
-	int iv_length, key_length, block_size;
-	crypt::getCipherInfo(cipher, mode, key_length, iv_length, block_size);
-	std::wstring info = TEXT("Key: ") + std::to_wstring(key_length * 8) + TEXT(" Bit, Blocksize: ") + std::to_wstring(block_size * 8) + TEXT(" Bit, IV: ") + std::to_wstring(iv_length * 8) + TEXT(" Bit");
-	::SetDlgItemText(hwnd_basic, IDC_CRYPT_CIPHER_INFO, info.c_str());
+	int key_length, block_size;
+	crypt::getCipherInfo(cipher, mode, key_length, cur_ivlength, block_size);
+	std::wostringstream s1;
+	//std::wstring info = TEXT("Key: ") + std::to_wstring(key_length * 8) + TEXT(" Bit, Blocksize: ") + std::to_wstring(block_size * 8) + TEXT(" Bit, IV: ") + std::to_wstring(cur_ivlength * 8) + TEXT(" Bit");
+	s1 << TEXT("Key: ") << std::to_wstring(key_length * 8) << TEXT(" Bit, Blocksize: ") << std::to_wstring(block_size * 8) << TEXT(" Bit, IV: ") << std::to_wstring(cur_ivlength * 8) << TEXT(" Bit");
+	::SetDlgItemText(hwnd_basic, IDC_CRYPT_CIPHER_INFO, s1.str().c_str());
+	std::wostringstream s2;
+	s2 << TEXT("custom (") << std::to_wstring(cur_ivlength) << TEXT(" Bytes)");
+	::SetDlgItemText(hwnd_iv, IDC_CRYPT_IV_USER, s2.str().c_str());
 }
 
 void DlgCrypt::enableKeyDeriControls()
@@ -781,8 +891,16 @@ bool DlgCrypt::updateOptions()
 			crypt->options.iv = crypt::IV::random;
 		} else if (::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0)) {
 			crypt->options.iv = crypt::IV::keyderivation;
-		} else {
+		} else if (::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
 			crypt->options.iv = crypt::IV::zero;
+		} else {
+			crypt->options.iv = crypt::IV::custom;
+			crypt::UserData data;
+			if (!checkCustomIV(data, true)) {
+				throw CExc::CExc(CExc::Code::invalid_iv);
+			} else {
+				ivdata->set(data.BytePtr(), data.size());
+			}
 		}
 
 		// ------- auth
@@ -791,7 +909,7 @@ bool DlgCrypt::updateOptions()
 			crypt->hmac.hash = static_cast<crypt::Hash>(::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_HASH, CB_GETCURSEL, 0, 0));
 			if (::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_GETCHECK, 0, 0)) {
 				crypt->hmac.keypreset_id = (int)::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_LIST, CB_GETCURSEL, 0, 0);
-			} else {				
+			} else {
 				crypt->hmac.keypreset_id = -1;
 				TCHAR temp_key[NPPC_HMAC_INPUT_MAX + 1];
 				::GetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE, temp_key, NPPC_HMAC_INPUT_MAX + 1);
@@ -803,7 +921,8 @@ bool DlgCrypt::updateOptions()
 		crypt->options.password_encoding = (crypt::Encoding)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
 		crypt->options.password.set(t_password.c_str(), t_password.size(), crypt->options.password_encoding);
 		t_password.clear();
-	} catch (CExc& exc) {
+	}
+	catch (CExc& exc) {
 		helper::Windows::error(_hSelf, exc.what());
 		return false;
 	}
@@ -812,14 +931,26 @@ bool DlgCrypt::updateOptions()
 
 bool DlgCrypt::OnClickOK()
 {
-	// in case hmac-password is enabled: if empty, switch tab and return
-	if (operation == Operation::Enc) {
+	if (operation == Operation::Enc && !confirm_password) {
+		// hmac-password is enabled: if empty, switch tab and return
 		if (!!::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_HMAC_ENABLE, BM_GETCHECK, 0, 0)
 			&& !!::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)
 			&& (GetWindowTextLength(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE)) == 0)) {
 			TabCtrl_SetCurSel(::GetDlgItem(_hSelf, IDC_CRYPT_TAB), 4);
 			changeActiveTab(4);
 			return false;
+		}
+		// custom iv valid?
+		if (!!::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_USER, BM_GETCHECK, 0, 0)) {
+			crypt::UserData ivdata;
+			invalid_iv = !checkCustomIV(ivdata, true);
+			if (invalid_iv) {
+				TabCtrl_SetCurSel(::GetDlgItem(_hSelf, IDC_CRYPT_TAB), 3);
+				changeActiveTab(3);
+				InvalidateRect(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
+				::SetFocus(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT));
+				return false;
+			}
 		}
 	}
 

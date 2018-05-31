@@ -206,7 +206,7 @@ size_t crypt::UserData::set(std::string& s, Encoding enc)
 		std::unique_ptr<CryptoPP::BaseN_Decoder> decoder;
 		if (enc == Encoding::base16) {
 			decoder.reset(new CryptoPP::HexDecoder);
-		} else if (enc == Encoding::base16) {
+		} else if (enc == Encoding::base32) {
 			decoder.reset(new CryptoPP::Base32Decoder);
 		} else {
 			decoder.reset(new CryptoPP::Base64Decoder);
@@ -230,7 +230,7 @@ size_t crypt::UserData::set(const char* s, size_t length, Encoding enc)
 		std::unique_ptr<CryptoPP::BaseN_Decoder> decoder;
 		if (enc == Encoding::base16) {
 			decoder.reset(new CryptoPP::HexDecoder);
-		} else if (enc == Encoding::base16) {
+		} else if (enc == Encoding::base32) {
 			decoder.reset(new CryptoPP::Base32Decoder);
 		} else {
 			decoder.reset(new CryptoPP::Base64Decoder);
@@ -263,7 +263,7 @@ void crypt::UserData::get(std::string& s, Encoding enc) const
 			std::unique_ptr<CryptoPP::SimpleProxyFilter> encoder;
 			if (enc == Encoding::base16) {
 				encoder.reset(new CryptoPP::HexEncoder);
-			} else if (enc == Encoding::base16) {
+			} else if (enc == Encoding::base32) {
 				encoder.reset(new CryptoPP::Base32Encoder);
 			} else {
 				encoder.reset(new CryptoPP::Base64Encoder(0,false));
@@ -292,7 +292,7 @@ void crypt::UserData::get(secure_string& s, Encoding enc) const
 			std::unique_ptr<CryptoPP::SimpleProxyFilter> encoder;
 			if (enc == Encoding::base16) {
 				encoder.reset(new CryptoPP::HexEncoder);
-			} else if (enc == Encoding::base16) {
+			} else if (enc == Encoding::base32) {
 				encoder.reset(new CryptoPP::Base32Encoder);
 			} else {
 				encoder.reset(new CryptoPP::Base64Encoder(0, false));
@@ -482,6 +482,12 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			tVec.Assign(iv_len, 0);
 			ptVec = &tVec[0];
 		}
+	} else if (options.iv == crypt::IV::custom) {
+		tKey.resize(key_len);
+		if (iv_len != init.iv.size()) {
+			throw CExc(CExc::Code::invalid_iv);
+		}
+		ptVec = init.iv.BytePtr();
 	}
 	// --------------------------- key derivation:
 	switch (options.key.algorithm)
@@ -1117,6 +1123,12 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			memset(&tVec[0], 0, tVec.size());
 			ptVec = &tVec[0];
 		}
+	} else if (options.iv == crypt::IV::custom) {
+		tKey.resize(key_len);
+		if (iv_len != init.iv.size()) {
+			throw CExc(CExc::Code::invalid_iv);
+		}
+		ptVec = init.iv.BytePtr();
 	}
 	// --------------------------- key derivation:
 	switch (options.key.algorithm)

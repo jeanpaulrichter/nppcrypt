@@ -354,7 +354,7 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	out << "/>" << linebreak;
 	if ((options.iv == crypt::IV::random && s_init.iv.size()>0) || options.key.salt_bytes > 0) {
 		out << "<random ";
-		if ((options.iv == crypt::IV::random && s_init.iv.size() > 0)) {
+		if ((options.iv == crypt::IV::random || options.iv == crypt::IV::custom) && s_init.iv.size() > 0) {
 			s_init.iv.get(temp_s, crypt::Encoding::base64);
 			out << "iv=\"" << temp_s << "\" ";
 		}

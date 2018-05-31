@@ -64,7 +64,7 @@ namespace crypt
 	};
 
 	enum class IV : unsigned {
-		random, keyderivation, zero, COUNT
+		random, keyderivation, zero, custom, COUNT
 	};
 
 	enum class Random: unsigned {
