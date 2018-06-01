@@ -55,14 +55,16 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 
 		for (size_t i = 0; i < preferences.getKeyNum(); i++) {			
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
-		}			
-		if (options.keypreset_id >= 0) {
+		}
+		::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_SETCURSEL, 0, 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO1, BM_SETCHECK, true, 0);
+		/*if (options.keypreset_id >= 0) {
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_SETCURSEL, options.keypreset_id, 0);
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO1, BM_SETCHECK, true, 0);
 		} else {
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_SETCURSEL, 0, 0);
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_SETCHECK, true, 0);
-		}
+		}*/
 		if (crypt::help::checkHashProperty(options.algorithm, crypt::HashProperties::hmac_possible) || crypt::help::checkHashProperty(options.algorithm, crypt::HashProperties::key)) {
 			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), true);
 			enableKeyControls(options.use_key); 
@@ -226,22 +228,18 @@ bool DlgHash::updateOptions()
 
 	if (options.use_key) {
 		if (!!::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_GETCHECK, 0, 0)) {
-			TCHAR temp_pw[NPPC_HMAC_INPUT_MAX + 1];
-			std::string pw;
-			::GetDlgItemText(_hSelf, IDC_HASH_PWEDIT, temp_pw, NPPC_HMAC_INPUT_MAX + 1);
-			if (!lstrlen(temp_pw))	{
+			TCHAR temp[NPPC_HMAC_INPUT_MAX + 1];
+			crypt::secure_string password;
+			::GetDlgItemText(_hSelf, IDC_HASH_PWEDIT, temp, NPPC_HMAC_INPUT_MAX + 1);
+			if (!lstrlen(temp))	{
 				::MessageBox(_hSelf, TEXT("Please enter a password."), TEXT("Error"), MB_OK);
 				return false;
 			}
-			helper::Windows::wchar_to_utf8(temp_pw, -1, pw);
-			options.keypreset_id = -1;
-			options.key.resize(16);
-			crypt::shake128((const unsigned char*)pw.c_str(), pw.size(), &options.key[0], options.key.size());
+			helper::Windows::wchar_to_utf8(temp, -1, password);
+			options.key.set(password.c_str(), password.size(), crypt::Encoding::ascii);
 		} else {
-			options.keypreset_id = (int)::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_GETCURSEL, 0, 0);
-			options.key.resize(16);
-			const unsigned char* tkey = preferences.getKey(options.keypreset_id);
-			options.key.assign(tkey, tkey + 16);
+			size_t keyid = (size_t)::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_GETCURSEL, 0, 0);
+			options.key.set(preferences.getKey(keyid), 16);
 		}
 	}
 	return true;

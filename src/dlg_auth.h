@@ -20,18 +20,19 @@ GNU General Public License for more details.
 
 #include "npp/ModalDialog.h"
 #include "help.h"
+#include "crypt.h"
 
 class DlgAuth: public ModalDialog
 {
 public:    
 						DlgAuth() : ModalDialog() {};
    	bool				doDialog(const TCHAR* filename=NULL);
-	void				getInput(std::string& out);
+	crypt::UserData&	getInput();
 
 private:
 	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	std::string			input;
+	crypt::UserData		input;
 	std::wstring		caption;
 };
 

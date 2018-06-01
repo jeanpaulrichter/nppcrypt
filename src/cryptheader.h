@@ -24,11 +24,10 @@ class CryptHeader
 public:
 
 	struct HMAC {
-		HMAC() : enable(false), hash(crypt::Hash::sha3_256), keypreset_id(-1) {};
-		bool			enable;
-		crypt::Hash		hash;
-		int				keypreset_id;
-		std::string		password;
+		HMAC() : enable(false) {};
+		bool					enable;
+		int						keypreset_id;
+		crypt::Options::Hash	hash;
 	};
 
 						CryptHeader() : version(NPPC_VERSION) {};
@@ -49,8 +48,8 @@ public:
 	const unsigned char*		encryptedData() { return pEncryptedData; };
 	size_t						encryptedDataLength() { return encryptedDataLen; };
 	crypt::InitData&			initData() { return s_init; };
-	bool						checkHMAC(const std::string& password);
-	bool						checkHMAC(const byte* key, size_t key_length);
+	//bool						checkHMAC(const std::string& password);
+	bool						checkHMAC();
 
 private:
 	crypt::Options::Crypt&		options;
@@ -69,7 +68,7 @@ public:
 	const char*				c_str() { return buffer.c_str(); };
 	size_t					size() { return buffer.size(); };
 	crypt::InitData&		initData() { return s_init;	};
-	void					setHMACKey(const byte* h_key = NULL, size_t h_len = 0);
+	//void					setHMACKey(const byte* h_key = NULL, size_t h_len = 0);
 
 private:
 	size_t					base64length(size_t bin_length, bool linebreaks=false, size_t line_length=0, bool windows=false);

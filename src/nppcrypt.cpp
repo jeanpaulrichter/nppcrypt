@@ -186,15 +186,15 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						if (!dlg_auth.doDialog()) {
 							return;
 						}
-						dlg_auth.getInput(crypt.hmac.password);
-						if (!header.checkHMAC(crypt.hmac.password)) {
+						crypt.hmac.hash.key.set(dlg_auth.getInput());
+						if (!header.checkHMAC()) {
 							throw CExc(CExc::Code::hmac_auth_failed);
 						}
 					} else {
 						if (crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
 							throw CExc(CExc::Code::invalid_presetkey);
 						} else {
-							if (!header.checkHMAC(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16)) {
+							if (!header.checkHMAC()) {
 								throw CExc(CExc::Code::hmac_auth_failed);
 							}
 						}
@@ -283,9 +283,9 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						}
 						if(autoencrypt)	{
 							crypt::encrypt(pData, data_length, buffer, crypt.options, header.initData());
-							if (crypt.hmac.enable && crypt.hmac.keypreset_id >= 0) {
-								header.setHMACKey(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16);
-							}
+							//if (crypt.hmac.enable && crypt.hmac.keypreset_id >= 0) {
+							//	header.setHMACKey(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16);
+							//}
 							header.create(&buffer[0], buffer.size());
 						}
 					}						
@@ -295,9 +295,9 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 						if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &crypt, &header.initData().iv, no_ascii, &filename)) {
 							crypt::encrypt(pData, data_length, buffer, crypt.options, header.initData());
-							if (crypt.hmac.enable && crypt.hmac.keypreset_id >= 0) {
-								header.setHMACKey(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16);
-							}
+							//if (crypt.hmac.enable && crypt.hmac.keypreset_id >= 0) {
+							//	header.setHMACKey(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16);
+							//}
 							header.create(&buffer[0], buffer.size());
 							if(fiter!=crypt_files.end()) {
 								crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
@@ -344,9 +344,9 @@ void EncryptDlg()
 			std::basic_string<byte>		buffer;
 
 			crypt::encrypt(pData, data_length, buffer, current.crypt.options, header.initData());
-			if (current.crypt.hmac.enable && current.crypt.hmac.keypreset_id >= 0) {
-				header.setHMACKey(preferences.getKey((size_t)current.crypt.hmac.keypreset_id), 16);
-			}
+			//if (current.crypt.hmac.enable && current.crypt.hmac.keypreset_id >= 0) {
+			//	header.setHMACKey(preferences.getKey((size_t)current.crypt.hmac.keypreset_id), 16);
+			//}
 			header.create(&buffer[0], buffer.size());
 
 			HWND hCurScintilla = helper::Scintilla::getCurrent();
@@ -387,15 +387,15 @@ void DecryptDlg()
 					if (!dlg_auth.doDialog()) {
 						return;
 					}
-					dlg_auth.getInput(current.crypt.hmac.password);
-					if (!header.checkHMAC(current.crypt.hmac.password)) {
+					current.crypt.hmac.hash.key.set(dlg_auth.getInput());
+					if (!header.checkHMAC()) {
 						throw CExc(CExc::Code::hmac_auth_failed);
 					}
 				} else {
 					if (current.crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
 						throw CExc(CExc::Code::invalid_presetkey);
 					} else {
-						if (!header.checkHMAC(preferences.getKey((size_t)current.crypt.hmac.keypreset_id), 16)) {
+						if (!header.checkHMAC()) {
 							throw CExc(CExc::Code::hmac_auth_failed);
 						}
 					}

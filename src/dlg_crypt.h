@@ -45,6 +45,7 @@ private:
 	void				initDialog();
 	void				checkSpinControlValue(int ctrlID);
 	bool				checkCustomIV(crypt::UserData& data, bool reencode);
+	bool				checkHMACKey(crypt::UserData& data, bool reencode);
 	void				changeActiveTab(int id);
 	void				setCipherInfo(crypt::Cipher cipher, crypt::Mode mode);
 	void				enableKeyDeriControls();
@@ -68,6 +69,7 @@ private:
 	int						cur_tab;
 	int						cur_ivlength;
 	bool					invalid_iv;
+	bool					invalid_hmac;
 	HBRUSH					brush_red;
 
 	HWND					hwnd_basic;

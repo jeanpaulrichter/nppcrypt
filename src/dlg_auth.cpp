@@ -39,6 +39,11 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		SetWindowText(_hSelf, caption.c_str());
 		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, '*', 0);
 		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
+		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
+		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
+		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));
+		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base64"));
+		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_SETCURSEL, 0, 0);
 		PostMessage(_hSelf, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(_hSelf, IDC_AUTH_KEY), TRUE);
 		goToCenter();
 		return TRUE;
@@ -49,14 +54,27 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		{
 		case IDC_OK:
 		{
-			TCHAR temp_key[NPPC_HMAC_INPUT_MAX + 1];
-			::GetDlgItemText(_hSelf, IDC_AUTH_KEY, temp_key, NPPC_HMAC_INPUT_MAX + 1);
+			TCHAR temp1[NPPC_HMAC_INPUT_MAX + 1];			
+			crypt::secure_string temp2;
+			::GetDlgItemText(_hSelf, IDC_AUTH_KEY, temp1, NPPC_HMAC_INPUT_MAX + 1);
+			int temp1len = lstrlen(temp1);
 
-			try {
-				helper::Windows::wchar_to_utf8(temp_key, -1, input);
-			} catch (CExc& exc) {
-				helper::Windows::error(_hSelf, exc.what());
-				break;
+			if (temp1len > 0) {
+				try {
+					helper::Windows::wchar_to_utf8(temp1, temp1len, temp2);
+				}
+				catch (CExc& exc) {
+					helper::Windows::error(_hSelf, exc.what());
+					break;
+				}
+				crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_GETCURSEL, 0, 0);
+				input.set(temp2.c_str(), temp2.size(), enc);
+
+				for (size_t i = 0; i < temp1len; i++) {
+					temp1[i] = 0;
+				}
+			} else {
+				input.clear();
 			}
 
 			EndDialog(_hSelf, IDC_OK);
@@ -75,6 +93,11 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 			::SetFocus(::GetDlgItem(_hSelf, IDC_AUTH_KEY));
 			break;
 		}
+		case CBN_SELCHANGE:
+		{
+			::SetFocus(::GetDlgItem(_hSelf, IDC_AUTH_KEY));
+			break;
+		}
 		}
 		break;
 	}
@@ -82,8 +105,7 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 	return FALSE;
 }
 
-void DlgAuth::getInput(std::string& out)
+crypt::UserData& DlgAuth::getInput()
 {
-	out.assign(input);
-	input.clear();
+	return input;
 }

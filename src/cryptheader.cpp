@@ -19,6 +19,7 @@ GNU General Public License for more details.
 #include "tinyxml2/tinyxml2.h"
 #include "cryptheader.h"
 #include "exception.h"
+#include "preferences.h"
 
 inline bool cmpchars(const char* s1, const char* s2, int len)
 {
@@ -88,17 +89,22 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			throw CExc(CExc::Code::invalid_hmac_data);
 		}		
 		const char* pHMAC_hash = xml_nppcrypt->Attribute("hmac-hash");
-		crypt::Hash thash;
-		if (!crypt::help::getHash(pHMAC_hash, thash) || !crypt::help::checkHashProperty(thash, crypt::HashProperties::hmac_possible))	{
+		if (!crypt::help::getHash(pHMAC_hash, hmac.hash.algorithm) || !crypt::help::checkHashProperty(hmac.hash.algorithm, crypt::HashProperties::hmac_possible))	{
 			throw CExc(CExc::Code::invalid_hmac_hash);
 		}
 		xml_err = xml_nppcrypt->QueryIntAttribute("auth-key", &hmac.keypreset_id);
 		if (xml_err != tinyxml2::XMLError::XML_NO_ERROR) {
 			hmac.keypreset_id = -1;
 		}
-		hmac.hash = thash;
-		hmac_data.assign(pHMAC);
+		if (hmac.keypreset_id >= 0) {
+			hmac.hash.key.set(preferences.getKey((size_t)hmac.keypreset_id), 16);
+		}
 		hmac.enable = true;
+		hmac.hash.use_key = true;
+		hmac.hash.encoding = crypt::Encoding::base64;
+		hmac_data.assign(pHMAC);		
+	} else {
+		hmac.enable = false;
 	}
 	tinyxml2::XMLElement* xml_random = xml_nppcrypt->FirstChildElement("random");
 	t_options.key.salt_bytes = 0;
@@ -220,7 +226,7 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			if (s_init.iv.size() > 0) {
 				t_options.iv = crypt::IV::random;
 			} else {
-				t_options.iv = crypt::IV::zero;
+				t_options.iv = crypt::IV::custom;
 			}
 		}
 	}
@@ -262,7 +268,7 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 	return true;
 }
 
-bool CryptHeaderReader::checkHMAC(const std::string& password)
+/*bool CryptHeaderReader::checkHMAC(const std::string& password)
 {
 	if (hmac.enable) {
 		std::basic_string<byte> buf;
@@ -277,21 +283,13 @@ bool CryptHeaderReader::checkHMAC(const std::string& password)
 	} else {
 		return false;
 	}
-}
+}*/
 
-bool CryptHeaderReader::checkHMAC(const byte* key, size_t key_length)
+bool CryptHeaderReader::checkHMAC()
 {
 	if (hmac.enable) {
 		std::basic_string<byte> buf;
-		crypt::Options::Hash options;
-		options.algorithm = hmac.hash;
-		options.encoding = crypt::Encoding::base64;
-		options.use_key = true;
-		options.key.resize(key_length);
-		for (size_t i = 0; i < key_length; i++) {
-			options.key[i] = key[i];
-		}
-		crypt::hash(options, buf, { { pBody, bodyLength },{ pEncryptedData,encryptedDataLen } });
+		crypt::hash(hmac.hash, buf, { { pBody, bodyLength },{ pEncryptedData,encryptedDataLen } });
 		return (hmac_data.compare((const char*)buf.c_str()) == 0);
 	}
 	else {
@@ -332,10 +330,10 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	out << "<nppcrypt version=\"" << NPPC_VERSION << "\"";
 	if (hmac.enable) {
 		int hmac_length = 0;
-		if (!crypt::getHashInfo(hmac.hash, hmac_length)) {
+		if (!crypt::getHashInfo(hmac.hash.algorithm, hmac_length)) {
 			throw CExc(CExc::Code::invalid_hmac_hash);
 		}
-		out << " hmac-hash=\"" << crypt::help::getString(hmac.hash) << "\"";
+		out << " hmac-hash=\"" << crypt::help::getString(hmac.hash.algorithm) << "\"";
 		if (hmac.keypreset_id >= 0) {
 			out << " auth-key=\"" << hmac.keypreset_id << "\"";
 		}
@@ -399,7 +397,7 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	if (hmac.enable && hmac_offset > 0) {
 		// create hmac hash and insert it into header
 		std::basic_string<byte> buf;
-		crypt::Options::Hash options;
+		/*crypt::Options::Hash options;
 		options.algorithm = hmac.hash;
 		options.encoding = crypt::Encoding::base64;
 		options.use_key = true;
@@ -411,20 +409,20 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 		} else {
 			options.key.resize(16);
 			crypt::shake128((const unsigned char*)hmac.password.c_str(), hmac.password.size(), &options.key[0], 16);
-		}
-		crypt::hash(options, buf, { { pBody, bodyLength },{ data, data_length } });
+		}*/
+		crypt::hash(hmac.hash, buf, { { pBody, bodyLength },{ data, data_length } });
 		std::string tstring(buf.begin(), buf.end());
 		buffer.replace(hmac_offset, tstring.size(), tstring);
 	}
 }
 
-void CryptHeaderWriter::setHMACKey(const byte* key, size_t len)
+/*void CryptHeaderWriter::setHMACKey(const byte* key, size_t len)
 {
 	hmac_key.resize(len);
 	for (size_t i = 0; i < len; i++) {
 		hmac_key[i] = key[i];
 	}
-}
+}*/
 
 size_t CryptHeaderWriter::base64length(size_t bin_length, bool linebreaks, size_t line_length, bool windows)
 {

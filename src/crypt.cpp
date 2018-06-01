@@ -198,6 +198,12 @@ size_t crypt::UserData::size() const
 	return data.size();
 }
 
+size_t crypt::UserData::set(const UserData& s)
+{
+	data.Assign(s.BytePtr(), s.size());
+	return data.size();
+}
+
 size_t crypt::UserData::set(std::string& s, Encoding enc)
 {
 	if(enc == Encoding::ascii) {
@@ -1704,39 +1710,39 @@ void crypt::hash(const Options::Hash& options, std::basic_string<byte>& buffer, 
 			switch (options.algorithm)
 			{
 			case crypt::Hash::md4:
-				hmac.reset(new HMAC< Weak::MD4 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Weak::MD4 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::md5:
-				hmac.reset(new HMAC< Weak::MD5 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Weak::MD5 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha1:
-				hmac.reset(new HMAC< SHA1 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA1 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha256:
-				hmac.reset(new HMAC< SHA256 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA256 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha512:
-				hmac.reset(new HMAC< SHA512 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA512 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::ripemd128:
-				hmac.reset(new HMAC< RIPEMD128 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< RIPEMD128 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::ripemd160:
-				hmac.reset(new HMAC< RIPEMD160 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< RIPEMD160 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::ripemd256:
-				hmac.reset(new HMAC< RIPEMD256 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< RIPEMD256 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::whirlpool:
-				hmac.reset(new HMAC< Whirlpool >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Whirlpool >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::tiger128:
-				hmac.reset(new HMAC< Tiger >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Tiger >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha3_224:
-				hmac.reset(new HMAC< SHA3_224 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA3_224 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha3_256:
-				hmac.reset(new HMAC< SHA3_256 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA3_256 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha3_384:
-				hmac.reset(new HMAC< SHA3_384 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA3_384 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha3_512:
-				hmac.reset(new HMAC< SHA3_512 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA3_512 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::keccak256:
-				hmac.reset(new HMAC< Keccak_256 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Keccak_256 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::keccak512:
-				hmac.reset(new HMAC< Keccak_512 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Keccak_512 >(options.key.BytePtr(), options.key.size())); break;
 			case Hash::blake2b:
-				hmac.reset(new BLAKE2b(options.key.data(), options.key.size())); break;
+				hmac.reset(new BLAKE2b(options.key.BytePtr(), options.key.size())); break;
 			default: throw CExc(CExc::Code::invalid_hash);
 			}
 			phash = hmac.get();
@@ -1821,39 +1827,39 @@ void crypt::hash(const Options::Hash& options, std::basic_string<byte>& buffer, 
 			switch (options.algorithm)
 			{
 			case crypt::Hash::md4:
-				hmac.reset(new HMAC< Weak::MD4 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Weak::MD4 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::md5:
-				hmac.reset(new HMAC< Weak::MD5 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Weak::MD5 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha1:
-				hmac.reset(new HMAC< SHA1 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA1 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha256:
-				hmac.reset(new HMAC< SHA256 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA256 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha512:
-				hmac.reset(new HMAC< SHA512 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA512 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::ripemd128:
-				hmac.reset(new HMAC< RIPEMD128 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< RIPEMD128 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::ripemd160:
-				hmac.reset(new HMAC< RIPEMD160 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< RIPEMD160 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::ripemd256:
-				hmac.reset(new HMAC< RIPEMD256 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< RIPEMD256 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::whirlpool:
-				hmac.reset(new HMAC< Whirlpool >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Whirlpool >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::tiger128:
-				hmac.reset(new HMAC< Tiger >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Tiger >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha3_224:
-				hmac.reset(new HMAC< SHA3_224 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA3_224 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha3_256:
-				hmac.reset(new HMAC< SHA3_256 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA3_256 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha3_384:
-				hmac.reset(new HMAC< SHA3_384 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA3_384 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::sha3_512:
-				hmac.reset(new HMAC< SHA3_512 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< SHA3_512 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::keccak256:
-				hmac.reset(new HMAC< Keccak_256 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Keccak_256 >(options.key.BytePtr(), options.key.size())); break;
 			case crypt::Hash::keccak512:
-				hmac.reset(new HMAC< Keccak_512 >(options.key.data(), options.key.size())); break;
+				hmac.reset(new HMAC< Keccak_512 >(options.key.BytePtr(), options.key.size())); break;
 			case Hash::blake2b:
-				hmac.reset(new BLAKE2b(options.key.data(), options.key.size())); break;
+				hmac.reset(new BLAKE2b(options.key.BytePtr(), options.key.size())); break;
 			default: throw CExc(CExc::Code::invalid_hash);
 			}
 			phash = hmac.get();

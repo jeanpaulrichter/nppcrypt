@@ -88,7 +88,11 @@ GNU General Public License for more details.
 #define IDC_CRYPT_PASSWORD_ENC          1051
 #define IDC_CRYPT_IV_ENC				1052
 #define IDC_CRYPT_IV_INPUT				1053
-#define IDC_CRYPT_IV_USER				1054
+#define IDC_CRYPT_IV_CUSTOM				1054
+#define IDC_CRYPT_AUTH_PW_ENC			1055
+#define IDC_CRYPT_AUTH_STATIC			1056
+#define IDC_CRYPT_ENC_STATIC			1057
+#define IDC_AUTH_KEY_ENC				1058
 
 #define IDC_HASH_ALGO                   1000
 #define IDC_HASH_ENC_ASCII              1001

@@ -109,6 +109,7 @@ namespace crypt
 		UserData(const char* s, Encoding enc);
 		const byte*		BytePtr() const;
 		size_t			size() const;
+		size_t			set(const UserData& s);
 		size_t			set(std::string& s, Encoding enc);
 		size_t			set(const char* s, size_t length, Encoding enc);
 		size_t			set(const byte* s, size_t length);
@@ -155,13 +156,12 @@ namespace crypt
 
 		struct Hash
 		{
-			Hash() : encoding(crypt::Encoding::base16), algorithm(crypt::Hash::md5), use_key(false), keypreset_id(-1){};
+			Hash() : encoding(crypt::Encoding::base16), algorithm(crypt::Hash::md5), use_key(false) {};
 
 			crypt::Hash					algorithm;
 			crypt::Encoding				encoding;
-			int							keypreset_id;
 			bool						use_key;
-			std::vector<byte>			key;
+			UserData					key;
 		};
 
 		struct Random
