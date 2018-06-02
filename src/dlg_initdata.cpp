@@ -24,14 +24,26 @@ DlgInitdata::DlgInitdata() : ModalDialog()
 {
 };
 
-bool DlgInitdata::doDialog(crypt::InitData* data, bool salt, bool iv, bool tag)
+void DlgInitdata::destroy()
 {
-	_data = data;
-	_salt = salt;
-	_iv = iv;
-	_tag = tag;
-	if (!_data) {
+	if (brush_red) {
+		DeleteObject(brush_red);
+	}
+	ModalDialog::destroy();
+};
+
+bool DlgInitdata::doDialog(crypt::InitData* data, size_t saltlen, size_t taglen)
+{
+	pdata = data;
+	saltlength = saltlen;
+	taglength = taglen;
+	invalid_salt = (saltlength > 0);
+	invalid_tag = (taglength > 0);
+	if (!pdata) {
 		return false;
+	}
+	if (!brush_red) {
+		brush_red = CreateSolidBrush(RGB(255, 0, 0));
 	}
 	return ModalDialog::doDialog();
 }
@@ -42,77 +54,146 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 	{
 	case WM_INITDIALOG:
 	{
+		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
+		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
+		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));
+		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base64"));
+		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_SETCURSEL, 0, 0);
+		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
+		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
+		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));
+		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base64"));
+		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_SETCURSEL, 0, 0);
+
 		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT, EM_LIMITTEXT, 1024, 0);
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_IV, EM_LIMITTEXT, 1024, 0);
 		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG, EM_LIMITTEXT, 1024, 0);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_SALT), _salt);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_IV), _iv);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_TAG), _tag);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_SALT), (saltlength > 0));
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_SALT_ENC), (saltlength > 0));
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_TAG), (taglength > 0));
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_TAG_ENC), (taglength > 0));
 
 		goToCenter();
 		return TRUE;
 	}
 	case WM_COMMAND:
 	{
-		switch (LOWORD(wParam))
+		switch (HIWORD(wParam))
 		{
-		case IDC_OK:
+		case BN_CLICKED:
 		{
-			if (_salt) {
-				int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_INITDATA_SALT));
-				if (len <= 0) {
-					::MessageBox(_hSelf, TEXT("Please enter a salt-value!"), TEXT("Error"), MB_OK); break;
-					return FALSE;
-				} else {
-					std::vector<TCHAR> tstr(len + 1);
-					::GetDlgItemText(_hSelf, IDC_INITDATA_SALT, tstr.data(), (int)tstr.size());
-					tstr.pop_back();
-					std::string temp;
-					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
-					_data->salt.set(temp, crypt::Encoding::base64);
+			switch (LOWORD(wParam))
+			{
+			case IDC_OK:
+			{
+				if (saltlength > 0) {
+					if (!checkSalt(true)) {
+						return FALSE;
+					}
 				}
+				if (taglength > 0) {
+					if (!checkTag(true)) {
+						return FALSE;
+					}
+				}
+				EndDialog(_hSelf, IDC_OK);
+				return TRUE;
 			}
-			if (_iv) {
-				int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_INITDATA_IV));
-				if (len <= 0) {
-					::MessageBox(_hSelf, TEXT("Please enter a iv-value!"), TEXT("Error"), MB_OK); break;
-					return FALSE;
-				}
-				else {
-					std::vector<TCHAR> tstr(len + 1);
-					::GetDlgItemText(_hSelf, IDC_INITDATA_IV, tstr.data(), (int)tstr.size());
-					tstr.pop_back();
-					std::string temp;
-					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
-					_data->iv.set(temp, crypt::Encoding::base64);
-				}
+			case IDC_CANCEL: case IDCANCEL:
+			{
+				EndDialog(_hSelf, IDC_CANCEL);
+				return TRUE;
 			}
-			if (_tag) {
-				int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_INITDATA_TAG));
-				if (len <= 0) {
-					::MessageBox(_hSelf, TEXT("Please enter a tag-value!"), TEXT("Error"), MB_OK); break;
-					return FALSE;
-				}
-				else {
-					std::vector<TCHAR> tstr(len + 1);
-					::GetDlgItemText(_hSelf, IDC_INITDATA_TAG, tstr.data(), (int)tstr.size());
-					tstr.pop_back();
-					std::string temp;
-					helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
-					_data->tag.set(temp, crypt::Encoding::base64);
-				}
 			}
-			EndDialog(_hSelf, IDC_OK);
-			return TRUE;
+			break;
 		}
-		case IDC_CANCEL: case IDCANCEL:
+		case EN_CHANGE:
 		{
-			EndDialog(_hSelf, IDC_CANCEL);
-			return TRUE;
+			if (saltlength > 0 && LOWORD(wParam) == IDC_INITDATA_SALT) {
+				checkSalt(false);
+				InvalidateRect(::GetDlgItem(_hSelf, IDC_INITDATA_SALT), NULL, NULL);
+			} else if (taglength > 0 && LOWORD(wParam) == IDC_INITDATA_TAG) {
+				checkTag(false);
+				InvalidateRect(::GetDlgItem(_hSelf, IDC_INITDATA_TAG), NULL, NULL);
+			}
+			break;
 		}
+		case CBN_SELCHANGE:
+		{
+			switch (LOWORD(wParam))
+			{
+			case IDC_INITDATA_SALT_ENC:
+			{
+				checkSalt(false);
+				InvalidateRect(::GetDlgItem(_hSelf, IDC_INITDATA_SALT), NULL, NULL);
+				::SetFocus(::GetDlgItem(_hSelf, IDC_INITDATA_SALT));
+				break;
+			}
+			case IDC_INITDATA_TAG_ENC:
+			{
+				checkTag(false);
+				InvalidateRect(::GetDlgItem(_hSelf, IDC_INITDATA_TAG), NULL, NULL);
+				::SetFocus(::GetDlgItem(_hSelf, IDC_INITDATA_TAG));
+				break;
+			}
+			}
+			break;
+		}
+		}
+		break;
+	}
+	case WM_CTLCOLOREDIT:
+	{
+		if (invalid_salt && (HWND)lParam == GetDlgItem(_hSelf, IDC_INITDATA_SALT)) {
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (INT_PTR)brush_red;
+		} else if (invalid_tag && (HWND)lParam == GetDlgItem(_hSelf, IDC_INITDATA_TAG)) {
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (INT_PTR)brush_red;
 		}
 		break;
 	}
 	}
 	return FALSE;
+}
+
+bool DlgInitdata::checkTag(bool updatedata)
+{
+	int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_INITDATA_TAG));
+	if (len <= 0) {
+		return false;
+	}
+	std::vector<TCHAR> tstr(len + 1);
+	crypt::secure_string temp;
+	crypt::UserData data;
+	crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_GETCURSEL, 0, 0);
+	::GetDlgItemText(_hSelf, IDC_INITDATA_TAG, tstr.data(), (int)tstr.size());
+	tstr.pop_back();
+	helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
+	data.set(temp.c_str(), temp.size(), enc);
+	invalid_tag = (data.size() != taglength);
+	if (!invalid_salt && updatedata) {
+		pdata->tag.set(data);
+	}
+	return !invalid_tag;
+}
+
+bool DlgInitdata::checkSalt(bool updatedata)
+{
+	int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_INITDATA_SALT));
+	if (len <= 0) {
+		return false;
+	}
+	std::vector<TCHAR> tstr(len + 1);
+	crypt::secure_string temp;
+	crypt::UserData data;
+	crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_GETCURSEL, 0, 0);
+	::GetDlgItemText(_hSelf, IDC_INITDATA_SALT, tstr.data(), (int)tstr.size());
+	tstr.pop_back();
+	helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
+	data.set(temp.c_str(), temp.size(), enc);
+	invalid_salt = (data.size() != saltlength);
+	if (!invalid_salt && updatedata) {
+		pdata->salt.set(data);
+	}
+	return !invalid_salt;
 }

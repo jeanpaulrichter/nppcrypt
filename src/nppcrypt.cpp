@@ -405,11 +405,19 @@ void DecryptDlg()
 
 		if(dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &current.crypt, &header.initData().iv, !helper::Buffer::isCurrent8Bit())) {
 			crypt::InitData& s_init = header.initData();
-			bool need_salt = (current.crypt.options.key.salt_bytes > 0 && s_init.salt.size() == 0);
-			bool need_iv = (current.crypt.options.iv == crypt::IV::random && s_init.iv.size() == 0);
-			bool need_tag = ((current.crypt.options.mode == crypt::Mode::gcm || current.crypt.options.mode == crypt::Mode::ccm || current.crypt.options.mode == crypt::Mode::eax) && s_init.tag.size() == 0);
-			if (need_salt || need_iv || need_tag) {
-				if (!dlg_initdata.doDialog(&s_init, need_salt, need_iv, need_tag)) {
+			size_t need_salt_len = (current.crypt.options.key.salt_bytes > 0 && s_init.salt.size() != current.crypt.options.key.salt_bytes) ? current.crypt.options.key.salt_bytes : 0;
+			size_t need_tag_len = 0;
+			if (current.crypt.options.mode == crypt::Mode::gcm && s_init.tag.size() != crypt::Constants::gcm_tag_size) {
+				need_tag_len = crypt::Constants::gcm_tag_size;
+			}
+			if (current.crypt.options.mode == crypt::Mode::ccm && s_init.tag.size() != crypt::Constants::ccm_tag_size) {
+				need_tag_len = crypt::Constants::gcm_tag_size;
+			}
+			if (current.crypt.options.mode == crypt::Mode::eax && s_init.tag.size() != crypt::Constants::eax_tag_size) {
+				need_tag_len = crypt::Constants::gcm_tag_size;
+			}
+			if (need_salt_len > 0 || need_tag_len > 0) {
+				if (!dlg_initdata.doDialog(&s_init, need_salt_len, need_tag_len)) {
 					return;
 				}
 			}

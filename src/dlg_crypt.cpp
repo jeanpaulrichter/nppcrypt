@@ -145,6 +145,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_LB_UNIX), linebreaks);
 				::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_LINELEN), linebreaks);
 				::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_LINELEN_SPIN), linebreaks);
+				::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_STATIC), linebreaks);
 				break;
 			}
 			case IDC_CRYPT_KEY_PBKDF2: case IDC_CRYPT_KEY_BCRYPT: case IDC_CRYPT_KEY_SCRYPT:
@@ -168,6 +169,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 					bool c = ::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_GETCHECK, 0, 0) ? true : false;
 					::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_BYTES), c);
 					::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_SPIN), c);
+					::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_STATIC), c);
 				}
 				break;
 			}
@@ -182,6 +184,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), c);
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW), c);
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_ENC), c);
+					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_STATIC), c);
 					if (c && ::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
 						::SetFocus(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE));
 					}
@@ -600,6 +603,7 @@ void DlgCrypt::initDialog()
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), crypt->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW), crypt->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_ENC), crypt->hmac.enable);
+		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_STATIC), crypt->hmac.enable);
 	}
 
 	url_help[int(HelpURL::hmac)].init(_hInst, hwnd_auth);
@@ -858,11 +862,17 @@ void DlgCrypt::enableKeyDeriControls()
 	{
 	case crypt::KeyDerivation::pbkdf2:
 	{
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_STATIC), true);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_HASH), true);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_ITER), true);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_ITER_SPIN), true);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_STATIC1), false);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_STATIC2), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_ITER), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_ITER_SPIN), false);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_STATIC1), false);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_STATIC2), false);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_STATIC3), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_N), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_N_SPIN), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_R), false);
@@ -870,17 +880,25 @@ void DlgCrypt::enableKeyDeriControls()
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_P), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_P_SPIN), false);
 		// the salt-bytes edit may have got deactivated because bcrypt was chosen:
-		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_BYTES), !!::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_GETCHECK, 0, 0));
-		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_SPIN), !!::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_GETCHECK, 0, 0));
+		bool c = !!::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_GETCHECK, 0, 0);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_BYTES), c);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_SPIN), c);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_STATIC), c);
 		break;
 	}
 	case crypt::KeyDerivation::bcrypt:
 	{
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_STATIC), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_HASH), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_ITER), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_ITER_SPIN), false);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_STATIC1), true);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_STATIC2), true);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_ITER), true);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_ITER_SPIN), true);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_STATIC1), false);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_STATIC2), false);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_STATIC3), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_N), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_N_SPIN), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_R), false);
@@ -895,11 +913,17 @@ void DlgCrypt::enableKeyDeriControls()
 	}
 	case crypt::KeyDerivation::scrypt:
 	{
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_STATIC), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_HASH), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_ITER), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_PBKDF2_ITER_SPIN), false);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_STATIC1), false);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_STATIC2), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_ITER), false);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_BCRYPT_ITER_SPIN), false);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_STATIC1), true);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_STATIC2), true);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_STATIC3), true);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_N), true);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_N_SPIN), true);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_R), true);
@@ -907,8 +931,10 @@ void DlgCrypt::enableKeyDeriControls()
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_P), true);
 		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SCRYPT_P_SPIN), true);
 		// the salt-bytes edit may have got deactivated because bcrypt was chosen:
-		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_BYTES), !!::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_GETCHECK, 0, 0));
-		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_SPIN), !!::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_GETCHECK, 0, 0));
+		bool c = !!::SendDlgItemMessage(hwnd_key, IDC_CRYPT_SALT, BM_GETCHECK, 0, 0);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_BYTES), c);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_SPIN), c);
+		::EnableWindow(::GetDlgItem(hwnd_key, IDC_CRYPT_SALT_STATIC), c);
 		break;
 	}
 	}
@@ -1171,8 +1197,10 @@ void DlgCrypt::OnCipherCategoryChange(int category, bool change_cipher)
 
 void DlgCrypt::OnEncodingChange(crypt::Encoding enc)
 {
-	if (operation != Operation::Enc)
+	if (operation != Operation::Enc) {
 		return;
+	}
+
 	using namespace crypt;
 	switch (enc)
 	{
@@ -1184,6 +1212,7 @@ void DlgCrypt::OnEncodingChange(crypt::Encoding enc)
 		::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_LINELEN), false);
 		::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_LINELEN_SPIN), false);
 		::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_UPPERCASE), false);
+		::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_STATIC), false);
 		break;
 	}
 	case Encoding::base16: case Encoding::base32: case Encoding::base64:
@@ -1194,6 +1223,7 @@ void DlgCrypt::OnEncodingChange(crypt::Encoding enc)
 		::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_LB_UNIX), linebreaks);
 		::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_LINELEN), linebreaks);
 		::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_LINELEN_SPIN), linebreaks);
+		::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_STATIC), linebreaks);
 		::EnableWindow(::GetDlgItem(hwnd_encoding, IDC_CRYPT_ENC_UPPERCASE), (enc != Encoding::base64));
 		break;
 	}

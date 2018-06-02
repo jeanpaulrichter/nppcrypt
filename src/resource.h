@@ -92,7 +92,13 @@ GNU General Public License for more details.
 #define IDC_CRYPT_AUTH_PW_ENC			1055
 #define IDC_CRYPT_AUTH_STATIC			1056
 #define IDC_CRYPT_ENC_STATIC			1057
-#define IDC_AUTH_KEY_ENC				1058
+#define IDC_CRYPT_SALT_STATIC			1058
+#define IDC_CRYPT_PBKDF2_STATIC			1059
+#define IDC_CRYPT_BCRYPT_STATIC1		1060
+#define IDC_CRYPT_BCRYPT_STATIC2		1061
+#define IDC_CRYPT_SCRYPT_STATIC1		1062
+#define IDC_CRYPT_SCRYPT_STATIC2		1063
+#define IDC_CRYPT_SCRYPT_STATIC3		1064
 
 #define IDC_HASH_ALGO                   1000
 #define IDC_HASH_ENC_ASCII              1001
@@ -148,11 +154,13 @@ GNU General Public License for more details.
 #define IDC_CONVERT_TOCLIPBOARD			1014
 
 #define IDC_INITDATA_SALT               1000
-#define IDC_INITDATA_IV                 1001
 #define IDC_INITDATA_TAG                1002
+#define IDC_INITDATA_SALT_ENC			1003
+#define IDC_INITDATA_TAG_ENC			1004
 
 #define IDC_AUTH_KEY                    1000
-#define IDC_AUTH_SHOW                   1001
+#define IDC_AUTH_KEY_ENC				1001
+#define IDC_AUTH_SHOW                   1002
 
 #define IDC_ABOUT_VERSION				1000
 #define IDC_ABOUT_GITHUB				1001
