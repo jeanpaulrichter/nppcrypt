@@ -109,12 +109,12 @@ GNU General Public License for more details.
 #define IDC_HASH_KEY                    1006
 #define IDC_HASH_KEYRADIO1              1007
 #define IDC_HASH_KEYRADIO2              1008
-#define IDC_HASH_PWEDIT                 1009
+#define IDC_HASH_PASSWORD               1009
 #define IDC_HASH_HELP_HASH              1010
 #define IDC_HASH_ENC_BASE32             1011
 #define IDC_HASH_TOCLIPBOARD			1012
-#define IDC_HASH_PW_STATIC				1013
-#define IDC_HASH_KEY_STATIC				1014
+#define IDC_HASH_PASSWORD_ENC			1013
+#define IDC_HASH_PASSWORD_SHOW			1014
 
 #define IDC_RANDOM_EDIT                 1000
 #define IDC_RANDOM_SPIN                 1001

@@ -27,14 +27,18 @@ class DlgHash : public ModalDialog
 {
 public:
 						DlgHash(crypt::Options::Hash& opt);
+	void				destroy();
 
 private:
 	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 	bool				updateOptions();
 	void				enableKeyControls(bool v);
+	bool				checkPassword(bool updatedata);
 	
 	crypt::Options::Hash&	options;
+	bool					invalid_password;
 	URLCtrl					url_help_hash;
+	HBRUSH					brush_red;
 };
 
 #endif
