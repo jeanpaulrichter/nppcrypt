@@ -102,8 +102,8 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 			crypt::help::getCipherMode(pTemp, current.crypt.options.mode);
 			pTemp = xml_temp->Attribute("iv");
 			crypt::help::getIVMode(pTemp, current.crypt.options.iv);
-			pTemp = xml_temp->Attribute("password-enc");
-			crypt::help::getEncoding(pTemp, current.crypt.options.password_encoding);
+			//pTemp = xml_temp->Attribute("password-enc");
+			//crypt::help::getEncoding(pTemp, current.crypt.options.password_encoding);
 		}
 		xml_temp = xml_nppcrypt->FirstChildElement("crypt_encoding");
 		if (xml_temp) {
@@ -280,7 +280,7 @@ void CPreferences::save(CurrentOptions& current)
 		fout << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << eol << "<nppcrypt_preferences version=\"" << NPPC_VERSION << "\">" << eol;
 		helper::Windows::wchar_to_utf8(files.extension.c_str(), (int)files.extension.size(), temp_str);
 		fout << "<files enabled=\"" << bool_str[files.enable] << "\" askonsave=\"" << bool_str[files.askonsave] << "\" extension=\"" << temp_str << "\" />" << eol;
-		fout << "<crypt_basic cipher=\"" << crypt::help::getString(current.crypt.options.cipher) << "\" mode=\"" << crypt::help::getString(current.crypt.options.mode) << "\" iv=\"" << crypt::help::getString(current.crypt.options.iv) << "\" password-enc=\"" << crypt::help::getString(current.crypt.options.password_encoding) << "\" />" << eol;
+		fout << "<crypt_basic cipher=\"" << crypt::help::getString(current.crypt.options.cipher) << "\" mode=\"" << crypt::help::getString(current.crypt.options.mode) << "\" iv=\"" << crypt::help::getString(current.crypt.options.iv) << "\" />" << eol;
 		fout << "<crypt_encoding enc=\"" << crypt::help::getString(current.crypt.options.encoding.enc) << "\" eol=\"" << crypt::help::getString(current.crypt.options.encoding.eol) << "\" linebreaks=\"" << bool_str[current.crypt.options.encoding.linebreaks];
 		fout << "\" linelength=\"" << current.crypt.options.encoding.linelength << "\" uppercase=\"" << bool_str[current.crypt.options.encoding.uppercase] << "\" />" << eol;
 		fout << "<crypt_key saltbytes=\"" << current.crypt.options.key.salt_bytes << "\" algorithm=\"" << crypt::help::getString(current.crypt.options.key.algorithm);

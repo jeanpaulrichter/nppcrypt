@@ -47,6 +47,7 @@ namespace helper
 		void			wchar_to_utf8(const wchar_t* i, int i_len, std::string& o);
 		void			wchar_to_utf8(const wchar_t* i, int i_len, crypt::secure_string& o);
 		void			utf8_to_wchar(const char* i, int i_len, std::wstring& o);
+		void			utf8_to_wchar(const char* i, int i_len, crypt::secure_wstring& o);
 		void			error(HWND hwnd, const char* msg);
 	};
 

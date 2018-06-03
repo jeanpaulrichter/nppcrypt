@@ -222,10 +222,30 @@ void helper::Windows::utf8_to_wchar(const char* i, int i_len, std::wstring& o)
 	}
 }
 
+void helper::Windows::utf8_to_wchar(const char* i, int i_len, crypt::secure_wstring& o)
+{
+	if (i_len < -1) {
+		i_len = -1;
+	}
+	int charlen = ::MultiByteToWideChar(CP_UTF8, 0, i, i_len, NULL, 0);
+	if (charlen < 1) {
+		throw CExc(CExc::Code::utf8conversion);
+	}
+	o.resize((size_t)charlen);
+	if (!MultiByteToWideChar(CP_UTF8, 0, i, i_len, &o[0], charlen)) {
+		throw CExc(CExc::Code::utf8conversion);
+	}
+	if (o.size() > 0 && i_len == -1) {
+		o.pop_back();
+	}
+}
+
 void helper::Windows::error(HWND hwnd, const char* msg)
 {
 	std::wstring temp;
-	helper::Windows::utf8_to_wchar(msg, -1, temp);
+	try {
+		helper::Windows::utf8_to_wchar(msg, -1, temp);
+	} catch (...) {}
 	::MessageBox(hwnd, temp.c_str(), TEXT("Error"), MB_OK);
 }
 

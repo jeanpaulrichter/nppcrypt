@@ -278,15 +278,12 @@ bool DlgHash::checkPassword(bool updatedata)
 	if (len <= 0) {
 		invalid_password = true;
 	} else {
-		std::vector<TCHAR>		tstr(len + 1);
 		crypt::secure_string	temp;
 		crypt::UserData			data;
 		crypt::Encoding			enc;
 
 		enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
-		::GetDlgItemText(_hSelf, IDC_HASH_PASSWORD, tstr.data(), (int)tstr.size());
-		tstr.pop_back();
-		helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
+		getText(IDC_HASH_PASSWORD, temp);
 		data.set(temp.c_str(), temp.size(), enc);
 		invalid_password = (data.size() == 0);
 		if (!invalid_password && updatedata) {

@@ -51,8 +51,6 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 	crypt::Options::Crypt	t_options;
 
 	t_options.encoding = options.encoding;
-	t_options.password_encoding = options.password_encoding;
-	t_options.password = options.password;
 
 	// find header body start:
 	while (offset < in_len - 11 && in[offset] != '\n') {
@@ -115,7 +113,7 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 				throw CExc(CExc::Code::invalid_salt);
 			}
 			s_init.salt.set(std::string(pSalt), crypt::Encoding::base64);
-			t_options.key.salt_bytes = s_init.salt.size();
+			t_options.key.salt_bytes = (int)s_init.salt.size();
 			if (t_options.key.salt_bytes < 1 || t_options.key.salt_bytes > crypt::Constants::salt_max) {
 				throw CExc(CExc::Code::invalid_salt);
 			}

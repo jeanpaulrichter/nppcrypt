@@ -44,6 +44,7 @@ private:
 
 	void				initDialog();
 	void				checkSpinControlValue(int ctrlID);
+	bool				checkPassword(crypt::secure_string& s, bool strict);
 	bool				checkCustomIV(crypt::UserData& data, bool reencode);
 	bool				checkHMACKey(crypt::UserData& data, bool reencode);
 	void				changeActiveTab(int id);
@@ -68,6 +69,7 @@ private:
 	crypt::secure_string	t_password;
 	int						cur_tab;
 	int						cur_ivlength;
+	bool					invalid_password;
 	bool					invalid_iv;
 	bool					invalid_hmac;
 	HBRUSH					brush_red;

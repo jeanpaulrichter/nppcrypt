@@ -38,6 +38,7 @@ GNU General Public License for more details.
 #define		NPPC_HMAC_INPUT_MAX			256
 
 #define		NPPC_MAX_LINE_LENGTH		9999
+#define		NPPC_PASSWORD_MAXLENGTH		1024
 
 #define		NPPC_DEF_FILE_EXT			"nppcrypt"
 #define		NPPC_FILE_EXT_MAXLENGTH		32

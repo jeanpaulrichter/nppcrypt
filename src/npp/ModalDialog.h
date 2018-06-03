@@ -17,6 +17,7 @@ GNU General Public License for more details.
 
 #include "Window.h"
 #include "Notepad_plus_msgs.h"
+#include "../crypt.h"
 
 class ModalDialog : public Window
 {
@@ -29,6 +30,8 @@ public:
 
 protected:
 	void						goToCenter();
+	void						getText(int id, crypt::secure_string& str, HWND hwnd = NULL);
+	void						setText(int id, const crypt::secure_string& str, HWND hwnd = NULL);
 	static INT_PTR CALLBACK		dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 	virtual	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam) = 0;
 

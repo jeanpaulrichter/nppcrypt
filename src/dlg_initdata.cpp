@@ -158,19 +158,15 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 
 bool DlgInitdata::checkTag(bool updatedata)
 {
-	int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_INITDATA_TAG));
-	if (len <= 0) {
+	crypt::secure_string	temp;
+	getText(IDC_INITDATA_TAG, temp);
+	if (!temp.size()) {
 		invalid_tag = true;
 	} else {
-		std::vector<TCHAR>		tstr(len + 1);
-		crypt::secure_string	temp;
 		crypt::UserData			data;
 		crypt::Encoding			enc;
 		
 		enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_GETCURSEL, 0, 0);
-		::GetDlgItemText(_hSelf, IDC_INITDATA_TAG, tstr.data(), (int)tstr.size());
-		tstr.pop_back();
-		helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
 		data.set(temp.c_str(), temp.size(), enc);
 		invalid_tag = (data.size() != taglength);
 		if (!invalid_salt && updatedata) {
@@ -182,19 +178,15 @@ bool DlgInitdata::checkTag(bool updatedata)
 
 bool DlgInitdata::checkSalt(bool updatedata)
 {
-	int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_INITDATA_SALT));
-	if (len <= 0) {
+	crypt::secure_string	temp;
+	getText(IDC_INITDATA_SALT, temp);
+	if (!temp.size()) {
 		invalid_salt = true;
 	} else {
-		std::vector<TCHAR>		tstr(len + 1);
-		crypt::secure_string	temp;
 		crypt::UserData			data;
 		crypt::Encoding			enc;
 		
 		enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_GETCURSEL, 0, 0);
-		::GetDlgItemText(_hSelf, IDC_INITDATA_SALT, tstr.data(), (int)tstr.size());
-		tstr.pop_back();
-		helper::Windows::wchar_to_utf8(tstr.data(), (int)tstr.size(), temp);
 		data.set(temp.c_str(), temp.size(), enc);
 		invalid_salt = (data.size() != saltlength);
 		if (!invalid_salt && updatedata) {

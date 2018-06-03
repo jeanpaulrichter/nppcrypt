@@ -150,6 +150,7 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 				::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH_SPIN), linebreaks);
 				::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_WINDOWS), linebreaks);
 				::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_UNIX), linebreaks);
+				::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_STATIC1), linebreaks);
 				break;
 			}
 			}
@@ -223,6 +224,7 @@ void DlgConvert::enableOptions(bool v) const
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH_SPIN), linebreaks);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_WINDOWS), linebreaks);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_UNIX), linebreaks);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_STATIC1), linebreaks);
 	} else {
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_UPPERCASE), false);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINEBREAKS), false);
@@ -230,6 +232,7 @@ void DlgConvert::enableOptions(bool v) const
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH_SPIN), false);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_WINDOWS), false);
 		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_LB_UNIX), false);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_CONVERT_STATIC1), false);
 	}
 }
 

@@ -14,6 +14,8 @@ GNU General Public License for more details.
 
 #include <stdio.h>
 #include "ModalDialog.h"
+#include "../help.h"
+#include "../exception.h"
 
 void ModalDialog::init(HINSTANCE hInst, HWND parent, int dialogID, INT_PTR returnID)
 {
@@ -66,6 +68,44 @@ void ModalDialog::goToCenter()
 	int y = center.y - (_rc.bottom - _rc.top) / 2;
 
 	::SetWindowPos(_hSelf, HWND_TOP, x, y, _rc.right - _rc.left, _rc.bottom - _rc.top, SWP_SHOWWINDOW);
+}
+
+void ModalDialog::getText(int id, crypt::secure_string& str, HWND hwnd)
+{
+	if (hwnd == NULL) {
+		hwnd = _hSelf;
+	}
+	int length = GetWindowTextLength(::GetDlgItem(hwnd, id));
+	if (length <= 0) {
+		str.clear();
+	} else {
+		try {
+			crypt::secure_wstring temp;
+			temp.resize((size_t)length + 1);
+			::GetDlgItemText(hwnd, id, &temp[0], length + 1);
+			helper::Windows::wchar_to_utf8(temp.c_str(), length, str);
+		} catch (CExc& exc) {
+			helper::Windows::error(_hSelf, exc.what());
+		}
+	}
+}
+
+void ModalDialog::setText(int id, const crypt::secure_string& str, HWND hwnd)
+{
+	if (hwnd == NULL) {
+		hwnd = _hSelf;
+	}
+	if (str.size() == 0) {
+		::SetDlgItemText(hwnd, id, TEXT(""));
+	} else {
+		try {
+			crypt::secure_wstring temp;
+			helper::Windows::utf8_to_wchar(str.c_str(), str.size(), temp);
+			::SetDlgItemText(hwnd, id, temp.c_str());
+		} catch (CExc& exc) {
+			helper::Windows::error(_hSelf, exc.what());
+		}
+	}
 }
 
 INT_PTR CALLBACK ModalDialog::dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)

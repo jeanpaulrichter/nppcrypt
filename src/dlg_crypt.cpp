@@ -67,6 +67,7 @@ bool DlgCrypt::doDialog(Operation operation, CryptInfo* crypt, crypt::UserData* 
 	cur_tab = -1;
 	invalid_iv = false;
 	invalid_hmac = false;
+	invalid_password = false;
 	return ModalDialog::doDialog();
 }
 
@@ -103,7 +104,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 					confirm_password = false;
 					::EnableWindow(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD), true);
 					::EnableWindow(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD_ENC), true);
-					::SetDlgItemText(hwnd_basic, IDC_CRYPT_STATIC_PASSWORD, TEXT("Password:"));
+					::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD_STATIC, TEXT("password:"));
 					::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, TEXT(""));
 					::SetFocus(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD));
 					PostMessage(hwnd_basic, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD), TRUE);
@@ -182,7 +183,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM), c);
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_LIST), c);
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), c);
-					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW), c);
+					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_SHOW), c);
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_ENC), c);
 					::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_STATIC), c);
 					if (c && ::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
@@ -196,9 +197,9 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				SendMessage(hwnd_auth, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), TRUE);
 				break;
 			}
-			case IDC_CRYPT_AUTH_KEY_SHOW:
+			case IDC_CRYPT_AUTH_PW_SHOW:
 			{
-				char c = ::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW, BM_GETCHECK, 0, 0) ? 0 : '*';
+				char c = ::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_PW_SHOW, BM_GETCHECK, 0, 0) ? 0 : '*';
 				::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE, EM_SETPASSWORDCHAR, c, 0);
 				InvalidateRect(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), 0, TRUE);
 				if (::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
@@ -217,6 +218,14 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 			{
 				::EnableWindow(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT), false);
 				::EnableWindow(::GetDlgItem(hwnd_iv, IDC_CRYPT_IV_ENC), false);
+				break;
+			}
+			case IDC_CRYPT_PASSWORD_SHOW:
+			{
+				char c = ::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_SHOW, BM_GETCHECK, 0, 0) ? 0 : '*';
+				::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD, EM_SETPASSWORDCHAR, c, 0);
+				InvalidateRect(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD), 0, TRUE);
+				::SetFocus(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD));
 				break;
 			}
 			}
@@ -247,13 +256,9 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 			}
 			case IDC_CRYPT_PASSWORD_ENC:
 			{
-				int pw_enc = (int)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
-				if (pw_enc > 0) {
-					::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD, EM_SETPASSWORDCHAR, 0, 0);
-				} else {
-					::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD, EM_SETPASSWORDCHAR, '*', 0);
-				}
-				PostMessage(hwnd_basic, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD), TRUE);
+				crypt::secure_string temp;
+				checkPassword(temp, false);
+				::SetFocus(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD));
 				break;
 			}
 			case IDC_CRYPT_IV_ENC:
@@ -310,6 +315,9 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 			} else if (LOWORD(wParam) == IDC_CRYPT_AUTH_PW_VALUE) {
 				invalid_hmac = !checkHMACKey(crypt->hmac.hash.key, false);
 				InvalidateRect(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), NULL, NULL);
+			} else if (LOWORD(wParam) == IDC_CRYPT_PASSWORD) {
+				crypt::secure_string temp;
+				checkPassword(temp, false);
 			}
 			break;
 		}
@@ -325,10 +333,9 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 	}
 	case WM_CTLCOLOREDIT:
 	{
-		if (invalid_iv && (HWND)lParam == GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT)) {
-			SetBkMode((HDC)wParam, TRANSPARENT);
-			return (INT_PTR)brush_red;
-		} else if (invalid_hmac && (HWND)lParam == GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE)) {
+		if ((invalid_iv && (HWND)lParam == GetDlgItem(hwnd_iv, IDC_CRYPT_IV_INPUT)) || 
+			(invalid_hmac && (HWND)lParam == GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE)) ||
+			(invalid_password && (HWND)lParam == GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD))) {
 			SetBkMode((HDC)wParam, TRANSPARENT);
 			return (INT_PTR)brush_red;
 		}
@@ -336,6 +343,31 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 	}
 	}
 	return FALSE;
+}
+
+bool DlgCrypt::checkPassword(crypt::secure_string& s, bool strict)
+{
+	getText(IDC_CRYPT_PASSWORD, s, hwnd_basic);
+	size_t slen = s.size();
+	crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
+	if (enc != crypt::Encoding::ascii) {
+		crypt::UserData data(s.c_str(), enc);
+		data.get(s, enc);
+	}
+	if (s.size() || (slen == 0 && !strict)) {
+		if (invalid_password) {
+			invalid_password = false;
+			InvalidateRect(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD), NULL, NULL);
+		}
+	} else {
+		if (!invalid_password) {
+			if (slen || strict) {
+				invalid_password = true;
+				InvalidateRect(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD), NULL, NULL);
+			}
+		}
+	}
+	return !invalid_password;
 }
 
 void DlgCrypt::initDialog()
@@ -419,15 +451,13 @@ void DlgCrypt::initDialog()
 	}
 
 	// ------- Password
-	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD, EM_LIMITTEXT, crypt::Constants::password_max, 0);
+	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD, EM_LIMITTEXT, NPPC_PASSWORD_MAXLENGTH, 0);
+	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD, EM_SETPASSWORDCHAR, '*', 0);
 	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
 	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
 	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));
 	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base64"));
-	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_SETCURSEL, (int)crypt->options.password_encoding, 0);
-	if (crypt->options.password_encoding == crypt::Encoding::ascii) {
-		::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD, EM_SETPASSWORDCHAR, '*', 0);
-	}
+	::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_SETCURSEL, 0, 0);
 
 	// ------- Encoding
 	if (no_bin_output) {
@@ -533,14 +563,9 @@ void DlgCrypt::initDialog()
 	if(operation == Operation::Dec) {
 		if ((crypt->options.iv == crypt::IV::random || crypt->options.iv == crypt::IV::custom) && ivdata->size()) {
 			crypt::secure_string temp;
-			std::wstring temp2;
 			ivdata->get(temp, crypt::Encoding::base64);
-			helper::Windows::utf8_to_wchar(temp.c_str(), temp.size(), temp2);
 			::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ENC, CB_SETCURSEL, (int)crypt::Encoding::base64, 0);
-			::SetDlgItemText(hwnd_iv, IDC_CRYPT_IV_INPUT, temp2.c_str());			
-			for (size_t i = 0; i < temp2.size(); i++) {
-				temp2[i] = 0;
-			}
+			setText(IDC_CRYPT_IV_INPUT, temp, hwnd_iv);
 		}
 		if (crypt->options.iv == crypt::IV::random) {
 			::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, true, 0);
@@ -592,7 +617,7 @@ void DlgCrypt::initDialog()
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM), false);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_LIST), false);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), false);
-		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW), false);
+		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_SHOW), false);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_ENC), false);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_STATIC), false);
 	} else {
@@ -601,7 +626,7 @@ void DlgCrypt::initDialog()
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_CUSTOM), crypt->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_LIST), crypt->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE), crypt->hmac.enable);
-		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_KEY_SHOW), crypt->hmac.enable);
+		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_SHOW), crypt->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_PW_ENC), crypt->hmac.enable);
 		::EnableWindow(::GetDlgItem(hwnd_auth, IDC_CRYPT_AUTH_STATIC), crypt->hmac.enable);
 	}
@@ -671,8 +696,7 @@ void DlgCrypt::checkSpinControlValue(int ctrlID)
 		break;
 	}
 	}
-	if (edit_id != -1)
-	{
+	if (edit_id != -1) {
 		int temp;
 		int len = GetWindowTextLength(::GetDlgItem(hwnd, edit_id));
 		if (len > 0) {
@@ -695,59 +719,39 @@ void DlgCrypt::checkSpinControlValue(int ctrlID)
 
 bool DlgCrypt::checkCustomIV(crypt::UserData& data, bool reencode)
 {
-	TCHAR temp1[513];
-	crypt::secure_string temp2;
-	::GetDlgItemText(hwnd_iv, IDC_CRYPT_IV_INPUT, temp1, 513);
-	int temp1len = lstrlen(temp1);
-	if (temp1len) {
-		helper::Windows::wchar_to_utf8(temp1, temp1len, temp2);		
-		for (int i = 0; i < temp1len; i++) {
-			temp1[i] = 0;
-		}
+	crypt::secure_string temp;
+	getText(IDC_CRYPT_IV_INPUT, temp, hwnd_iv);
+	if (temp.size()) {
 		crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(hwnd_iv, IDC_CRYPT_IV_ENC, CB_GETCURSEL, 0, 0);
 		if (enc != crypt::Encoding::ascii) {
-			data.set(temp2.c_str(), temp2.size(), enc);
+			data.set(temp.c_str(), temp.size(), enc);
 			if (reencode && data.size() == cur_ivlength) {
-				data.get(temp2, enc);
-				std::wstring temp3;
-				helper::Windows::utf8_to_wchar(temp2.c_str(), (int)temp2.size(), temp3);
-				::SetDlgItemText(hwnd_iv, IDC_CRYPT_IV_INPUT, temp3.c_str());
-				for (size_t i = 0; i < temp3.size(); i++) {
-					temp3[i] = 0;
-				}
+				data.get(temp, enc);
+				setText(IDC_CRYPT_IV_INPUT, temp, hwnd_iv);
 			}
 		} else {
-			data.set((const byte*)temp2.c_str(), temp2.size());
+			data.set((const byte*)temp.c_str(), temp.size());
 		}
+	} else {
+		data.clear();
 	}
 	return (data.size() == cur_ivlength);
 }
 
 bool DlgCrypt::checkHMACKey(crypt::UserData& data, bool reencode)
 {
-	TCHAR temp1[NPPC_HMAC_INPUT_MAX + 1];
-	crypt::secure_string temp2;
-	::GetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE, temp1, NPPC_HMAC_INPUT_MAX + 1);
-	int temp1len = lstrlen(temp1);
-	if (temp1len) {
-		helper::Windows::wchar_to_utf8(temp1, temp1len, temp2);
-		for (int i = 0; i < temp1len; i++) {
-			temp1[i] = 0;
-		}
+	crypt::secure_string temp;
+	getText(IDC_CRYPT_AUTH_PW_VALUE, temp, hwnd_auth);
+	if (temp.size()) {
 		crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(hwnd_auth, IDC_CRYPT_AUTH_PW_ENC, CB_GETCURSEL, 0, 0);
 		if (enc != crypt::Encoding::ascii) {
-			data.set(temp2.c_str(), temp2.size(), enc);
+			data.set(temp.c_str(), temp.size(), enc);
 			if (reencode && data.size() > 0) {
-				data.get(temp2, enc);
-				std::wstring temp3;
-				helper::Windows::utf8_to_wchar(temp2.c_str(), (int)temp2.size(), temp3);
-				::SetDlgItemText(hwnd_auth, IDC_CRYPT_AUTH_PW_VALUE, temp3.c_str());
-				for (size_t i = 0; i < temp3.size(); i++) {
-					temp3[i] = 0;
-				}
+				data.get(temp, enc);
+				setText(IDC_CRYPT_AUTH_PW_VALUE, temp, hwnd_auth);
 			}
 		} else {
-			data.set((const byte*)temp2.c_str(), temp2.size());
+			data.set((const byte*)temp.c_str(), temp.size());
 		}
 		return (data.size() > 0);
 	} else {
@@ -1025,8 +1029,8 @@ bool DlgCrypt::updateOptions()
 		}
 
 		// ------- password
-		crypt->options.password_encoding = (crypt::Encoding)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
-		crypt->options.password.set(t_password.c_str(), t_password.size(), crypt->options.password_encoding);
+		crypt::Encoding pw_encoding = (crypt::Encoding)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
+		crypt->options.password.set(t_password.c_str(), t_password.size(), pw_encoding);
 		t_password.clear();
 	}
 	catch (CExc& exc) {
@@ -1065,67 +1069,47 @@ bool DlgCrypt::OnClickOK()
 	}
 
 	// get password
-	TCHAR temp_pw[crypt::Constants::password_max + 1];
 	crypt::secure_string temp_pw_str;
-	::GetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, temp_pw, crypt::Constants::password_max + 1);	
-	helper::Windows::wchar_to_utf8(temp_pw, lstrlen(temp_pw), temp_pw_str);
-	for (size_t i = 0; i < crypt::Constants::password_max; i++) {
-		temp_pw[i] = 0;
-	}
-	// if necessary: decode and reencode password to get valid hex/base32/base64
 	crypt::Encoding password_enc = (crypt::Encoding)::SendDlgItemMessage(hwnd_basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
-	if (password_enc != crypt::Encoding::ascii) {
-		crypt::UserData temp(temp_pw_str.c_str(), password_enc);
-		temp.get(temp_pw_str, password_enc);
+	if (!checkPassword(temp_pw_str, true)) {
+		::SetFocus(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD));
+		return false;
 	}
 
 	if (operation == Operation::Enc && !confirm_password) {
 		// confirmation needed
 		t_password.assign(temp_pw_str);
-		if (t_password.size()) {
-			::SetDlgItemText(hwnd_basic, IDC_CRYPT_STATIC_PASSWORD, TEXT("Confirm:"));
-			if (password_enc == crypt::Encoding::ascii) {
-				// no password encoding: user has to reenter password for confirmation
-				::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, TEXT(""));
-				::SetFocus(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD));
-			} else {
-				// encoded password: present reencoded password to user for confirmation
-				std::wstring pwtest_w;
-				helper::Windows::utf8_to_wchar(t_password.c_str(), (int)t_password.size(), pwtest_w);
-				::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, pwtest_w.c_str());
-				::EnableWindow(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD), false);
-				::EnableWindow(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD_ENC), false);
-			}
-			confirm_password = true;
-		} else if (password_enc != crypt::Encoding::ascii) {
-			// if password decode failed: set password to ""
+		::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD_STATIC, TEXT("confirm:"));
+		if (password_enc == crypt::Encoding::ascii) {
+			// no password encoding: user has to reenter password for confirmation
 			::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, TEXT(""));
+			::EnableWindow(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD_ENC), false);
 			::SetFocus(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD));
+		} else {
+			// encoded password: present reencoded password to user for confirmation
+			setText(IDC_CRYPT_PASSWORD, t_password, hwnd_basic);
+			::EnableWindow(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD), false);
+			::EnableWindow(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD_ENC), false);
 		}
+		confirm_password = true;
 	} else {
 		if (operation == Operation::Enc) {
 			// encryption: confirm password
-			if (password_enc == crypt::Encoding::ascii) {
-				// no encoding: check if both entered password match
-				if (t_password.compare(temp_pw_str) == 0) {
-					if (updateOptions()) {
-						return true;
-					}
-				} else {
-					::SetDlgItemText(hwnd_basic, IDC_CRYPT_STATIC_PASSWORD, TEXT("Password:"));
-					::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, TEXT(""));
-					::SetFocus(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD));
-					confirm_password = false;
-				}
-			} else {
+			if (t_password.compare(temp_pw_str) == 0) {
 				if (updateOptions()) {
 					return true;
 				}
+			} else {
+				::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD_STATIC, TEXT("password:"));
+				::SetDlgItemText(hwnd_basic, IDC_CRYPT_PASSWORD, TEXT(""));
+				::EnableWindow(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD_ENC), true);
+				::SetFocus(::GetDlgItem(hwnd_basic, IDC_CRYPT_PASSWORD));
+				confirm_password = false;
 			}
 		} else {
 			// decryption
 			t_password.assign(temp_pw_str);
-			if (t_password.size() > 0 && updateOptions()) {
+			if (updateOptions()) {
 				return true;
 			}
 		}

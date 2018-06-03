@@ -54,29 +54,14 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		{
 		case IDC_OK:
 		{
-			TCHAR temp1[NPPC_HMAC_INPUT_MAX + 1];			
-			crypt::secure_string temp2;
-			::GetDlgItemText(_hSelf, IDC_AUTH_KEY, temp1, NPPC_HMAC_INPUT_MAX + 1);
-			int temp1len = lstrlen(temp1);
-
-			if (temp1len > 0) {
-				try {
-					helper::Windows::wchar_to_utf8(temp1, temp1len, temp2);
-				}
-				catch (CExc& exc) {
-					helper::Windows::error(_hSelf, exc.what());
-					break;
-				}
+			crypt::secure_string temp;
+			getText(IDC_AUTH_KEY, temp);
+			if (temp.size()) {
 				crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_GETCURSEL, 0, 0);
-				input.set(temp2.c_str(), temp2.size(), enc);
-
-				for (size_t i = 0; i < temp1len; i++) {
-					temp1[i] = 0;
-				}
+				input.set(temp.c_str(), temp.size(), enc);
 			} else {
 				input.clear();
 			}
-
 			EndDialog(_hSelf, IDC_OK);
 			return TRUE;
 		}

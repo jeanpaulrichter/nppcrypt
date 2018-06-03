@@ -73,7 +73,6 @@ namespace crypt
 
 	namespace Constants
 	{
-		const int password_max =		512;			// password: max number of characters
 		const int salt_max =			512;			// max salt bytes
 		const int pbkdf2_default_hash = 1;				// pbkdf2: default hash ( see enum Hash )
 		const int pbkdf2_iter_default = 5000;			// pbkdf2: default iterations
@@ -101,6 +100,7 @@ namespace crypt
 	};
 
 	typedef std::basic_string<char, std::char_traits<char>, CryptoPP::AllocatorWithCleanup<char> > secure_string;
+	typedef std::basic_string<wchar_t, std::char_traits<wchar_t>, CryptoPP::AllocatorWithCleanup<wchar_t> > secure_wstring;
 
 	class UserData
 	{
@@ -125,13 +125,12 @@ namespace crypt
 	{
 		struct Crypt
 		{
-			Crypt() : cipher(Cipher::rijndael256), mode(Mode::gcm), iv(IV::random), password_encoding(crypt::Encoding::ascii) {};
+			Crypt() : cipher(Cipher::rijndael256), mode(Mode::gcm), iv(IV::random) {};
 
 			crypt::Cipher			cipher;
 			crypt::Mode				mode;
 			crypt::IV				iv;
 			crypt::UserData			password;
-			crypt::Encoding			password_encoding;
 
 			struct Key
 			{
