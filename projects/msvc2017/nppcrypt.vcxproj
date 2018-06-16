@@ -24,6 +24,8 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\bcrypt\crypt_blowfish.cpp" />
     <ClCompile Include="..\..\src\crypt.cpp" />
+    <ClCompile Include="..\..\src\crypt_help.cpp" />
+    <ClCompile Include="..\..\src\ctl_help.cpp" />
     <ClCompile Include="..\..\src\dlg_about.cpp" />
     <ClCompile Include="..\..\src\dlg_auth.cpp" />
     <ClCompile Include="..\..\src\dlg_convert.cpp" />
@@ -36,9 +38,9 @@
     <ClCompile Include="..\..\src\keccak\KeccakF-1600-inplace32BI.cpp" />
     <ClCompile Include="..\..\src\keccak\KeccakHash.cpp" />
     <ClCompile Include="..\..\src\keccak\KeccakSponge.cpp" />
-    <ClCompile Include="..\..\src\npp\ModalDialog.cpp" />
     <ClCompile Include="..\..\src\exception.cpp" />
     <ClCompile Include="..\..\src\cryptheader.cpp" />
+    <ClCompile Include="..\..\src\modaldialog.cpp" />
     <ClCompile Include="..\..\src\nppcrypt.cpp" />
     <ClCompile Include="..\..\src\npp\URLCtrl.cpp" />
     <ClCompile Include="..\..\src\preferences.cpp" />
@@ -55,6 +57,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\bcrypt\crypt_blowfish.h" />
     <ClInclude Include="..\..\src\crypt.h" />
+    <ClInclude Include="..\..\src\crypt_help.h" />
+    <ClInclude Include="..\..\src\ctl_help.h" />
     <ClInclude Include="..\..\src\dlg_about.h" />
     <ClInclude Include="..\..\src\dlg_auth.h" />
     <ClInclude Include="..\..\src\dlg_convert.h" />
@@ -68,8 +72,8 @@
     <ClInclude Include="..\..\src\keccak\KeccakF-1600-interface.h" />
     <ClInclude Include="..\..\src\keccak\KeccakHash.h" />
     <ClInclude Include="..\..\src\keccak\KeccakSponge.h" />
+    <ClInclude Include="..\..\src\modaldialog.h" />
     <ClInclude Include="..\..\src\npp\Definitions.h" />
-    <ClInclude Include="..\..\src\npp\ModalDialog.h" />
     <ClInclude Include="..\..\src\exception.h" />
     <ClInclude Include="..\..\src\cryptheader.h" />
     <ClInclude Include="..\..\src\mdef.h" />
@@ -96,6 +100,13 @@
     <ProjectReference Include="cryptlib.vcxproj">
       <Project>{c39f4b46-6e89-4074-902e-ca57073044d2}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\src\icons\help_disabled.ico" />
+    <Image Include="..\..\src\icons\help_normal.ico" />
+    <Image Include="..\..\src\icons\help_normal_hover.ico" />
+    <Image Include="..\..\src\icons\help_warning.ico" />
+    <Image Include="..\..\src\icons\help_warning_hover.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1590D7CD-7D3A-4AB7-A355-EE02F7FB987D}</ProjectGuid>
@@ -179,7 +190,7 @@
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <TargetName>nppcrypt</TargetName>
     <IntDir>$(SolutionDir)..\..\obj\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</IntDir>
-    <OutDir>..\..\..\..\..\..\..\..\Program Files\Notepad++\plugins</OutDir>
+    <OutDir>..\..\..\..\..\..\Downloads\npp\plugins</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

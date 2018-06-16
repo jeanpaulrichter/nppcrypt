@@ -18,7 +18,7 @@ GNU General Public License for more details.
 #ifndef DLG_CONVERT_H_DEF
 #define DLG_CONVERT_H_DEF
 
-#include "npp/ModalDialog.h"
+#include "modaldialog.h"
 #include "crypt.h"
 
 class DlgConvert : public ModalDialog

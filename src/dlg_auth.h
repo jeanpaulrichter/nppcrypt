@@ -18,7 +18,7 @@ GNU General Public License for more details.
 #ifndef DLG_AUTH_H_DEF
 #define DLG_AUTH_H_DEF
 
-#include "npp/ModalDialog.h"
+#include "modaldialog.h"
 #include "help.h"
 #include "crypt.h"
 

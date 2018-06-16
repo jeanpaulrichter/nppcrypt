@@ -34,6 +34,12 @@ GNU General Public License for more details.
 #define IDC_OK                          998
 #define IDC_CANCEL                      999
 
+#define IDI_HELPCTRL_NORMAL				201
+#define IDI_HELPCTRL_NORMAL_HOVER		202
+#define IDI_HELPCTRL_WARNING			203
+#define IDI_HELPCTRL_WARNING_HOVER		204
+#define IDI_HELPCTRL_DISABLED			205
+
 #define IDC_CRYPT_TAB                   1000
 #define IDC_CRYPT_CIPHER                1001
 #define IDC_CRYPT_CIPHER_TYPE           1002
@@ -65,7 +71,6 @@ GNU General Public License for more details.
 #define IDC_CRYPT_PBKDF2_HASH           1028
 #define IDC_CRYPT_PBKDF2_ITER           1029
 #define IDC_CRYPT_PBKDF2_ITER_SPIN      1030
-#define IDC_CRYPT_PBKDF2_STATIC			1031
 #define IDC_CRYPT_BCRYPT_ITER           1032
 #define IDC_CRYPT_BCRYPT_ITER_SPIN      1033
 #define IDC_CRYPT_BCRYPT_STATIC1		1034
@@ -79,15 +84,15 @@ GNU General Public License for more details.
 #define IDC_CRYPT_SCRYPT_STATIC1		1042
 #define IDC_CRYPT_SCRYPT_STATIC2		1043
 #define IDC_CRYPT_SCRYPT_STATIC3		1044
-#define IDC_CRYPT_HMAC_ENABLE           1045
-#define IDC_CRYPT_HMAC_HASH             1046
+#define IDC_CRYPT_AUTH_ENABLE           1045
+#define IDC_CRYPT_AUTH_HASH             1046
 #define IDC_CRYPT_AUTH_KEY_LIST         1047
 #define IDC_CRYPT_AUTH_KEY_PRESET       1048
 #define IDC_CRYPT_AUTH_KEY_CUSTOM       1049
 #define IDC_CRYPT_AUTH_PW_VALUE			1050
 #define IDC_CRYPT_AUTH_PW_ENC			1051
 #define IDC_CRYPT_AUTH_PW_SHOW			1052
-#define IDC_CRYPT_AUTH_STATIC			1053
+#define IDC_CRYPT_AUTH_STATIC1			1053
 #define IDC_CRYPT_IV_RANDOM             1054
 #define IDC_CRYPT_IV_KEY                1055
 #define IDC_CRYPT_IV_ZERO               1056
@@ -99,7 +104,12 @@ GNU General Public License for more details.
 #define IDC_CRYPT_HELP_SALT             1062
 #define IDC_CRYPT_HELP_IV               1063
 #define IDC_CRYPT_HELP_KEYALGO          1064
-#define IDC_CRYPT_HELP_HMAC             1065
+#define IDC_CRYPT_AUTH_HELP             1065
+#define IDC_CRYPT_KEYLENGTH				1066
+#define IDC_CRYPT_PBKDF2_HASH_LENGTH	1067
+#define IDC_CRYPT_PBKDF2_STATIC1		1068
+#define IDC_CRYPT_PBKDF2_STATIC3		1070
+#define IDC_CRYPT_AUTH_HASH_LENGTH		1071
 
 #define IDC_HASH_ALGO                   1000
 #define IDC_HASH_ENC_ASCII              1001
@@ -110,22 +120,29 @@ GNU General Public License for more details.
 #define IDC_HASH_KEY                    1006
 #define IDC_HASH_KEYRADIO1              1007
 #define IDC_HASH_KEYRADIO2              1008
-#define IDC_HASH_PASSWORD               1009
-#define IDC_HASH_HELP_HASH              1010
-#define IDC_HASH_ENC_BASE32             1011
-#define IDC_HASH_TOCLIPBOARD			1012
-#define IDC_HASH_PASSWORD_ENC			1013
-#define IDC_HASH_PASSWORD_SHOW			1014
+#define IDC_HASH_ALGO_HELP				1009
+#define IDC_HASH_ENC_BASE32             1010
+#define IDC_HASH_TOCLIPBOARD			1011
+#define IDC_HASH_KEY_ENC				1012
+#define IDC_HASH_KEY_SHOW				1013
+#define IDC_HASH_DIGESTS				1014
+#define IDC_HASH_ENC_HELP				1015
 
 #define IDC_RANDOM_EDIT                 1000
 #define IDC_RANDOM_SPIN                 1001
-#define IDC_RANDOM_R1                   1002
-#define IDC_RANDOM_R2                   1003
-#define IDC_RANDOM_R3                   1004
-#define IDC_RANDOM_R4                   1005
-#define IDC_RANDOM_R5                   1006
-#define IDC_RANDOM_R6                   1007
-#define IDC_RANDOM_TOCLIPBOARD			1008
+#define IDC_RANDOM_ENC_BINARY           1002
+#define IDC_RANDOM_ENC_BASE16           1003
+#define IDC_RANDOM_ENC_BASE32           1004
+#define IDC_RANDOM_ENC_BASE64           1005
+#define IDC_RANDOM_ENC_HELP             1006
+#define IDC_RANDOM_BINARY               1007
+#define IDC_RANDOM_DIGITS               1008
+#define IDC_RANDOM_LETTERS              1009
+#define IDC_RANDOM_ALPHANUM             1010
+#define IDC_RANDOM_PASSWORD             1011
+#define IDC_RANDOM_SPECIALS             1012
+#define IDC_RANDOM_TOCLIPBOARD			1013
+#define IDC_RANDOM_HELP					1014
 
 #define IDC_PREF_FILES_ENABLE           1000
 #define IDC_PREF_FILES_EXT              1001

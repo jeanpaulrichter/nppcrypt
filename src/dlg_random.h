@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
 (https://notepad-plus-plus.org)
@@ -18,19 +18,23 @@ GNU General Public License for more details.
 #ifndef DLG_RANDOM_H_DEF
 #define DLG_RANDOM_H_DEF
 
-#include "npp/ModalDialog.h"
+#include "modaldialog.h"
+#include "ctl_help.h"
 #include "crypt.h"
+#include "preferences.h"
 
 class DlgRandom : public ModalDialog
 {
 public:
-						DlgRandom(crypt::Options::Random& opt);
+	DlgRandom(RandomOptions& opt);
 
 private:
 	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	bool				updateOptions();
+	void				updateEncodingControls(crypt::Encoding enc);
 
-	crypt::Options::Random&		options;
+	RandomOptions&		options;
+	HelpCtrl			help_enc;
+	HelpCtrl			help_restrictions;
 };
 
 #endif

@@ -43,6 +43,9 @@
     <Filter Include="Source Files\keccak">
       <UniqueIdentifier>{4b64f114-6c57-4fd8-9a9d-17c9c56654c0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\icons">
+      <UniqueIdentifier>{841d3aa5-7245-46df-a2e8-1cc6a699a3f2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\src\nppcrypt.rc">
@@ -104,9 +107,6 @@
     <ClCompile Include="..\..\src\dlg_initdata.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\npp\ModalDialog.cpp">
-      <Filter>Source Files\notepad++</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\help.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -136,6 +136,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\scrypt\warnp.c">
       <Filter>Source Files\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ctl_help.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\crypt_help.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modaldialog.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -211,9 +220,6 @@
     <ClInclude Include="..\..\src\dlg_initdata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\npp\ModalDialog.h">
-      <Filter>Header Files\notepad++</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\npp\Definitions.h">
       <Filter>Header Files\notepad++</Filter>
     </ClInclude>
@@ -253,5 +259,31 @@
     <ClInclude Include="..\..\src\npp\Window.h">
       <Filter>Header Files\notepad++</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\ctl_help.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\crypt_help.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modaldialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\src\icons\help_warning_hover.ico">
+      <Filter>Resource Files\icons</Filter>
+    </Image>
+    <Image Include="..\..\src\icons\help_disabled.ico">
+      <Filter>Resource Files\icons</Filter>
+    </Image>
+    <Image Include="..\..\src\icons\help_normal.ico">
+      <Filter>Resource Files\icons</Filter>
+    </Image>
+    <Image Include="..\..\src\icons\help_normal_hover.ico">
+      <Filter>Resource Files\icons</Filter>
+    </Image>
+    <Image Include="..\..\src\icons\help_warning.ico">
+      <Filter>Resource Files\icons</Filter>
+    </Image>
   </ItemGroup>
 </Project>

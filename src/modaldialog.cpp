@@ -13,9 +13,9 @@ GNU General Public License for more details.
 */
 
 #include <stdio.h>
-#include "ModalDialog.h"
-#include "../help.h"
-#include "../exception.h"
+#include "modaldialog.h"
+#include "help.h"
+#include "exception.h"
 
 void ModalDialog::init(HINSTANCE hInst, HWND parent, int dialogID, INT_PTR returnID)
 {
@@ -106,6 +106,15 @@ void ModalDialog::setText(int id, const crypt::secure_string& str, HWND hwnd)
 			helper::Windows::error(_hSelf, exc.what());
 		}
 	}
+}
+
+void ModalDialog::setupInputEncodingSelect(HWND hwnd, int id)
+{
+	::SendDlgItemMessage(hwnd, id, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
+	::SendDlgItemMessage(hwnd, id, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
+	::SendDlgItemMessage(hwnd, id, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));
+	::SendDlgItemMessage(hwnd, id, CB_ADDSTRING, 0, (LPARAM)TEXT("base64"));
+	::SendDlgItemMessage(hwnd, id, CB_SETCURSEL, 0, 0);
 }
 
 INT_PTR CALLBACK ModalDialog::dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)

@@ -90,6 +90,17 @@ void helper::Scintilla::replaceSelection(const std::basic_string<byte>& buffer)
 	::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
 }
 
+void helper::Scintilla::replaceSelection(const char* s, size_t len)
+{
+	HWND hCurScintilla = helper::Scintilla::getCurrent();
+	size_t selStart = ::SendMessage(hCurScintilla, SCI_GETSELECTIONSTART, 0, 0);
+	::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
+	::SendMessage(hCurScintilla, SCI_TARGETFROMSELECTION, 0, 0);
+	::SendMessage(hCurScintilla, SCI_REPLACETARGET, len, (LPARAM)s);
+	::SendMessage(hCurScintilla, SCI_SETSEL, selStart, selStart + len);
+	::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 uptr_t helper::Buffer::getCurrent()
@@ -132,22 +143,22 @@ void helper::Buffer::getPath(uptr_t bufferid, std::wstring& path, std::wstring& 
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void helper::Windows::copyToClipboard(const std::basic_string<byte>& buffer)
+void helper::Windows::copyToClipboard(const unsigned char* s, size_t len)
 {
 	if (!OpenClipboard(NULL)) {
 		return;
 	}
 	EmptyClipboard();
 
-	HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, (buffer.size() + 1) * sizeof(byte));
+	HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, (len + 1) * sizeof(byte));
 	if (hglbCopy == NULL) {
 		CloseClipboard();
 		return;
 	}
 
 	unsigned char *lpucharCopy = (unsigned char *)GlobalLock(hglbCopy);
-	memcpy(lpucharCopy, buffer.c_str(), buffer.size() * sizeof(byte));
-	lpucharCopy[buffer.size()] = 0;
+	memcpy(lpucharCopy, s, len * sizeof(char));
+	lpucharCopy[len] = 0;
 	GlobalUnlock(hglbCopy);
 
 	SetClipboardData(CF_TEXT, hglbCopy);
@@ -159,13 +170,18 @@ void helper::Windows::copyToClipboard(const std::basic_string<byte>& buffer)
 	}
 
 	unsigned long *lpLenCopy = (unsigned long *)GlobalLock(hglbLenCopy);
-	*lpLenCopy = (unsigned long)buffer.size();
+	*lpLenCopy = (unsigned long)len;
 	GlobalUnlock(hglbLenCopy);
 
 	UINT f = RegisterClipboardFormat(CF_NPPTEXTLEN);
 	SetClipboardData(f, hglbLenCopy);
 
 	CloseClipboard();
+}
+
+void helper::Windows::copyToClipboard(const std::basic_string<byte>& buffer)
+{
+	copyToClipboard(buffer.c_str(), buffer.size());
 }
 
 void helper::Windows::wchar_to_utf8(const wchar_t* i, int i_len, std::string& o)

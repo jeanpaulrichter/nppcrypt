@@ -24,6 +24,7 @@ GNU General Public License for more details.
 #include "tinyxml2/tinyxml2.h"
 #include "cryptopp/filters.h"
 #include "cryptopp/base64.h"
+#include "crypt_help.h"
 
 CPreferences& preferences = CPreferences::Instance();
 
@@ -209,8 +210,10 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 		}
 		xml_temp = xml_nppcrypt->FirstChildElement("random");
 		if (xml_temp) {
-			const char* pTemp = xml_temp->Attribute("mode");
-			crypt::help::getRandomMode(pTemp, current.random.mode);
+			const char* pTemp = xml_temp->Attribute("restriction");
+			crypt::help::getRandomRestriction(pTemp, current.random.restriction);
+			pTemp = xml_temp->Attribute("encoding");
+			crypt::help::getEncoding(pTemp, current.random.encoding);
 			pTemp = xml_temp->Attribute("length");
 			if (pTemp) {
 				current.random.length = std::atoi(pTemp);
@@ -305,7 +308,7 @@ void CPreferences::save(CurrentOptions& current)
 		fout << "\" />" << eol;
 		fout << "<crypt_hmac enabled=\"" << bool_str[current.crypt.hmac.enable] << "\" hash=\"" << crypt::help::getString(current.crypt.hmac.hash.algorithm) << "\" keypreset_id=\"" << current.crypt.hmac.keypreset_id << "\" />" << eol;
 		fout << "<hash algorithm=\"" << crypt::help::getString(current.hash.algorithm) << "\" encoding=\"" << crypt::help::getString(current.hash.encoding) << "\" usekey=\"" << bool_str[current.hash.use_key] << "\" keypreset_id=\"" << 0 << "\" />" << eol;
-		fout << "<random mode=\"" << crypt::help::getString(current.random.mode) << "\" length=\"" << current.random.length << "\" />" << eol;
+		fout << "<random restriction=\"" << crypt::help::getString(current.random.restriction) << "\" encoding =\"" << crypt::help::getString(current.random.encoding) << "\" length=\"" << current.random.length << "\" />" << eol;
 		fout << "<convert source_enc=\"" << crypt::help::getString(current.convert.from) << "\" target_enc=\"" << crypt::help::getString(current.convert.to) << "\" eol=\"" << crypt::help::getString(current.convert.eol) << "\" linelength=\"" << current.convert.linelength;
 		fout << "\" linebreaks=\"" << bool_str[current.convert.linebreaks] << "\" uppercase=\"" << bool_str[current.convert.uppercase] << "\" />" << eol;
 		fout << "<key_presets>" << eol;
@@ -330,7 +333,7 @@ void CPreferences::save(CurrentOptions& current)
 void CPreferences::validate(CurrentOptions& current)
 {
 	if (int(current.crypt.options.cipher) < 0 || int(current.crypt.options.cipher) >= int(crypt::Cipher::COUNT)) {
-		current.crypt.options.cipher = crypt::Cipher::rijndael256;
+		current.crypt.options.cipher = crypt::Cipher::rijndael;
 	}
 	if (int(current.crypt.options.mode) < 0 || int(current.crypt.options.mode) >= int(crypt::Mode::COUNT) || !crypt::help::validCipherMode(current.crypt.options.cipher, current.crypt.options.mode)) {
 		current.crypt.options.mode = crypt::Mode::cbc;
@@ -358,8 +361,8 @@ void CPreferences::validate(CurrentOptions& current)
 	case crypt::KeyDerivation::pbkdf2:
 	{
 		if (current.crypt.options.key.options[0] < 0 || current.crypt.options.key.options[0] >= (int)crypt::Hash::COUNT 
-			|| !crypt::help::checkHashProperty((crypt::Hash)current.crypt.options.key.options[0], crypt::HashProperties::hmac_possible)) {
-			current.crypt.options.key.options[0]= crypt::Constants::pbkdf2_default_hash;
+			|| !crypt::help::checkProperty((crypt::Hash)current.crypt.options.key.options[0], crypt::HMAC_SUPPORT)) {
+			current.crypt.options.key.options[0] = (int)crypt::Constants::pbkdf2_default_hash;
 		}
 		if (current.crypt.options.key.options[1] < crypt::Constants::pbkdf2_iter_min || current.crypt.options.key.options[1] > crypt::Constants::pbkdf2_iter_max) {
 			current.crypt.options.key.options[1] = crypt::Constants::pbkdf2_iter_default;
@@ -391,8 +394,8 @@ void CPreferences::validate(CurrentOptions& current)
 	}
 	}
 	if (int(current.crypt.hmac.hash.algorithm) < 0 || int(current.crypt.hmac.hash.algorithm) >= int(crypt::Hash::COUNT) 
-		|| !crypt::help::checkHashProperty(current.crypt.hmac.hash.algorithm, crypt::HashProperties::hmac_possible)) {
-		current.crypt.hmac.hash.algorithm = crypt::Hash::tiger128;
+		|| !crypt::help::checkProperty(current.crypt.hmac.hash.algorithm, crypt::HMAC_SUPPORT)) {
+		current.crypt.hmac.hash.algorithm = crypt::Hash::tiger;
 	}
 	if (current.crypt.hmac.keypreset_id < -1 || current.crypt.hmac.keypreset_id >= (int)keys.size()) {
 		current.crypt.hmac.keypreset_id = 0;
@@ -411,7 +414,7 @@ void CPreferences::validate(CurrentOptions& current)
 		current.convert.linelength = 64;
 	}
 	if (int(current.hash.algorithm) < 0 || int(current.hash.algorithm) >= int(crypt::Hash::COUNT)) {
-		current.hash.algorithm = crypt::Hash::tiger128;
+		current.hash.algorithm = crypt::Hash::tiger;
 	}
 	if (int(current.hash.encoding) < 0 || int(current.hash.encoding) >= int(crypt::Encoding::COUNT)) {
 		current.hash.encoding = crypt::Encoding::base16;
@@ -420,8 +423,11 @@ void CPreferences::validate(CurrentOptions& current)
 	//	current.hash.keypreset_id = 0;
 	//}
 
-	if (int(current.random.mode) < 0 || int(current.random.mode) >= int(crypt::Random::COUNT)) {
-		current.random.mode = crypt::Random::charnum;
+	if (int(current.random.restriction) < 0 || int(current.random.restriction) >= int(crypt::UserData::Restriction::COUNT)) {
+		current.random.restriction = crypt::UserData::Restriction::alphanum;
+	}
+	if (int(current.random.encoding) < 0 || int(current.random.encoding) >= int(crypt::Encoding::COUNT)) {
+		current.random.encoding = crypt::Encoding::base16;
 	}
 	if (current.random.length > crypt::Constants::rand_char_max) {
 		current.random.length = 32;

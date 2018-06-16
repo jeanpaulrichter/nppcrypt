@@ -18,7 +18,7 @@ GNU General Public License for more details.
 #ifndef DLG_INITDATA_H_DEF
 #define DLG_INITDATA_H_DEF
 
-#include "npp/ModalDialog.h"
+#include "modaldialog.h"
 #include "crypt.h"
 
 class DlgInitdata : public ModalDialog

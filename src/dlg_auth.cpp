@@ -38,7 +38,7 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 	{
 		SetWindowText(_hSelf, caption.c_str());
 		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, '*', 0);
-		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
+		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_LIMITTEXT, NPPC_MAX_HMAC_KEYLENGTH, 0);
 		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
 		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
 		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));

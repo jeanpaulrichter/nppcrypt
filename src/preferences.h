@@ -28,11 +28,19 @@ struct CryptInfo {
 	CryptHeader::HMAC		hmac;
 };
 
+struct RandomOptions
+{
+	RandomOptions() : length(16), restriction(crypt::UserData::Restriction::alphanum), encoding(crypt::Encoding::ascii) {};
+	size_t							length;
+	crypt::UserData::Restriction	restriction;
+	crypt::Encoding					encoding;
+};
+
 struct CurrentOptions
 {
 	CryptInfo				crypt;
 	crypt::Options::Hash	hash;
-	crypt::Options::Random	random;
+	RandomOptions			random;
 	crypt::Options::Convert	convert;
 };
 

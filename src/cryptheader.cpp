@@ -20,6 +20,7 @@ GNU General Public License for more details.
 #include "cryptheader.h"
 #include "exception.h"
 #include "preferences.h"
+#include "crypt_help.h"
 
 inline bool cmpchars(const char* s1, const char* s2, int len)
 {
@@ -87,7 +88,14 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			throw CExc(CExc::Code::invalid_hmac_data);
 		}		
 		const char* pHMAC_hash = xml_nppcrypt->Attribute("hmac-hash");
-		if (!crypt::help::getHash(pHMAC_hash, hmac.hash.algorithm) || !crypt::help::checkHashProperty(hmac.hash.algorithm, crypt::HashProperties::hmac_possible))	{
+		if (!crypt::help::getHash(pHMAC_hash, hmac.hash.algorithm) || !crypt::help::checkProperty(hmac.hash.algorithm, crypt::HMAC_SUPPORT)) {
+			throw CExc(CExc::Code::invalid_hmac_hash);
+		}
+		int tint;
+		xml_err = xml_nppcrypt->QueryIntAttribute("hmac-length", &tint);
+		if (xml_err == tinyxml2::XMLError::XML_NO_ERROR && tint > 0 && crypt::help::checkHashDigest(hmac.hash.algorithm, (unsigned int)tint)) {
+			hmac.hash.digest_length = (size_t)tint;
+		} else {
 			throw CExc(CExc::Code::invalid_hmac_hash);
 		}
 		xml_err = xml_nppcrypt->QueryIntAttribute("auth-key", &hmac.keypreset_id);
@@ -132,6 +140,10 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 		if (!crypt::help::getCipher(t, t_options.cipher)) {
 			throw CExc(CExc::Code::invalid_cipher);
 		}
+		if (!(t = xml_crypt->Attribute("key-length"))) {
+			throw CExc(CExc::Code::keylength_missing);
+		}
+		t_options.key.length = std::atoi(t);
 		t = xml_crypt->Attribute("mode");
 		if (!crypt::help::getCipherMode(t, t_options.mode)) {
 			throw CExc(CExc::Code::invalid_mode);
@@ -159,15 +171,22 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 		{
 			t = xml_key->Attribute("hash");
 			crypt::Hash thash;
-			if (!crypt::help::getHash(t, thash) || !crypt::help::checkHashProperty(thash, crypt::HashProperties::hmac_possible)) {
+			if (!crypt::help::getHash(t, thash) || !crypt::help::checkProperty(thash, crypt::HMAC_SUPPORT)) {
 				throw CExc(CExc::Code::invalid_pbkdf2);
 			}
 			t_options.key.options[0] = static_cast<int>(thash);
-			if (!(t = xml_key->Attribute("iterations"))) {
+			if (!(t = xml_key->Attribute("digest"))) {
 				throw CExc(CExc::Code::invalid_pbkdf2);
 			}
 			t_options.key.options[1] = std::atoi(t);
-			if (t_options.key.options[1] < crypt::Constants::pbkdf2_iter_min || t_options.key.options[1] > crypt::Constants::pbkdf2_iter_max) {
+			if (!crypt::help::checkHashDigest(thash, (unsigned int)t_options.key.options[1])) {
+				throw CExc(CExc::Code::invalid_pbkdf2);
+			}
+			if (!(t = xml_key->Attribute("iterations"))) {
+				throw CExc(CExc::Code::invalid_pbkdf2);
+			}
+			t_options.key.options[2] = std::atoi(t);
+			if (t_options.key.options[2] < crypt::Constants::pbkdf2_iter_min || t_options.key.options[2] > crypt::Constants::pbkdf2_iter_max) {
 				throw CExc(CExc::Code::invalid_pbkdf2);
 			}
 			break;
@@ -327,11 +346,12 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	out << std::fixed;
 	out << "<nppcrypt version=\"" << NPPC_VERSION << "\"";
 	if (hmac.enable) {
-		int hmac_length = 0;
-		if (!crypt::getHashInfo(hmac.hash.algorithm, hmac_length)) {
+		size_t hmac_length = hmac.hash.digest_length;
+		size_t key_length;
+		if (!crypt::getHashInfo(hmac.hash.algorithm, hmac_length, key_length)) {
 			throw CExc(CExc::Code::invalid_hmac_hash);
 		}
-		out << " hmac-hash=\"" << crypt::help::getString(hmac.hash.algorithm) << "\"";
+		out << " hmac-hash=\"" << crypt::help::getString(hmac.hash.algorithm) << "\" hmac-length=\"" << hmac.hash.digest_length << "\"";
 		if (hmac.keypreset_id >= 0) {
 			out << " auth-key=\"" << hmac.keypreset_id << "\"";
 		}
@@ -341,7 +361,7 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	}
 	out << ">" << linebreak;
 	body_start = static_cast<size_t>(out.tellp());
-	out << "<encryption cipher=\"" << crypt::help::getString(options.cipher) << "\" mode=\"" << crypt::help::getString(options.mode)
+	out << "<encryption cipher=\"" << crypt::help::getString(options.cipher) << "\" key-length=\"" << options.key.length << "\" mode=\"" << crypt::help::getString(options.mode)
 		<< "\" encoding=\"" << crypt::help::getString(options.encoding.enc) << "\" ";
 	if (s_init.tag.size()) {
 		s_init.tag.get(temp_s, crypt::Encoding::base64);
@@ -365,7 +385,7 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	{
 	case crypt::KeyDerivation::pbkdf2:
 	{
-		out << "\" hash=\"" << crypt::help::getString((crypt::Hash)options.key.options[0]) << "\" iterations=\"" << options.key.options[1] << "\" ";
+		out << "\" hash=\"" << crypt::help::getString((crypt::Hash)options.key.options[0]) << "\" digest=\"" << options.key.options[1] << "\" iterations=\"" << options.key.options[2] << "\" ";
 		break;
 	}
 	case crypt::KeyDerivation::bcrypt:

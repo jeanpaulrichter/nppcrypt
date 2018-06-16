@@ -15,9 +15,9 @@ GNU General Public License for more details.
 #ifndef MODALDIALOG_H_DEF
 #define MODALDIALOG_H_DEF
 
-#include "Window.h"
-#include "Notepad_plus_msgs.h"
-#include "../crypt.h"
+#include "npp/Window.h"
+#include "npp/Notepad_plus_msgs.h"
+#include "crypt.h"
 
 class ModalDialog : public Window
 {
@@ -32,6 +32,7 @@ protected:
 	void						goToCenter();
 	void						getText(int id, crypt::secure_string& str, HWND hwnd = NULL);
 	void						setText(int id, const crypt::secure_string& str, HWND hwnd = NULL);
+	void						setupInputEncodingSelect(HWND hwnd, int id);
 	static INT_PTR CALLBACK		dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 	virtual	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam) = 0;
 

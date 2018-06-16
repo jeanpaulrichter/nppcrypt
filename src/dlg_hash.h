@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
 (https://notepad-plus-plus.org)
@@ -18,10 +18,10 @@ GNU General Public License for more details.
 #ifndef DLG_HASH_H_DEF
 #define DLG_HASH_H_DEF
 
-#include "npp/ModalDialog.h"
-#include "npp/URLCtrl.h"
+#include "modaldialog.h"
 #include "exception.h"
 #include "crypt.h"
+#include "ctl_help.h"
 
 class DlgHash : public ModalDialog
 {
@@ -30,14 +30,26 @@ public:
 	void				destroy();
 
 private:
-	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	bool				updateOptions();
-	void				enableKeyControls(bool v);
-	bool				checkPassword(bool updatedata);
+	/**** messagehandler ****/
+	INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+
+	/**** update this->options ****/
+	bool prepareOptions();
+	/**** make sure custom key is valid ****/
+	bool checkKey(bool updatedata);
+
+	/**** update dialog on change of algorithm ****/
+	void onChangeAlgorithm(size_t digest = 0);
+	/**** enable/disable key-controls ****/
+	void updateKeyControls(bool enable);
+	/**** update encoding controls ****/
+	void updateEncodingControls(crypt::Encoding enc);
 	
 	crypt::Options::Hash&	options;
-	bool					invalid_password;
-	URLCtrl					url_help_hash;
+	size_t					keylength;
+	bool					invalid_key;
+	HelpCtrl				help_enc;
+	HelpCtrl				help_hash;
 	HBRUSH					brush_red;
 };
 

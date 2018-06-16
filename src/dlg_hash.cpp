@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
 (https://notepad-plus-plus.org)
@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #include "npp/PluginInterface.h"
 #include "npp/Definitions.h"
 #include "help.h"
+#include "crypt_help.h"
 
 DlgHash::DlgHash(crypt::Options::Hash& opt) : ModalDialog(), options(opt)
 {
@@ -43,7 +44,8 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		if (!brush_red) {
 			brush_red = CreateSolidBrush(RGB(255, 0, 0));
 		}
-		invalid_password = false;
+		invalid_key = false;
+
 		if(!helper::Buffer::isCurrent8Bit()) {
 			if (options.encoding == crypt::Encoding::ascii) {
 				options.encoding = crypt::Encoding::base16;
@@ -55,17 +57,14 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_SETCHECK, (options.encoding == crypt::Encoding::base32), 0);
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE64, BM_SETCHECK, (options.encoding == crypt::Encoding::base64), 0);
 
-		std::wstring temp_str;
-		crypt::help::Iter::setup_hash();
-		while (crypt::help::Iter::next()) {
-			helper::Windows::utf8_to_wchar(crypt::help::Iter::getString(), -1, temp_str);
-			::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)temp_str.c_str());
+		for(crypt::help::Hashnames it; *it; ++it) {
+			::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)helper::Windows::ToWCHAR(*it).c_str());
 		}
 		::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_SETCURSEL, (int)options.algorithm, 0);
 			
 		::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_SETCHECK, options.use_key, 0);
-		::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD, EM_LIMITTEXT, NPPC_HMAC_INPUT_MAX, 0);
-		::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD, EM_SETPASSWORDCHAR, '*', 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_KEY, EM_LIMITTEXT, NPPC_MAX_HMAC_KEYLENGTH, 0);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_KEY, EM_SETPASSWORDCHAR, '*', 0);
 
 		for (size_t i = 0; i < preferences.getKeyNum(); i++) {			
 			::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
@@ -73,27 +72,13 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_SETCURSEL, 0, 0);
 		::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO1, BM_SETCHECK, true, 0);
 
-		if (crypt::help::checkHashProperty(options.algorithm, crypt::HashProperties::hmac_possible) || crypt::help::checkHashProperty(options.algorithm, crypt::HashProperties::key)) {
-			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), true);
-			enableKeyControls(options.use_key); 
-			if (crypt::help::checkHashProperty(options.algorithm, crypt::HashProperties::hmac_possible)) {
-				::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key (hmac):"));
-			} else {
-				::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key:"));
-			}
-		} else {
-			enableKeyControls(false);
-			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
-		}
+		setupInputEncodingSelect(_hSelf, IDC_HASH_KEY_ENC);
 
-		::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
-		::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
-		::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));
-		::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base64"));
-		::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD_ENC, CB_SETCURSEL, 0, 0);
+		help_hash.setup(_hInst, _hSelf, ::GetDlgItem(_hSelf, IDC_HASH_ALGO_HELP), crypt::help::checkProperty(options.algorithm, crypt::WEAK));
+		help_enc.setup(_hInst, _hSelf, ::GetDlgItem(_hSelf, IDC_HASH_ENC_HELP));
 
- 		url_help_hash.init(_hInst, _hSelf);
-		url_help_hash.create(::GetDlgItem(_hSelf, IDC_HASH_HELP_HASH), crypt::help::getHelpURL(options.algorithm));
+		updateEncodingControls(options.encoding);
+		onChangeAlgorithm(options.digest_length);
 
 		goToCenter();
 		return TRUE;
@@ -117,8 +102,8 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 					const byte*				pdata;
 					size_t					data_length;
 					std::basic_string<byte>	buffer;
-
-					if (!updateOptions()) {
+					
+					if (!prepareOptions()) {
 						return TRUE;
 					}
 					helper::Scintilla::getSelection(&pdata, &data_length);
@@ -140,20 +125,40 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 			case IDC_HASH_USE_KEY:
 			{
 				bool use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
-				enableKeyControls(use_key);
+				updateKeyControls(use_key);
 				break;
 			}
 			case IDC_HASH_KEYRADIO1: case IDC_HASH_KEYRADIO2:
 			{
-				enableKeyControls(true);
+				updateKeyControls(true);
 				break;
 			}
-			case IDC_HASH_PASSWORD_SHOW:
+			case IDC_HASH_KEY_SHOW:
 			{
-				bool show = !!::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD_SHOW, BM_GETCHECK, 0, 0);
-				::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD, EM_SETPASSWORDCHAR, show ? 0 : '*', 0);
-				InvalidateRect(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD), 0, TRUE);
-				::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD));
+				bool show = !!::SendDlgItemMessage(_hSelf, IDC_HASH_KEY_SHOW, BM_GETCHECK, 0, 0);
+				::SendDlgItemMessage(_hSelf, IDC_HASH_KEY, EM_SETPASSWORDCHAR, show ? 0 : '*', 0);
+				InvalidateRect(::GetDlgItem(_hSelf, IDC_HASH_KEY), 0, TRUE);
+				::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_KEY));
+				break;
+			}
+			case IDC_HASH_ENC_ASCII:
+			{
+				updateEncodingControls(crypt::Encoding::ascii);
+				break;
+			}
+			case IDC_HASH_ENC_BASE16:
+			{
+				updateEncodingControls(crypt::Encoding::base16);
+				break;
+			}
+			case IDC_HASH_ENC_BASE32:
+			{
+				updateEncodingControls(crypt::Encoding::base32);
+				break;
+			}
+			case IDC_HASH_ENC_BASE64:
+			{
+				updateEncodingControls(crypt::Encoding::base64);
 				break;
 			}
 			}
@@ -165,28 +170,14 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 			{
 			case IDC_HASH_ALGO:
 			{
-				crypt::Hash cur_sel = crypt::Hash(::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0));
-				if (crypt::help::checkHashProperty(cur_sel, crypt::HashProperties::hmac_possible) || crypt::help::checkHashProperty(cur_sel, crypt::HashProperties::key)) {
-					if (crypt::help::checkHashProperty(cur_sel, crypt::HashProperties::hmac_possible)) {
-						::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key (hmac):"));
-					} else {
-						::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("with key:"));
-					}
-					::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), true);
-					bool use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
-					enableKeyControls(use_key);
-				} else {
-					enableKeyControls(false);
-					::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
-				}
-				url_help_hash.changeURL(crypt::help::getHelpURL(cur_sel));
+				onChangeAlgorithm();
 				break;
 			}
-			case IDC_HASH_PASSWORD_ENC:
+			case IDC_HASH_KEY_ENC:
 			{
-				checkPassword(false);
-				InvalidateRect(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD), 0, TRUE);
-				::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD));
+				checkKey(false);
+				InvalidateRect(::GetDlgItem(_hSelf, IDC_HASH_KEY), 0, TRUE);
+				::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_KEY));
 				break;
 			}
 			}
@@ -194,9 +185,9 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		}
 		case EN_CHANGE:
 		{
-			if (LOWORD(wParam) == IDC_HASH_PASSWORD) {
-				checkPassword(false);
-				InvalidateRect(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD), 0, TRUE);
+			if (LOWORD(wParam) == IDC_HASH_KEY) {
+				checkKey(false);
+				InvalidateRect(::GetDlgItem(_hSelf, IDC_HASH_KEY), 0, TRUE);
 			}
 			break;
 		}
@@ -205,7 +196,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 	}
 	case WM_CTLCOLOREDIT:
 	{
-		if (invalid_password && (HWND)lParam == GetDlgItem(_hSelf, IDC_HASH_PASSWORD)) {
+		if (invalid_key && (HWND)lParam == GetDlgItem(_hSelf, IDC_HASH_KEY)) {
 			SetBkMode((HDC)wParam, TRANSPARENT);
 			return (INT_PTR)brush_red;
 		}
@@ -215,9 +206,11 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 	return FALSE;
 }
 
-bool DlgHash::updateOptions()
+bool DlgHash::prepareOptions()
 {
 	options.algorithm = (crypt::Hash)::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
+	options.digest_length = crypt::help::getHashDigestByIndex(options.algorithm, ::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_GETCURSEL, 0, 0));
+
 	if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_GETCHECK, 0, 0)) {
 		options.encoding = crypt::Encoding::ascii;
 	} else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_GETCHECK, 0, 0)) {
@@ -228,7 +221,7 @@ bool DlgHash::updateOptions()
 		options.encoding = crypt::Encoding::base64;
 	}
 
-	if (IsWindowEnabled(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY))) {
+	if (crypt::help::checkProperty(options.algorithm, crypt::HMAC_SUPPORT) || crypt::help::checkProperty(options.algorithm, crypt::KEY_SUPPORT)) {
 		options.use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
 	} else {
 		options.use_key = false;
@@ -236,9 +229,9 @@ bool DlgHash::updateOptions()
 
 	if (options.use_key) {
 		if (!!::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_GETCHECK, 0, 0)) {
-			if (!checkPassword(true)) {
-				InvalidateRect(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD), 0, TRUE);
-				::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD));
+			if (!checkKey(true)) {
+				InvalidateRect(::GetDlgItem(_hSelf, IDC_HASH_KEY), 0, TRUE);
+				::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_KEY));
 				return false;
 			}
 		} else {
@@ -249,46 +242,101 @@ bool DlgHash::updateOptions()
 	return true;
 }
 
-void DlgHash::enableKeyControls(bool v)
+bool DlgHash::checkKey(bool updatedata)
 {
-	::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYRADIO1), v);
-	::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYRADIO2), v);
-	if (v) {
-		bool password = !!::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_GETCHECK, 0, 0);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYLIST), !password);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD), password);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD_ENC), password);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD_SHOW), password);
-		if (password) {
-			checkPassword(false);
-			InvalidateRect(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD), 0, TRUE);
-			::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD));
-		}
-	} else {
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYLIST), false);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD), false);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD_ENC), false);
-		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD_SHOW), false);
-	}
-}
-
-bool DlgHash::checkPassword(bool updatedata)
-{
-	int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_HASH_PASSWORD));
+	int len = GetWindowTextLength(::GetDlgItem(_hSelf, IDC_HASH_KEY));
 	if (len <= 0) {
-		invalid_password = true;
+		invalid_key = true;
 	} else {
 		crypt::secure_string	temp;
 		crypt::UserData			data;
 		crypt::Encoding			enc;
 
-		enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_HASH_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
-		getText(IDC_HASH_PASSWORD, temp);
+		enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_HASH_KEY_ENC, CB_GETCURSEL, 0, 0);
+		getText(IDC_HASH_KEY, temp);
 		data.set(temp.c_str(), temp.size(), enc);
-		invalid_password = (data.size() == 0);
-		if (!invalid_password && updatedata) {
+		invalid_key = (data.size() == 0 || (keylength > 0 && data.size() != keylength));
+		if (!invalid_key && updatedata) {
 			options.key.set(data);
 		}
 	}
-	return !invalid_password;
+	return !invalid_key;
+}
+
+void DlgHash::onChangeAlgorithm(size_t digest)
+{
+	crypt::Hash cur_sel = (crypt::Hash)::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
+
+	// ----------------------------- Update Digests ----------------------------------------------------------------
+	std::wstring temp_str;
+	::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_RESETCONTENT, 0, 0);
+
+	for (crypt::help::HashDigests it(cur_sel); *it; ++it) {
+		temp_str = std::to_wstring(*it * 8);
+		temp_str.append(TEXT(" Bits"));
+		::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_ADDSTRING, 0, (LPARAM)temp_str.c_str());
+	}
+	::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_SETCURSEL, crypt::help::getHashDigestIndex(cur_sel, digest), 0);
+
+	// ----------------------------- Key Options ------------------------------------------------------------------- 
+	if (crypt::help::checkProperty(cur_sel, crypt::HMAC_SUPPORT) || crypt::help::checkProperty(cur_sel, crypt::KEY_SUPPORT)) {
+		if (crypt::help::checkProperty(cur_sel, crypt::HMAC_SUPPORT)) {
+			::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("HMAC:"));
+		} else {
+			::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("use key:"));
+		}
+		if (crypt::help::checkProperty(cur_sel, crypt::KEY_REQUIRED)) {
+			::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_SETCHECK, true, 0);
+			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
+			updateKeyControls(true);
+		} else {
+			::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), true);
+			bool use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
+			updateKeyControls(use_key);
+		}
+		size_t digest_len;
+		crypt::getHashInfo(cur_sel, digest_len, keylength);
+	} else {
+		updateKeyControls(false);
+		::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_SETCHECK, false, 0);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
+	}
+	help_hash.setURL(crypt::help::getHelpURL(cur_sel));
+	help_hash.setTooltip(crypt::help::getInfo(cur_sel));
+	help_hash.setWarning(crypt::help::checkProperty(cur_sel, crypt::WEAK));
+}
+
+void DlgHash::updateKeyControls(bool enable)
+{
+	::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYRADIO1), enable);
+	::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYRADIO2), enable);
+	if (enable) {
+		bool password = !!::SendDlgItemMessage(_hSelf, IDC_HASH_KEYRADIO2, BM_GETCHECK, 0, 0);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYLIST), !password);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEY), password);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEY_ENC), password);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEY_SHOW), password);
+		if (password) {
+			checkKey(false);
+			InvalidateRect(::GetDlgItem(_hSelf, IDC_HASH_KEY), 0, TRUE);
+			::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_KEY));
+		}
+	} else {
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEYLIST), false);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEY), false);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEY_ENC), false);
+		::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_KEY_SHOW), false);
+	}
+}
+
+void DlgHash::updateEncodingControls(crypt::Encoding enc)
+{
+	help_enc.setURL(crypt::help::getHelpURL(enc));
+	if (enc == crypt::Encoding::ascii) {
+		help_enc.setWarning(true);
+		help_enc.setTooltip(crypt::help::getInfo(crypt::Encoding::ascii));
+	} else {
+		help_enc.setWarning(false);
+		help_enc.setTooltip(crypt::help::getInfo(enc));
+	}
 }

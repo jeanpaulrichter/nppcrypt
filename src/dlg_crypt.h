@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
 (https://notepad-plus-plus.org)
@@ -24,8 +24,8 @@ GNU General Public License for more details.
 #include <windows.h>
 #include <commctrl.h>
 
-#include "npp/ModalDialog.h"
-#include "npp/URLCtrl.h"
+#include "modaldialog.h"
+#include "ctl_help.h"
 #include "crypt.h"
 #include "cryptheader.h"
 #include "preferences.h"
@@ -35,53 +35,92 @@ class DlgCrypt : public ModalDialog
 public:
 	enum class Operation { Enc, Dec };
 
-						DlgCrypt();
-    void				destroy();
-	bool				doDialog(Operation operation, CryptInfo* crypt, crypt::UserData* iv, bool no_bin_output = false, const std::wstring* filename = NULL);
+		 DlgCrypt();
+    void destroy();
+	bool doDialog(Operation operation, CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename = NULL);
 
 private:
-	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	/**** messagehandler ****/
+	INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	void				initDialog();
-	void				checkSpinControlValue(int ctrlID);
-	bool				checkPassword(crypt::secure_string& s, bool strict);
-	bool				checkCustomIV(crypt::UserData& data, bool reencode);
-	bool				checkHMACKey(crypt::UserData& data, bool reencode);
-	void				changeActiveTab(int id);
-	void				setCipherInfo(crypt::Cipher cipher, crypt::Mode mode);
-	void				enableKeyDeriControls();
-	bool				updateOptions();
-	bool				OnClickOK();
-	void				OnCipherChange();	
-	void				OnCipherCategoryChange(int category, bool change_cipher=false);
-	void				OnEncodingChange(crypt::Encoding enc);
+	/**** creates tab windows and sets up controls according to CryptInfo* crypt ****/	
+	void setupDialog();
+	/**** change the selected tab window (0 - 4) ****/
+	void changeActiveTab(int id);
+	/**** update CryptInfo* crypt and crypt::UserData* ivdata ****/
+	bool prepareOptions();
+	/**** user clicked OK Button ****/
+	bool OnClickOK();
+
+	/**** make sure values entered into editboxes with spincontrol are valid ****/
+	void checkSpinControlValue(int ctrlID);
+	/**** check password (strict = emty password not allowed) ****/
+	bool checkPassword(crypt::secure_string& s, bool strict);
+	/**** check custom IV ****/
+	bool checkCustomIV(crypt::UserData& data, bool reencode);
+	/**** check custom hmac key ****/
+	bool checkHMACKey(crypt::UserData& data, bool reencode);
 	
+	/**** update controls to show information about current cipher ****/
+	void updateCipherInfo(crypt::Cipher cipher, crypt::Mode mode);
+	/**** enable/disable controls based on currently selected encoding ****/
+	void updateEncodingControls(crypt::Encoding enc);
+	/**** update Hashlength Combobox */
+	void updateHashDigestControl(crypt::Hash h, HWND hwnd, int ctrlID);
+	/**** enable/disable controls based on currently selected keyderivation method ****/
+	void updateKeyDerivationControls();
+	/**** update controls on cipher change ****/
+	void updateCipherControls();
 	
 	Operation				operation;
 	const std::wstring*		filename;
-	bool					no_bin_output;
 	CryptInfo*				crypt;
 	crypt::UserData*		ivdata;
+	bool					confirm_password;
 
-	bool					confirm_password;	
-	crypt::Cipher			t_cipher;
-	crypt::KeyDerivation	t_key_derivation;
-	crypt::secure_string	t_password;
-	int						cur_tab;
-	int						cur_ivlength;
-	bool					invalid_password;
-	bool					invalid_iv;
-	bool					invalid_hmac;
-	HBRUSH					brush_red;
+	struct CurSelection
+	{
+		CurSelection() : tab(-1), iv_length(0) {};
 
-	HWND					hwnd_basic;
-	HWND					hwnd_auth;
-	HWND					hwnd_key;
-	HWND					hwnd_iv;
-	HWND					hwnd_encoding;
+		crypt::Cipher			cipher;
+		crypt::KeyDerivation	key_derivation;
+		crypt::secure_string	password;
+		int						tab;
+		size_t					iv_length;
+		size_t					key_length;
+	} current;
 
-	URLCtrl					url_help[7];
-	enum class HelpURL : unsigned { encoding, cipher, mode, salt, keyalgo, hmac, iv };
+	struct InvalidInput
+	{
+		InvalidInput() : password(false), iv(false), hmac_key(false), brush(NULL) {};
+
+		bool	password;
+		bool	iv;
+		bool	hmac_key;
+		HBRUSH	brush;
+	} invalid;
+
+	struct TabDialogs
+	{
+		TabDialogs() : basic(NULL), encoding(NULL), key(NULL), iv(NULL), auth(NULL) {};
+
+		HWND basic;
+		HWND encoding;
+		HWND key;
+		HWND iv;
+		HWND auth;		
+	} tab;
+
+	struct HelpControls
+	{
+		HelpCtrl cipher;
+		HelpCtrl mode;
+		HelpCtrl encoding;
+		HelpCtrl salt;
+		HelpCtrl keyalgorithm;
+		HelpCtrl iv;
+		HelpCtrl auth;
+	} help;
 };
 
 

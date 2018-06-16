@@ -18,7 +18,7 @@ GNU General Public License for more details.
 #ifndef DLG_PREFERENCES_H_DEF
 #define DLG_PREFERENCES_H_DEF
 
-#include "npp/ModalDialog.h"
+#include "modaldialog.h"
 #include "npp/URLCtrl.h"
 
 class DlgPreferences: public ModalDialog
