@@ -17,14 +17,14 @@ GNU General Public License for more details.
 #define MDEF_DEFINE_H
 
 #define		NPPC_NAME					"NppCrypt"
-#define		NPPC_VERSION				1015
+#define		NPPC_VERSION				1016
 
 #define		NPPC_FUNC_COUNT				9
 #define		NPPC_FUNC_HASH_ID			2
 #define		NPPC_FUNC_RANDOM_ID			3
 #define		NPPC_FUNC_CONVERT_ID		4
 
-#define		NPPC_ABOUT_VERSION			"1.0.1.5"
+#define		NPPC_ABOUT_VERSION			"1.0.1.6"
 #define		NPPC_ABOUT_GITHUB			"https://www.github.com/jeanpaulrichter/nppcrypt"
 #define		NPPC_ABOUT_CRYPTOPP			"https://www.cryptopp.com"
 #define		NPPC_ABOUT_TINYXML2			"https://github.com/leethomason/tinyxml2"
