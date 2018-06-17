@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
 (https://notepad-plus-plus.org)

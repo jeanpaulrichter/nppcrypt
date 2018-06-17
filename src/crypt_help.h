@@ -43,12 +43,14 @@ namespace crypt
 		static bool			getRandomRestriction(const char* s, UserData::Restriction& r);
 		static bool			getEOL(const char* s, EOL& eol);
 
-		static Mode			getModeByIndex(Cipher cipher, int index);
-		static int			getModeIndex(Cipher cipher, Mode mode);
 		static bool			validCipherMode(Cipher cipher, Mode mode);
 		static bool			checkProperty(Cipher cipher, int filter);
 		static bool			checkProperty(Hash h, int filter);
 		static bool			checkHashDigest(Hash h, unsigned int digest);
+		static bool			checkCipherKeylength(Cipher cipher, size_t keylength);
+
+		static Mode			getModeByIndex(Cipher cipher, int index);
+		static int			getModeIndex(Cipher cipher, Mode mode);
 		static int			getCipherCategory(Cipher cipher);
 		static Cipher		getCipherByIndex(size_t category, size_t index);
 		static int			getCipherIndex(Cipher cipher);

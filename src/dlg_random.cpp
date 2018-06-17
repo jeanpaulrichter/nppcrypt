@@ -65,22 +65,22 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
 		help_restrictions.setURL(NPPC_RANDOM_HELP_URL);
 		updateEncodingControls(options.encoding);
 
-		updateEncodingControls(crypt::Encoding::ascii);
-
 		goToCenter();
 		return TRUE;
 	}
 	case WM_COMMAND : 
 	{
-		if (LOWORD(wParam) == IDCANCEL) {
-			EndDialog(_hSelf, IDC_CANCEL);
-		}
 		switch (HIWORD(wParam))
 		{
 		case BN_CLICKED:
 		{
 			switch (LOWORD(wParam))
 			{
+			case IDC_CANCEL: case IDCANCEL:
+			{
+				EndDialog(_hSelf, IDC_CANCEL);
+				return TRUE;
+			}
 			case IDC_OK: case IDC_RANDOM_TOCLIPBOARD:
 			{
 				try {

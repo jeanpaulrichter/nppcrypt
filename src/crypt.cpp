@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 
 This program is free software; you can redistribute it and/or
@@ -13,9 +13,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#include <iostream>
-#include <chrono>
-#include <cmath>
 #include "crypt.h"
 #include "exception.h"
 
@@ -25,10 +22,6 @@ GNU General Public License for more details.
 extern "C" {
 #include "scrypt/crypto_scrypt.h"
 }
-
-#ifdef max
-#undef max
-#endif
 
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 
@@ -93,16 +86,29 @@ extern "C" {
 #include "cryptopp/crc.h"
 #include "cryptopp/siphash.h"
 
+template<typename T>
+T ipow(T base, T exp)
+{
+	T result = 1;
+	while (exp) {
+		if (exp & 1) {
+			result *= base;
+		}
+		exp >>= 1;
+		base *= base;
+	}
+	return result;
+}
+
 namespace Strings
 {
-	static const std::string	eol_windows = "\r\n";
-	static const std::string	eol_unix = "\n";
+	static const std::string eol[3] = { "\r\n", "\n", "\r" };
 }
 
 using namespace crypt;
 
 // ===========================================================================================================================================================================================
-// of course it would be much more elegant to use the factory, but that would be a lot of never used registrations etc
+// of course it would be much more elegant to use the factory, but that would mean a lot of never used registrations etc
 // ===========================================================================================================================================================================================
 
 namespace intern
@@ -286,6 +292,26 @@ namespace intern
 			}
 			break;
 		}
+		case Cipher::speck128:
+		{
+			switch (mode)
+			{
+			case Mode::gcm: return (encryption ? (AuthenticatedSymmetricCipher*)(new GCM< SPECK128 >::Encryption) : (new GCM< SPECK128 >::Decryption));
+			case Mode::ccm: return (encryption ? (AuthenticatedSymmetricCipher*)(new CCM< SPECK128 >::Encryption) : (new CCM< SPECK128 >::Decryption));
+			case Mode::eax: return (encryption ? (AuthenticatedSymmetricCipher*)(new EAX< SPECK128 >::Encryption) : (new EAX< SPECK128 >::Decryption));
+			}
+			break;
+		}
+		case Cipher::square:
+		{
+			switch (mode)
+			{
+			case Mode::gcm: return (encryption ? (AuthenticatedSymmetricCipher*)(new GCM< Square >::Encryption) : (new GCM< Square >::Decryption));
+			case Mode::ccm: return (encryption ? (AuthenticatedSymmetricCipher*)(new CCM< Square >::Encryption) : (new CCM< Square >::Decryption));
+			case Mode::eax: return (encryption ? (AuthenticatedSymmetricCipher*)(new EAX< Square >::Encryption) : (new EAX< Square >::Decryption));
+			}
+			break;
+		}
 		case Cipher::twofish:
 		{
 			switch (mode)
@@ -340,6 +366,7 @@ namespace intern
 		}
 		case Cipher::btea:
 		{
+			return encryption ? (SymmetricCipher*)(new BTEA::Encryption) : (SymmetricCipher*)(new BTEA::Decryption);
 			/*switch (mode) {
 			case Mode::ecb: return encryption ? (SymmetricCipher*)(new ECB_Mode<BTEA>::Encryption) : (new ECB_Mode<BTEA>::Decryption);
 			case Mode::cbc: return encryption ? (SymmetricCipher*)(new CBC_Mode<BTEA>::Encryption) : (new CBC_Mode<BTEA>::Decryption);
@@ -768,14 +795,14 @@ namespace intern
 			case Hash::blake2b:
 			{
 				if (options.digest_length >= 1 && options.digest_length <= 64) {
-					return new BLAKE2b(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0Ui64, false, options.digest_length);
+					return new BLAKE2b(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0Ui64, false, (unsigned int)options.digest_length);
 				}
 				break;
 			}
 			case Hash::blake2s:
 			{
 				if (options.digest_length >= 1 && options.digest_length <= 32) {
-					return new BLAKE2s(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0Ui64, false, options.digest_length);
+					return new BLAKE2s(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0Ui64, false, (unsigned int)options.digest_length);
 				}
 				break;
 			}
@@ -840,18 +867,18 @@ namespace intern
 			case Hash::siphash24:
 			{
 				if (options.digest_length == 8) {
-					return new SipHash<2, 4, false>(options.key.BytePtr(), options.key.size());
+					return new SipHash<2, 4, false>(options.key.BytePtr(), (unsigned int)options.key.size());
 				} else if (options.digest_length == 16) {
-					return new SipHash<2, 4, true>(options.key.BytePtr(), options.key.size());
+					return new SipHash<2, 4, true>(options.key.BytePtr(), (unsigned int)options.key.size());
 				}
 				break;
 			}
 			case Hash::siphash48:
 			{
 				if (options.digest_length == 8) {
-					return new SipHash<4, 8, false>(options.key.BytePtr(), options.key.size());
+					return new SipHash<4, 8, false>(options.key.BytePtr(), (unsigned int)options.key.size());
 				} else if (options.digest_length == 16) {
-					return new SipHash<4, 8, true>(options.key.BytePtr(), options.key.size());
+					return new SipHash<4, 8, true>(options.key.BytePtr(), (unsigned int)options.key.size());
 				}
 				break;
 			}
@@ -988,6 +1015,7 @@ namespace intern
 				throw CExc(CExc::Code::bcrypt_failed);
 			}
 			memset(output, 0, sizeof(output));
+			// _crypt_blowfish_rn need 0-terminated password...
 			std::string temp(password.size() + 1, 0);
 			memcpy(&temp[0], password.BytePtr(), password.size());
 			if (_crypt_blowfish_rn(temp.c_str(), settings, output, 64) == NULL) {
@@ -1450,7 +1478,7 @@ bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, size_t& key_le
 		break;
 	}
 	if (mode == Mode::ccm) {
-		iv_length = 13;
+		iv_length = Constants::ccm_iv_length;
 	}
 	return true;
 }
@@ -1634,13 +1662,12 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			case Encoding::base16: case Encoding::base32:
 			{
 				int linelength = options.encoding.linebreaks ? (int)options.encoding.linelength : 0;
-				const std::string& seperator = (options.encoding.eol == crypt::EOL::windows) ? Strings::eol_windows : Strings::eol_unix;
 				if (options.encoding.enc == Encoding::base16) {
 					StringSource(temp.data(), temp.size() - tag_size, true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
-						options.encoding.uppercase, linelength, seperator));
+						options.encoding.uppercase, linelength, Strings::eol[(int)options.encoding.eol]));
 				} else {
 					StringSource(temp.data(), temp.size() - tag_size, true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
-						options.encoding.uppercase, linelength, seperator));
+						options.encoding.uppercase, linelength, Strings::eol[(int)options.encoding.eol]));
 				}
 				init.tag.set(temp.data() + temp.size() - tag_size, tag_size);
 				break;
@@ -1675,13 +1702,12 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			case Encoding::base16: case Encoding::base32:
 			{
 				int linelength = options.encoding.linebreaks ? (int)options.encoding.linelength : 0;
-				const std::string& seperator = (options.encoding.eol == crypt::EOL::windows) ? Strings::eol_windows : Strings::eol_unix;
 				if (options.encoding.enc == Encoding::base16) {
 					StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
-						new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, seperator)));
+						new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, Strings::eol[(int)options.encoding.eol])));
 				} else {
 					StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
-							new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, seperator)));
+							new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, Strings::eol[(int)options.encoding.eol])));
 				}
 				break;
 			}
@@ -2018,66 +2044,6 @@ void crypt::shake128(const byte* in, size_t in_len, byte* out, size_t out_len)
 	}
 }
 
-/*void crypt::random(const Options::Random& options, UserData& data)
-{
-	if (options.length == 0) {
-		data.clear();
-		return;
-	}
-	using namespace CryptoPP;
-	using namespace crypt;
-
-	switch(options.mode)
-	{
-	case Random::binary:
-	{
-		data.random(options.length);
-		break;
-	}
-	case Random::specials:
-	{
-		data.
-		buffer.resize(options.length);
-		unsigned char temp[Constants::rand_char_bufsize];
-		size_t i = 0;
-		while (i < options.length) {
-			OS_GenerateRandomBlock(false, temp, Constants::rand_char_bufsize);
-			for (int x = 0; x < Constants::rand_char_bufsize && i < options.length; x++) {
-				if (temp[x] > 32 && temp[x] < 127) {
-					buffer[i] = temp[x];
-					i++;
-				}
-			}
-		}
-		break;
-	}
-	case Random::charnum:
-	{
-		buffer.resize(options.length);
-		unsigned char temp[Constants::rand_char_bufsize];
-		size_t i = 0;
-		while (i < options.length) {
-			OS_GenerateRandomBlock(false, temp, Constants::rand_char_bufsize);
-			for (int x = 0; x < Constants::rand_char_bufsize && i < options.length; x++) {
-				if (temp[x] < 62) {
-					if (temp[x] < 10) {
-						buffer[i] = 48 + temp[x];
-					}
-					else if (temp[x] < 36) {
-						buffer[i] = 55 + temp[x];
-					}
-					else {
-						buffer[i] = 61 + temp[x];
-					}
-					i++;
-				}
-			}
-		}
-		break;
-	}	
-	}
-}*/
-
 void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options)
 {
 	using namespace CryptoPP;
@@ -2179,4 +2145,3 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	}
 }
 
-// ===========================================================================================================================================================================

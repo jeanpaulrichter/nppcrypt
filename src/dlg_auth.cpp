@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
 (https://notepad-plus-plus.org)
@@ -25,7 +25,11 @@ bool DlgAuth::doDialog(const TCHAR* filename)
 	if (filename == NULL) {
 		caption = TEXT("authentication");
 	} else {
-		caption = TEXT("authentication (") + std::wstring(filename) + TEXT(")");
+		if (lstrlen(filename) > 25) {
+			caption = TEXT("authentication (") + std::wstring(filename, 25) + TEXT("...)");
+		} else {
+			caption = TEXT("authentication (") + std::wstring(filename) + TEXT(")");
+		}
 	}
 	return ModalDialog::doDialog();
 }
@@ -39,11 +43,7 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 		SetWindowText(_hSelf, caption.c_str());
 		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_SETPASSWORDCHAR, '*', 0);
 		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY, EM_LIMITTEXT, NPPC_MAX_HMAC_KEYLENGTH, 0);
-		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
-		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
-		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));
-		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base64"));
-		::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_SETCURSEL, 0, 0);
+		setupInputEncodingSelect(_hSelf, IDC_AUTH_KEY_ENC);
 		PostMessage(_hSelf, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(_hSelf, IDC_AUTH_KEY), TRUE);
 		goToCenter();
 		return TRUE;

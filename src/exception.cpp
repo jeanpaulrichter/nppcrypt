@@ -1,6 +1,8 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -69,7 +71,8 @@ static const char* error_msgs[] =
 	/* inputfile_read_fail			*/ "Failed to read input-file.",
 	/* outputfile_write_fail		*/ "Failed to write output-file.",
 	/* only_utf8_decrypt			*/ "utf16/utf32 bom present: nppcrypt creates only utf8 files.",
-	/* password_decode				*/ "Failed to decode password"
+	/* password_decode				*/ "Failed to decode password",
+	/* bad_version					*/ "Please use an older version of nppcrypt to decrypt."
 };
 
 const char* CExc::what() const throw()

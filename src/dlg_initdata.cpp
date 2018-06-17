@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
 (https://notepad-plus-plus.org)
@@ -54,16 +54,8 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 	{
 	case WM_INITDIALOG:
 	{
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base64"));
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_SETCURSEL, 0, 0);
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("utf8"));
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base16"));
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base32"));
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_ADDSTRING, 0, (LPARAM)TEXT("base64"));
-		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_SETCURSEL, 0, 0);
+		setupInputEncodingSelect(_hSelf, IDC_INITDATA_SALT_ENC);
+		setupInputEncodingSelect(_hSelf, IDC_INITDATA_TAG_ENC);
 
 		::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT, EM_LIMITTEXT, 1024, 0);
 		::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG, EM_LIMITTEXT, 1024, 0);

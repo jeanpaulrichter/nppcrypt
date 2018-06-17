@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
 (https://notepad-plus-plus.org)
@@ -103,8 +103,6 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 			crypt::help::getCipherMode(pTemp, current.crypt.options.mode);
 			pTemp = xml_temp->Attribute("iv");
 			crypt::help::getIVMode(pTemp, current.crypt.options.iv);
-			//pTemp = xml_temp->Attribute("password-enc");
-			//crypt::help::getEncoding(pTemp, current.crypt.options.password_encoding);
 		}
 		xml_temp = xml_nppcrypt->FirstChildElement("crypt_encoding");
 		if (xml_temp) {

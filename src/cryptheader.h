@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 
 This program is free software; you can redistribute it and/or
@@ -19,6 +19,8 @@ GNU General Public License for more details.
 #include "crypt.h"
 #include "mdef.h"
 
+using crypt::byte;
+
 class CryptHeader
 {
 public:
@@ -32,6 +34,7 @@ public:
 
 						CryptHeader() : version(NPPC_VERSION) {};
 	int					getVersion() { return version; };
+	crypt::InitData&	initData() { return s_init; };
 
 protected:
 	crypt::InitData		s_init;
@@ -45,37 +48,31 @@ class CryptHeaderReader : public CryptHeader
 public:
 								CryptHeaderReader(crypt::Options::Crypt& opt, CryptHeader::HMAC& h) : options(opt), hmac(h), pEncryptedData(NULL), encryptedDataLen(0) {};
 	bool						parse(const byte* in, size_t in_len);	
-	const unsigned char*		encryptedData() { return pEncryptedData; };
+	const byte*					encryptedData() { return pEncryptedData; };
 	size_t						encryptedDataLength() { return encryptedDataLen; };
-	crypt::InitData&			initData() { return s_init; };
-	//bool						checkHMAC(const std::string& password);
 	bool						checkHMAC();
 
 private:
 	crypt::Options::Crypt&		options;
 	CryptHeader::HMAC&			hmac;
+	crypt::UserData				hmac_digest;
 	const unsigned char* 		pEncryptedData;
-	size_t						encryptedDataLen;	
-	std::string					hmac_data;
+	size_t						encryptedDataLen;
 };
 
 class CryptHeaderWriter : public CryptHeader
 {
 public:
-
-							CryptHeaderWriter(const crypt::Options::Crypt& opt, const HMAC& hmac_opt, const byte* h_key = NULL, size_t h_len = 0);
-	void					create(const byte* data, size_t data_length);
+							CryptHeaderWriter(const crypt::Options::Crypt& opt, HMAC& hmac_opt, const byte* h_key = NULL, size_t h_len = 0);
+	void					create(const crypt::byte* data, size_t data_length);
 	const char*				c_str() { return buffer.c_str(); };
 	size_t					size() { return buffer.size(); };
-	crypt::InitData&		initData() { return s_init;	};
-	//void					setHMACKey(const byte* h_key = NULL, size_t h_len = 0);
 
 private:
 	size_t					base64length(size_t bin_length, bool linebreaks=false, size_t line_length=0, bool windows=false);
 
-	const CryptHeader::HMAC&		hmac;
+	CryptHeader::HMAC&				hmac;
 	const crypt::Options::Crypt&	options;
-	std::vector<byte>				hmac_key;
 	std::string						buffer;
 };
 

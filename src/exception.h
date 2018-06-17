@@ -1,6 +1,8 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
+a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
+(https://notepad-plus-plus.org)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -77,7 +79,8 @@ public:
 		inputfile_read_fail,
 		outputfile_write_fail,
 		only_utf8_decrypt,
-		password_decode
+		password_decode,
+		bad_version
 	};
 
 	CExc(Code err_code=Code::unexpected);

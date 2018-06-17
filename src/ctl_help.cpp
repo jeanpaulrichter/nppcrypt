@@ -16,7 +16,7 @@ GNU General Public License for more details.
 */
 
 /*
-	XORMask[128] and ANDMask[128] used to create sursor stolen from URLCtrl.h by Don HO
+	XORMask[128] and ANDMask[128] stolen from URLCtrl.h by Don HO
 */
 
 #include "ctl_help.h"

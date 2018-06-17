@@ -1,5 +1,5 @@
 /*
-This file is part of the nppcrypt
+This file is part of nppcrypt
 (http://www.github.com/jeanpaulrichter/nppcrypt)
 a plugin for notepad++ [ Copyright (C)2003 Don HO <don.h@free.fr> ]
 (https://notepad-plus-plus.org)
@@ -280,9 +280,6 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						}
 						if(autoencrypt)	{
 							crypt::encrypt(pData, data_length, buffer, crypt.options, header.initData());
-							//if (crypt.hmac.enable && crypt.hmac.keypreset_id >= 0) {
-							//	header.setHMACKey(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16);
-							//}
 							header.create(&buffer[0], buffer.size());
 						}
 					}						
@@ -292,9 +289,6 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 						if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &crypt, &header.initData().iv, &filename)) {
 							crypt::encrypt(pData, data_length, buffer, crypt.options, header.initData());
-							//if (crypt.hmac.enable && crypt.hmac.keypreset_id >= 0) {
-							//	header.setHMACKey(preferences.getKey((size_t)crypt.hmac.keypreset_id), 16);
-							//}
 							header.create(&buffer[0], buffer.size());
 							if(fiter!=crypt_files.end()) {
 								crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
@@ -341,9 +335,6 @@ void EncryptDlg()
 			std::basic_string<byte>		buffer;
 
 			crypt::encrypt(pData, data_length, buffer, current.crypt.options, header.initData());
-			//if (current.crypt.hmac.enable && current.crypt.hmac.keypreset_id >= 0) {
-			//	header.setHMACKey(preferences.getKey((size_t)current.crypt.hmac.keypreset_id), 16);
-			//}
 			header.create(&buffer[0], buffer.size());
 
 			HWND hCurScintilla = helper::Scintilla::getCurrent();

@@ -17,27 +17,14 @@ GNU General Public License for more details.
 #define CRYPT_H_DEF
 
 #include <string>
-#include <vector>
-#include "cryptopp/config.h"
 #include "cryptopp/secblock.h"
-
-typedef CryptoPP::byte byte;
-template<typename T>
-T ipow(T base, T exp)
-{
-	T result = 1;
-	while (exp) {
-		if (exp & 1) {
-			result *= base;
-		}
-		exp >>= 1;
-		base *= base;
-	}
-	return result;
-}
 
 namespace crypt
 {
+	typedef CryptoPP::byte byte;
+	typedef std::basic_string<char, std::char_traits<char>, CryptoPP::AllocatorWithCleanup<char> > secure_string;
+	typedef std::basic_string<wchar_t, std::char_traits<wchar_t>, CryptoPP::AllocatorWithCleanup<wchar_t> > secure_wstring;
+
 	enum class Cipher : unsigned {		
 		threeway, aria, blowfish, btea, camellia, cast128, cast256, chacha20, des, des_ede2, des_ede3, desx, gost, idea, kalyna128, kalyna256, kalyna512, mars, panama, rc2, rc4, rc5, rc6, rijndael, saferk, safersk, salsa20, seal, seed, serpent, shacal2, shark, simon128, skipjack, sm4, sosemanuk, speck128, square, tea, threefish256, threefish512, threefish1024, twofish, wake, xsalsa20, xtea, COUNT
 	};
@@ -70,7 +57,7 @@ namespace crypt
 	{
 		const int salt_max =			512;			// max salt bytes
 		const Hash pbkdf2_default_hash = Hash::sha3;	// pbkdf2: default hash ( see enum Hash )
-		const int pbkdf2_default_hash_digest = 32;
+		const int pbkdf2_default_hash_digest = 32;		// pbkdf2: hash digest length
 		const int pbkdf2_iter_default = 5000;			// pbkdf2: default iterations
 		const int pbkdf2_iter_min =		1;				// pbkdf2: min iterations 
 		const int pbkdf2_iter_max =		10000000;		// pbkdf2: max iterations
@@ -86,17 +73,13 @@ namespace crypt
 		const int scrypt_p_default =	1;				// scrypt: default p
 		const int scrypt_p_min =		1;				// scrypt: min r
 		const int scrypt_p_max =		256;			// scrypt: max r
-		const int gcm_iv_length =		16;				// IV-Length for gcm mode (aes)
-		const int ccm_iv_length =		8;				// IV-Length for ccm mode (aes), possible values: 7-13
-		const int rand_char_max =		4096;			// max number of random chars [-> getRandom()]
-		const int rand_char_bufsize =	512;			// buffersize of getRandom()
+		const int gcm_iv_length =		16;				// IV-Length for gcm mode
+		const int ccm_iv_length =		13;				// IV-Length for ccm mode, possible values: 7-13
+		const int rand_char_max =		4096;			// max number of random bytes ( UserData::random() )
 		const int gcm_tag_size =		16;				// gcm tag size in bytes
 		const int ccm_tag_size =		16;				// ccm tag size in bytes
 		const int eax_tag_size =		16;				// eax tag size in bytes
 	};
-
-	typedef std::basic_string<char, std::char_traits<char>, CryptoPP::AllocatorWithCleanup<char> > secure_string;
-	typedef std::basic_string<wchar_t, std::char_traits<wchar_t>, CryptoPP::AllocatorWithCleanup<wchar_t> > secure_wstring;
 
 	class UserData
 	{
@@ -136,7 +119,7 @@ namespace crypt
 
 			struct Key
 			{
-				Key() : algorithm(KeyDerivation::scrypt), salt_bytes(16), length(0) { options[0] = Constants::scrypt_N_default; options[1] = Constants::scrypt_r_default; options[2] = Constants::scrypt_p_default; };
+				Key() : algorithm(KeyDerivation::scrypt), salt_bytes(16), length(32) { options[0] = Constants::scrypt_N_default; options[1] = Constants::scrypt_r_default; options[2] = Constants::scrypt_p_default; };
 				KeyDerivation		algorithm;
 				size_t				length;
 				int					salt_bytes;
@@ -158,7 +141,7 @@ namespace crypt
 
 		struct Hash
 		{
-			Hash() : encoding(crypt::Encoding::base16), algorithm(crypt::Hash::md5), use_key(false), digest_length(0) {};
+			Hash() : encoding(crypt::Encoding::base16), algorithm(crypt::Hash::md5), use_key(false), digest_length(16) {};
 
 			crypt::Hash					algorithm;
 			size_t						digest_length;
@@ -180,7 +163,7 @@ namespace crypt
 		};
 	};
 
-	/* -- used by encrypt() and decrypt() to recieve or return iv/salt/tag data -- */
+	/* -- used by encrypt() and decrypt() to receive or return iv/salt/tag data -- */
 	struct InitData
 	{
 		UserData		iv;
@@ -188,13 +171,21 @@ namespace crypt
 		UserData		tag;
 	};
 	
+	/* -- check parameters of cipher or receive default values -- */
 	bool	getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, size_t& key_length, size_t& iv_length, size_t& block_size);
+	/* -- check parameters of hash or receive default values -- */
 	bool	getHashInfo(Hash h, size_t& length, size_t& keylength);
+	/* -- encrypt -- */
 	void	encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init);
+	/* -- decrypt -- */
 	void	decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init);
+	/* -- hash data -- */
 	void	hash(const Options::Hash& options, std::basic_string<byte>& buffer, std::initializer_list<std::pair<const byte*, size_t>> in);
+	/* -- hash file -- */
 	void	hash(const Options::Hash& options, std::basic_string<byte>& buffer, const std::string& path);
+	/* -- sha3 shake128 hash -- */
 	void	shake128(const byte* in, size_t in_len, byte* out, size_t out_len);
+	/* -- convert encoding -- */
 	void	convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options);	
 };
 

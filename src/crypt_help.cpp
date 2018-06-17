@@ -1,9 +1,39 @@
+/*
+This file is part of nppcrypt
+(http://www.github.com/jeanpaulrichter/nppcrypt)
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
+
 #include "crypt_help.h"
 
-// ----------------------------- PROPERTIES -------------------------------------------------------------------------------------------------------------------------------------------------------
+template<typename T>
+T ipow(T base, T exp)
+{
+	T result = 1;
+	while (exp) {
+		if (exp & 1) {
+			result *= base;
+		}
+		exp >>= 1;
+		base *= base;
+	}
+	return result;
+}
+
 using namespace crypt;
 
-enum { B4 = 1, B8 = 2, B12 = 4, B16 = 8, B20 = 16, B24 = 32, B28 = 64, B32 = 128, B36 = 256, B40 = 512, B44 = 1024, B48 = 2048, B52 = 4096, B56 = 8192, B60 = 16384, B64 = 32768 };
+// ----------------------------- PROPERTIES -------------------------------------------------------------------------------------------------------------------------------------------------------
+
+const enum { B4 = 1, B8 = 2, B12 = 4, B16 = 8, B20 = 16, B24 = 32, B28 = 64, B32 = 128, B36 = 256, B40 = 512, B44 = 1024, B48 = 2048, B52 = 4096, B56 = 8192, B60 = 16384, B64 = 32768 };
 
 static const unsigned int cipher_properties[unsigned(crypt::Cipher::COUNT)] =
 {
@@ -55,6 +85,7 @@ static const unsigned int cipher_properties[unsigned(crypt::Cipher::COUNT)] =
 	/* xtea				*/	BLOCK
 };
 
+/* { Start, Stepsize, Count } in Bytes */
 static const unsigned int cipher_keys[unsigned(crypt::Cipher::COUNT)][3] =
 {
 	/* threeway			*/	{12, 0, 1},
@@ -149,6 +180,7 @@ static const unsigned int hash_digests[unsigned(crypt::Hash::COUNT)] =
 	/* whirlpool	*/	B64,
 };
 
+/* { startindex , endindex } of crypt::Cipher */
 #define CIPHER_CAT_COUNT 4
 static const int cipher_categories[4][2] =
 {
@@ -562,6 +594,16 @@ bool crypt::help::checkHashDigest(Hash h, unsigned int digest)
 	}
 	unsigned int x = ipow<unsigned int>(2, ((digest / 4) - 1));
 	return ((hash_digests[(unsigned)h] & x) == x);
+}
+
+bool crypt::help::checkCipherKeylength(Cipher cipher, size_t keylength)
+{
+	for (size_t i = 0; i < cipher_keys[(int)cipher][2]; i++) {
+		if (keylength == cipher_keys[(int)cipher][0] + cipher_keys[(int)cipher][1] * i) {
+			return true;
+		}
+	}
+	return false;
 }
 
 const char* crypt::help::getHelpURL(crypt::Encoding enc)
