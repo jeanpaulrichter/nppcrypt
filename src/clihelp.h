@@ -16,9 +16,11 @@ GNU General Public License for more details.
 #ifndef CLIHELP_H_DEF
 #define CLIHELP_H_DEF
 
+#include "crypt.h"
+
 /* Set console echo (in own file because unistd.h pollutes the global namespace...) */
 void setEcho(bool enable = true);
 bool setLocale();
-void readLine(std::string& out);
+void readLine(crypt::secure_string& out);
 
 #endif

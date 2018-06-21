@@ -169,6 +169,7 @@
     <ClCompile Include="..\..\src\cmdline.cpp" />
     <ClCompile Include="..\..\src\crypt.cpp" />
     <ClCompile Include="..\..\src\cryptheader.cpp" />
+    <ClCompile Include="..\..\src\crypt_help.cpp" />
     <ClCompile Include="..\..\src\exception.cpp" />
     <ClCompile Include="..\..\src\keccak\KeccakF-1600-inplace32BI.cpp" />
     <ClCompile Include="..\..\src\keccak\KeccakHash.cpp" />
@@ -189,6 +190,7 @@
     <ClInclude Include="..\..\src\clihelp.h" />
     <ClInclude Include="..\..\src\crypt.h" />
     <ClInclude Include="..\..\src\cryptheader.h" />
+    <ClInclude Include="..\..\src\crypt_help.h" />
     <ClInclude Include="..\..\src\exception.h" />
     <ClInclude Include="..\..\src\keccak\brg_endian.h" />
     <ClInclude Include="..\..\src\keccak\KeccakF-1600-interface.h" />

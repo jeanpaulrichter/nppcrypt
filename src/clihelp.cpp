@@ -83,13 +83,13 @@ bool setLocale()
 	return ret;
 }
 
-void readLine(std::string& out)
+void readLine(crypt::secure_string& out)
 {
 #ifdef WIN32
 	HANDLE hConsole = GetStdHandle(STD_INPUT_HANDLE);
-	wchar_t buf[255];
+	wchar_t buf[512];
 	unsigned long read;
-	ReadConsole(hConsole, buf, 255, &read, nullptr);
+	ReadConsole(hConsole, buf, 512, &read, nullptr);
 	int bytelen = WideCharToMultiByte(CP_UTF8, 0, buf, read, NULL, 0, NULL, false);
 	if (bytelen > 0) {
 		out.resize((size_t)bytelen);
@@ -99,6 +99,9 @@ void readLine(std::string& out)
 		while (out.size() && (out.back() == '\n' || out.back() == '\r')) {
 			out.pop_back();
 		}
+	}
+	for (size_t i = 0; i < 512; i++) {
+		buf[i] = 0;
 	}
 #else
 	std::getline(std::cin, out);

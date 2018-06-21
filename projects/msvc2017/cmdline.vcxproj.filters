@@ -99,6 +99,9 @@
     <ClCompile Include="..\..\src\scrypt\warnp.c">
       <Filter>Quelldateien\scrypt</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\crypt_help.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\bcrypt\crypt_blowfish.h">
@@ -175,6 +178,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\scrypt\warnp.h">
       <Filter>Headerdateien\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\crypt_help.h">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

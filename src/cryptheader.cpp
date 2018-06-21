@@ -17,7 +17,7 @@ GNU General Public License for more details.
 #include "tinyxml2/tinyxml2.h"
 #include "cryptheader.h"
 #include "exception.h"
-#include "preferences.h"
+//#include "preferences.h"
 #include "crypt_help.h"
 
 inline bool cmpchars(const char* s1, const char* s2, int len)
@@ -101,7 +101,7 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			hmac.keypreset_id = -1;
 		}
 		if (hmac.keypreset_id >= 0) {
-			hmac.hash.key.set(preferences.getKey((size_t)hmac.keypreset_id), 16);
+			//hmac.hash.key.set(preferences.getKey((size_t)hmac.keypreset_id), 16);
 		}
 		hmac.enable = true;
 		hmac.hash.use_key = true;
