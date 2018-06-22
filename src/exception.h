@@ -45,6 +45,8 @@ public:
 		salt_missing,
 		iv_missing,
 		keylength_missing,
+		hmac_key_missing,
+		cipher_mode_missing,
 		authentication_failed,
 		hmac_auth_failed,
 		decode_base16,

@@ -145,8 +145,17 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			throw CExc(CExc::Code::invalid_keylength);
 		}
 		t = xml_crypt->Attribute("mode");
-		if (!crypt::help::getCipherMode(t, t_options.mode)) {
-			throw CExc(CExc::Code::invalid_mode);
+		if (t) {
+			if (!crypt::help::getCipherMode(t, t_options.mode)) {
+				throw CExc(CExc::Code::invalid_mode);
+			}
+			if (!crypt::help::checkCipherMode(t_options.cipher, t_options.mode)) {
+				throw CExc(CExc::Code::invalid_mode);
+			}
+		} else {
+			if (!crypt::help::checkProperty(t_options.cipher, crypt::STREAM)) {
+				throw CExc(CExc::Code::cipher_mode_missing);
+			}
 		}
 		t = xml_crypt->Attribute("encoding");
 		if (!crypt::help::getEncoding(t, t_options.encoding.enc)) {
@@ -247,7 +256,12 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			}
 		}
 	}
-	options = t_options;
+
+	options.cipher = t_options.cipher;
+	options.iv = t_options.iv;
+	options.key = t_options.key;
+	options.mode = t_options.mode;
+
 	if (in[offset + 11] == '\r' && in[offset + 12] == '\n') {
 		pEncryptedData = in + offset + 13;
 		encryptedDataLen = in_len - offset - 13;
@@ -346,8 +360,11 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	}
 	out << ">" << linebreak;
 	body_start = static_cast<size_t>(out.tellp());
-	out << "<encryption cipher=\"" << crypt::help::getString(options.cipher) << "\" key-length=\"" << options.key.length << "\" mode=\"" << crypt::help::getString(options.mode)
-		<< "\" encoding=\"" << crypt::help::getString(options.encoding.enc) << "\" ";
+	out << "<encryption cipher=\"" << crypt::help::getString(options.cipher) << "\" key-length=\"" << options.key.length << "\"";
+	if (!crypt::help::checkProperty(options.cipher, crypt::STREAM)) {
+		out << " mode=\"" << crypt::help::getString(options.mode) << "\"";
+	}
+	out << " encoding=\"" << crypt::help::getString(options.encoding.enc) << "\" ";
 	if (s_init.tag.size()) {
 		s_init.tag.get(temp_s, crypt::Encoding::base64);
 		out << "tag=\"" << temp_s << "\" ";

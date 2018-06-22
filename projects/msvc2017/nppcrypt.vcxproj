@@ -172,7 +172,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <OutDir>..\..\..\..\..\..\..\..\Program Files\Notepad++\plugins</OutDir>
+    <OutDir>$(SolutionDir)..\..\bin\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\..\obj\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</IntDir>
     <TargetName>nppcrypt</TargetName>
   </PropertyGroup>

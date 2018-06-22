@@ -194,6 +194,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						if (crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
 							throw CExc(CExc::Code::invalid_presetkey);
 						} else {
+							crypt.hmac.hash.key.set(preferences.getKey(crypt.hmac.keypreset_id), 16);
 							if (!header.checkHMAC()) {
 								throw CExc(CExc::Code::hmac_auth_failed);
 							}
@@ -383,6 +384,7 @@ void DecryptDlg()
 					if (current.crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
 						throw CExc(CExc::Code::invalid_presetkey);
 					} else {
+						current.crypt.hmac.hash.key.set(preferences.getKey(current.crypt.hmac.keypreset_id), 16);
 						if (!header.checkHMAC()) {
 							throw CExc(CExc::Code::hmac_auth_failed);
 						}

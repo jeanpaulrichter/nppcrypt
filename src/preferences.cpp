@@ -333,7 +333,7 @@ void CPreferences::validate(CurrentOptions& current)
 	if (int(current.crypt.options.cipher) < 0 || int(current.crypt.options.cipher) >= int(crypt::Cipher::COUNT)) {
 		current.crypt.options.cipher = crypt::Cipher::rijndael;
 	}
-	if (int(current.crypt.options.mode) < 0 || int(current.crypt.options.mode) >= int(crypt::Mode::COUNT) || !crypt::help::validCipherMode(current.crypt.options.cipher, current.crypt.options.mode)) {
+	if (int(current.crypt.options.mode) < 0 || int(current.crypt.options.mode) >= int(crypt::Mode::COUNT) || !crypt::help::checkCipherMode(current.crypt.options.cipher, current.crypt.options.mode)) {
 		current.crypt.options.mode = crypt::Mode::cbc;
 	}
 	if (int(current.crypt.options.iv) < 0 || int(current.crypt.options.iv) >= int(crypt::IV::COUNT)) {

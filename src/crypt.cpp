@@ -786,7 +786,7 @@ namespace intern
 		return NULL;
 	}
 
-	CryptoPP::HashTransformation* getHashTransformation(const crypt::Options::Hash options)
+	CryptoPP::HashTransformation* getHashTransformation(crypt::Options::Hash options)
 	{
 		using namespace CryptoPP;
 
@@ -794,19 +794,22 @@ namespace intern
 			switch (options.algorithm) {
 			case Hash::blake2b:
 			{
-				if (options.digest_length >= 1 && options.digest_length <= 64) {
-					return new BLAKE2b(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0Ui64, false, (unsigned int)options.digest_length);
+				if (options.digest_length < 1 || options.digest_length > 64) {
+					options.digest_length = 32;
 				}
+				return new BLAKE2b(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0Ui64, false, (unsigned int)options.digest_length);
 				break;
 			}
 			case Hash::blake2s:
 			{
-				if (options.digest_length >= 1 && options.digest_length <= 32) {
-					return new BLAKE2s(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0Ui64, false, (unsigned int)options.digest_length);
+				if (options.digest_length < 1 && options.digest_length > 32) {
+					options.digest_length = 32;
 				}
+				return new BLAKE2s(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0Ui64, false, (unsigned int)options.digest_length);
 				break;
 			}
 			case Hash::cmac_aes:
+				options.digest_length = 16;
 				return new CMAC<AES>(options.key.BytePtr(), options.key.size());
 			case Hash::keccak:
 			{
@@ -818,12 +821,27 @@ namespace intern
 					return new HMAC<Keccak_384>(options.key.BytePtr(), options.key.size());
 				} else if (options.digest_length == 64) {
 					return new HMAC<Keccak_512>(options.key.BytePtr(), options.key.size());
+				} else {
+					options.digest_length = 32;
+					return new HMAC<Keccak_256>(options.key.BytePtr(), options.key.size());
 				}
 				break;
 			}
-			case Hash::md2: return new HMAC<Weak::MD2>(options.key.BytePtr(), options.key.size());
-			case Hash::md4: return new HMAC<Weak::MD4>(options.key.BytePtr(), options.key.size());
-			case Hash::md5: return new HMAC<Weak::MD5>(options.key.BytePtr(), options.key.size());
+			case Hash::md2:
+			{
+				options.digest_length = 16;
+				return new HMAC<Weak::MD2>(options.key.BytePtr(), options.key.size());
+			}
+			case Hash::md4:
+			{
+				options.digest_length = 16;
+				return new HMAC<Weak::MD4>(options.key.BytePtr(), options.key.size());
+			}
+			case Hash::md5:
+			{
+				options.digest_length = 16;
+				return new HMAC<Weak::MD5>(options.key.BytePtr(), options.key.size());
+			}
 			case Hash::ripemd:
 			{
 				if (options.digest_length == 16) {
@@ -834,10 +852,17 @@ namespace intern
 					return new HMAC<RIPEMD256>(options.key.BytePtr(), options.key.size());
 				} else if (options.digest_length == 40) {
 					return new HMAC<RIPEMD320>(options.key.BytePtr(), options.key.size());
+				} else {
+					options.digest_length = 32;
+					return new HMAC<RIPEMD256>(options.key.BytePtr(), options.key.size());
 				}
 				break;
 			}
-			case Hash::sha1: return new HMAC<SHA1>(options.key.BytePtr(), options.key.size());
+			case Hash::sha1:
+			{
+				options.digest_length = 20;
+				return new HMAC<SHA1>(options.key.BytePtr(), options.key.size());
+			}
 			case Hash::sha2:
 			{
 				if (options.digest_length == 28) {
@@ -848,6 +873,9 @@ namespace intern
 					return new HMAC<SHA384>(options.key.BytePtr(), options.key.size());
 				} else if (options.digest_length == 64) {
 					return new HMAC<SHA512>(options.key.BytePtr(), options.key.size());
+				} else {
+					options.digest_length = 32;
+					return new HMAC<SHA256>(options.key.BytePtr(), options.key.size());
 				}
 				break;
 			}
@@ -861,6 +889,9 @@ namespace intern
 					return new HMAC<SHA3_384>(options.key.BytePtr(), options.key.size());
 				} else if (options.digest_length == 64) {
 					return new HMAC<SHA3_512>(options.key.BytePtr(), options.key.size());
+				} else {
+					options.digest_length = 32;
+					return new HMAC<SHA3_256>(options.key.BytePtr(), options.key.size());
 				}
 				break;
 			}
@@ -869,6 +900,9 @@ namespace intern
 				if (options.digest_length == 8) {
 					return new SipHash<2, 4, false>(options.key.BytePtr(), (unsigned int)options.key.size());
 				} else if (options.digest_length == 16) {
+					return new SipHash<2, 4, true>(options.key.BytePtr(), (unsigned int)options.key.size());
+				} else {
+					options.digest_length = 16;
 					return new SipHash<2, 4, true>(options.key.BytePtr(), (unsigned int)options.key.size());
 				}
 				break;
@@ -879,37 +913,57 @@ namespace intern
 					return new SipHash<4, 8, false>(options.key.BytePtr(), (unsigned int)options.key.size());
 				} else if (options.digest_length == 16) {
 					return new SipHash<4, 8, true>(options.key.BytePtr(), (unsigned int)options.key.size());
+				} else {
+					options.digest_length = 16;
+					return new SipHash<4, 8, true>(options.key.BytePtr(), (unsigned int)options.key.size());
 				}
 				break;
 			}
-			case Hash::sm3: return new HMAC<SM3>(options.key.BytePtr(), options.key.size());
+			case Hash::sm3:
+			{
+				options.digest_length = 32;
+				return new HMAC<SM3>(options.key.BytePtr(), options.key.size());
+			}
 			case Hash::tiger:
 			{
-				if (options.digest_length == 16 || options.digest_length == 20 || options.digest_length == 24) {
-					return new HMAC<Tiger>(options.key.BytePtr(), options.key.size());
-				}
+				options.digest_length = 24;
+				return new HMAC<Tiger>(options.key.BytePtr(), options.key.size());
 				break;
 			}
-			case Hash::whirlpool: return new HMAC<Whirlpool>(options.key.BytePtr(), options.key.size());
+			case Hash::whirlpool:
+			{
+				options.digest_length = 64;
+				return new HMAC<Whirlpool>(options.key.BytePtr(), options.key.size());
+			}
 			}
 		} else {
 			switch (options.algorithm) {
-			case Hash::adler32: return new Adler32;
+			case Hash::adler32:
+			{
+				options.digest_length = 4;
+				return new Adler32;
+			}
 			case Hash::blake2b:
 			{
-				if (options.digest_length >= 1 && options.digest_length <= 64) {
-					return new BLAKE2b(false, (unsigned int)options.digest_length);
+				if (options.digest_length < 1 || options.digest_length > 64) {
+					options.digest_length = 32;
 				}
+				return new BLAKE2b(false, (unsigned int)options.digest_length);
 				break;
 			}
 			case Hash::blake2s:
 			{
-				if (options.digest_length >= 1 && options.digest_length <= 32) {
-					return new BLAKE2s(false, (unsigned int)options.digest_length);
+				if (options.digest_length < 1 || options.digest_length > 32) {
+					options.digest_length = 32;
 				}
+				return new BLAKE2s(false, (unsigned int)options.digest_length);
 				break;
 			}
-			case Hash::crc32: return new CRC32;
+			case Hash::crc32:
+			{
+				options.digest_length = 4;
+				return new CRC32;
+			}
 			case Hash::keccak:
 			{
 				if (options.digest_length == 28) {
@@ -920,12 +974,27 @@ namespace intern
 					return new Keccak_384;
 				} else if (options.digest_length == 64) {
 					return new Keccak_512;
+				} else {
+					options.digest_length = 32;
+					return new Keccak_256;
 				}
 				break;
 			}
-			case Hash::md2: return new Weak::MD2;
-			case Hash::md4: return new Weak::MD4;
-			case Hash::md5: return new Weak::MD5;
+			case Hash::md2:
+			{
+				options.digest_length = 16;
+				return new Weak::MD2;
+			}
+			case Hash::md4:
+			{
+				options.digest_length = 16;
+				return new Weak::MD4;
+			}
+			case Hash::md5:
+			{
+				options.digest_length = 16;
+				return new Weak::MD5;
+			}
 			case Hash::ripemd:
 			{
 				if (options.digest_length == 16) {
@@ -936,10 +1005,17 @@ namespace intern
 					return new RIPEMD256;
 				} else if (options.digest_length == 40) {
 					return new RIPEMD320;
+				} else {
+					options.digest_length = 32;
+					return new RIPEMD256;
 				}
 				break;
 			}
-			case Hash::sha1: return new SHA1;
+			case Hash::sha1:
+			{
+				options.digest_length = 20;
+				return new SHA1;
+			}
 			case Hash::sha2:
 			{
 				if (options.digest_length == 28) {
@@ -950,6 +1026,9 @@ namespace intern
 					return new SHA384;
 				} else if (options.digest_length == 64) {
 					return new SHA512;
+				} else {
+					options.digest_length = 32;
+					return new SHA256;
 				}
 				break;
 			}
@@ -963,6 +1042,9 @@ namespace intern
 					return new SHA3_384;
 				} else if (options.digest_length == 64) {
 					return new SHA3_512;
+				} else {
+					options.digest_length = 32;
+					return new SHA3_256;
 				}
 				break;
 			}
@@ -971,6 +1053,9 @@ namespace intern
 				if (options.digest_length == 8) {
 					return new SipHash<2, 4, false>;
 				} else if (options.digest_length == 16) {
+					return new SipHash<2, 4, true>;
+				} else {
+					options.digest_length = 16;
 					return new SipHash<2, 4, true>;
 				}
 				break;
@@ -981,12 +1066,27 @@ namespace intern
 					return new SipHash<4, 8, false>;
 				} else if (options.digest_length == 16) {
 					return new SipHash<4, 8, true>;
+				} else {
+					options.digest_length = 16;
+					return new SipHash<4, 8, true>;
 				}
 				break;
 			}
-			case Hash::sm3: return new SM3;
-			case Hash::tiger: return new Tiger;
-			case Hash::whirlpool: return new Whirlpool;
+			case Hash::sm3:
+			{
+				options.digest_length = 32;
+				return new SM3;
+			}
+			case Hash::tiger:
+			{
+				options.digest_length = 24;
+				return new Tiger;
+			}
+			case Hash::whirlpool:
+			{
+				options.digest_length = 64;
+				return new Whirlpool;
+			}
 			}
 		}
 		return NULL;
@@ -1619,7 +1719,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	intern::calcKey(tKey, options.password, init.salt, options.key);
 
 	try	{
-		if (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax) {
+		if (block_size && (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax)) {
 			std::unique_ptr<AuthenticatedSymmetricCipher> penc(intern::getAuthenticatedCipher(options.cipher, options.mode, true));
 			if (!penc) {
 				throw CExc(CExc::Code::invalid_mode);
@@ -1800,7 +1900,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	intern::calcKey(tKey, options.password, init.salt, options.key);
 
 	try	{
-		if (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax) {
+		if (block_size && (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax)) {
 			std::unique_ptr<AuthenticatedSymmetricCipher> penc(intern::getAuthenticatedCipher(options.cipher, options.mode, false));
 
 			int tag_size;
@@ -1924,15 +2024,14 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	}
 }
 
-void crypt::hash(const Options::Hash& options, std::basic_string<byte>& buffer, std::initializer_list<std::pair<const byte*, size_t>> in)
+void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, std::initializer_list<std::pair<const byte*, size_t>> in)
 {
 	try	{
 		using namespace CryptoPP;
 		using namespace std;
 
 		size_t keylength;
-		size_t digest_length = options.digest_length;
-		if (!getHashInfo(options.algorithm, digest_length, keylength)) {
+		if (!getHashInfo(options.algorithm, options.digest_length, keylength)) {
 			throw CExc(CExc::Code::invalid_hash);
 		}
 		if (keylength != 0 && options.use_key && options.key.size() != keylength) {
@@ -1950,6 +2049,7 @@ void crypt::hash(const Options::Hash& options, std::basic_string<byte>& buffer, 
 		}
 		phash->Final(digest);
 
+		buffer.clear();
 		switch (options.encoding)
 		{
 		case crypt::Encoding::ascii:
@@ -1980,7 +2080,7 @@ void crypt::hash(const Options::Hash& options, std::basic_string<byte>& buffer, 
 	}
 }
 
-void crypt::hash(const Options::Hash& options, std::basic_string<byte>& buffer, const std::string& path)
+void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, const std::string& path)
 {
 	try {
 		using namespace CryptoPP;
@@ -1995,6 +2095,7 @@ void crypt::hash(const Options::Hash& options, std::basic_string<byte>& buffer, 
 
 		FileSource f(path.c_str(), true, new HashFilter(*phash, new ArraySink(digest, digest.size())));
 
+		buffer.clear();
 		switch (options.encoding)
 		{
 		case crypt::Encoding::ascii:

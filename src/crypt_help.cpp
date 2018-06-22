@@ -447,26 +447,6 @@ int crypt::help::getModeIndex(crypt::Cipher cipher, crypt::Mode mode)
 	return -1;
 }
 
-bool crypt::help::validCipherMode(crypt::Cipher cipher, crypt::Mode mode)
-{
-	if (mode == Mode::eax) {
-		if ((cipher_properties[int(cipher)] & EAX) == EAX) {
-			return true;
-		}
-	} else if (mode == Mode::ccm) {
-		if ((cipher_properties[int(cipher)] & CCM) == CCM) {
-			return true;
-		}
-	} else if (mode == Mode::gcm) {
-		if ((cipher_properties[int(cipher)] & GCM) == GCM) {
-			return true;
-		}
-	} else {
-		return true;
-	}
-	return false;
-}
-
 int crypt::help::getCipherCategory(Cipher cipher)
 {
 	for (int i = CIPHER_CAT_COUNT - 1; i >= 0; i--) {
@@ -569,6 +549,26 @@ int crypt::help::getHashDigestIndex(Hash h, unsigned int digest)
 		i++;
 	}
 	return 0;
+}
+
+bool crypt::help::checkCipherMode(crypt::Cipher cipher, crypt::Mode mode)
+{
+	if (mode == Mode::eax) {
+		if ((cipher_properties[int(cipher)] & EAX) == EAX) {
+			return true;
+		}
+	} else if (mode == Mode::ccm) {
+		if ((cipher_properties[int(cipher)] & CCM) == CCM) {
+			return true;
+		}
+	} else if (mode == Mode::gcm) {
+		if ((cipher_properties[int(cipher)] & GCM) == GCM) {
+			return true;
+		}
+	} else {
+		return true;
+	}
+	return false;
 }
 
 bool crypt::help::checkProperty(crypt::Cipher cipher, int filter)

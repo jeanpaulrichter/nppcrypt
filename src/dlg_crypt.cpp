@@ -20,6 +20,7 @@ GNU General Public License for more details.
 #include "help.h"
 #include "exception.h"
 #include "crypt_help.h"
+#include <sstream>
 
 DlgCrypt::DlgCrypt() : ModalDialog()
 {

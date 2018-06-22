@@ -43,7 +43,7 @@ namespace crypt
 		static bool			getRandomRestriction(const char* s, UserData::Restriction& r);
 		static bool			getEOL(const char* s, EOL& eol);
 
-		static bool			validCipherMode(Cipher cipher, Mode mode);
+		static bool			checkCipherMode(Cipher cipher, Mode mode);
 		static bool			checkProperty(Cipher cipher, int filter);
 		static bool			checkProperty(Hash h, int filter);
 		static bool			checkHashDigest(Hash h, unsigned int digest);

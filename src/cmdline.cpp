@@ -62,7 +62,7 @@ struct Arguments
 	std::string iv;
 	std::string salt;
 	std::string hmac;
-	std::string hmac_password;
+	std::string hmac_key;
 };
 
 struct CLIOptions
@@ -79,7 +79,7 @@ struct CLIOptions
 	CLI::Option* iv;
 	CLI::Option* salt;
 	CLI::Option* hmac;
-	CLI::Option* hmac_password;
+	CLI::Option* hmac_key;
 	CLI::Option* action;
 	CLI::Option* noheader;
 	CLI::Option* silent;
@@ -183,7 +183,7 @@ void splitArgument(std::string& arg, std::vector<size_t>& pos, char delimiter)
 	}
 }
 
-bool setUserData(const char* s, size_t len, crypt::UserData& d)
+bool setUserData(const char* s, size_t len, crypt::UserData& d, crypt::Encoding default_enc)
 {
 	if (len > 4 && s[0] == 'h' && s[1] == 'e' && s[2] == 'x'  && s[3] == ':') {
 		d.set(s + 4, len - 4, crypt::Encoding::base16);
@@ -191,10 +191,54 @@ bool setUserData(const char* s, size_t len, crypt::UserData& d)
 		d.set(s + 7, len - 7, crypt::Encoding::base32);
 	} else if (len > 7 && s[0] == 'b' && s[1] == 'a' && s[2] == 's'  && s[3] == 'e'  && s[4] == '6'  && s[5] == '4'  && s[6] == ':') {
 		d.set(s + 7, len - 7, crypt::Encoding::base64);
-	} else {
+	} else if (len > 5 && s[0] == 'u' && s[1] == 't' && s[2] == 'f' && s[3] == '8' && s[4] == ':') {
 		d.set(s, len, crypt::Encoding::ascii);
+	} else {
+		d.set(s, len, default_enc);
 	}
 	return (d.size() > 0);
+}
+
+bool getUserInput(const char* msg, crypt::UserData& data, crypt::Encoding default_enc, size_t trys, bool repeat, bool echo)
+{
+	crypt::secure_string input1, input2;
+	size_t counter = 0;
+	setEcho(echo);
+	while (true) {
+		std::cout << msg << ": ";
+		readLine(input1);
+		if (repeat) {
+			std::cout << std::endl << "repeat: ";
+			readLine(input2);
+			std::cout << std::endl;
+			if (input1.compare(input2) != 0) {
+				std::cout << "input did not match!" << std::endl;
+				continue;
+			}
+		}
+		if (setUserData(input1.c_str(), input1.size(), data, default_enc)) {
+			break;
+		} else {
+			std::cout << "invalid input (empty)." << std::endl;
+		}
+		counter++;
+		if (counter >= trys) {
+			setEcho(true);
+			return false;
+		}
+	}
+	setEcho(true);
+	return true;
+}
+
+void checkPassword(CLI::Option* opt, std::string& arg, crypt::Options::Crypt& options)
+{
+	if (opt->count()) {
+		setUserData(arg.c_str(), arg.size(), options.password, crypt::Encoding::ascii);
+		for (size_t i = 0; i < arg.size(); i++) {
+			arg[i] = 0;
+		}
+	}
 }
 
 // check -c --cipher argument
@@ -209,19 +253,27 @@ void checkCipher(CLI::Option* opt, const std::string& arg, crypt::Options::Crypt
 			throw CExc(CExc::Code::invalid_cipher);
 		}
 		if (pos.size() > 1) {
-			options.key.length = std::atoi(&s[pos[1]]);
+			options.key.length = std::atoi(&s[pos[1]]) / 8;
+			if (!crypt::help::checkCipherKeylength(options.cipher, (size_t)options.key.length)) {
+				throw CExc(CExc::Code::invalid_keylength);
+			}
+			if (pos.size() > 2) {
+				if (!crypt::help::getCipherMode(&s[pos[2]], options.mode)) {
+					throw CExc(CExc::Code::invalid_mode);
+				}
+				if (!crypt::help::checkCipherMode(options.cipher, options.mode)) {
+					throw CExc(CExc::Code::invalid_mode);
+				}
+			} else {
+				if (!crypt::help::checkProperty(options.cipher, crypt::STREAM)) {
+					if (crypt::help::checkCipherMode(options.cipher, crypt::Mode::gcm)) {
+						options.mode = crypt::Mode::gcm;
+					} else {
+						options.mode = crypt::Mode::cbc;
+					}
+				}
+			}
 		}
-	}
-	if (opt->count() && !crypt::help::getCipher(arg.c_str(), options.cipher)) {
-		throw CExc(CExc::Code::invalid_cipher);
-	}
-}
-
-// check -m --mode argument
-void checkCipherMode(CLI::Option* opt, const std::string& arg, crypt::Options::Crypt& options)
-{
-	if (opt->count() && !crypt::help::getCipherMode(arg.c_str(), options.mode)) {
-		throw CExc(CExc::Code::invalid_mode);
 	}
 }
 
@@ -349,34 +401,44 @@ void checkKeyDerivation(CLI::Option* opt, const std::string& arg, crypt::Options
 }
 
 // check --hmac, example:
-//   --hmac md5:thisisakey
+//   --hmac md5:128
 void checkHMAC(CLI::Option* opt, const std::string& arg, CryptHeaderWriter::HMAC& hmac)
 {
 	hmac.enable = false;
 	hmac.keypreset_id = -1;
 	if (opt->count()) {
-		std::string tstr(arg);
-		size_t tpos = tstr.find_first_of(':');
-		if (tpos == 0 || tpos == std::string::npos || tpos + 1 == tstr.size()) {
+		std::string s(arg);
+		std::vector<size_t> pos;
+		splitArgument(s, pos, ':');
+
+		if (!crypt::help::getHash(s.c_str(), hmac.hash.algorithm) || !crypt::help::checkProperty(hmac.hash.algorithm, crypt::HMAC_SUPPORT)) {
 			throw CExc(CExc::Code::invalid_hmac_hash);
 		}
-		tstr[tpos] = 0;
-		crypt::Hash thash;
-		if (!crypt::help::getHash(tstr.c_str(), thash) || !crypt::help::checkProperty(thash, crypt::HMAC_SUPPORT)) {
-			throw CExc(CExc::Code::invalid_hmac_hash);
+		if (pos.size() > 1) {
+			hmac.hash.digest_length = (size_t)std::atoi(&s[pos[1]]) / 8;
+			if (!crypt::help::checkHashDigest(hmac.hash.algorithm, hmac.hash.digest_length)) {
+				throw CExc(CExc::Code::invalid_hmac_hash);
+			}
 		}
 		hmac.enable = true;
-		hmac.hash.algorithm = thash;
 		hmac.hash.use_key = true;
-		hmac.hash.key.set((byte*)tstr.c_str() + tpos + 1, tstr.size() - tpos -1);
 	}
 }
+
+// check -s --salt
+void checkHMACKey(CLI::Option* opt, const std::string& arg, CryptHeader::HMAC& hmac)
+{
+	if (opt->count()) {
+		setUserData(arg.c_str(), arg.size(), hmac.hash.key, crypt::Encoding::ascii);
+	}
+}
+
 
 // check -t --tag
 void checkTag(CLI::Option* opt, const std::string& arg, crypt::InitData& initdata)
 {
 	if (opt->count()) {
-		setUserData(arg.c_str(), arg.size(), initdata.tag);
+		setUserData(arg.c_str(), arg.size(), initdata.tag, crypt::Encoding::base64);
 	}
 }
 
@@ -392,7 +454,7 @@ void checkIV(CLI::Option* opt, const std::string& arg, crypt::Options::Crypt& op
 			options.iv = crypt::IV::keyderivation;
 		} else {
 			options.iv = crypt::IV::custom;
-			if (!setUserData(arg.c_str(), arg.size(), initdata.iv)) {
+			if (!setUserData(arg.c_str(), arg.size(), initdata.iv, crypt::Encoding::base64)) {
 				throw CExc(CExc::Code::iv_missing);
 			}
 		}
@@ -403,7 +465,7 @@ void checkIV(CLI::Option* opt, const std::string& arg, crypt::Options::Crypt& op
 void checkSalt(CLI::Option* opt, const std::string& arg, crypt::InitData& initdata, crypt::Options::Crypt& options)
 {
 	if (opt->count()) {
-		setUserData(arg.c_str(), arg.size(), initdata.salt);
+		setUserData(arg.c_str(), arg.size(), initdata.salt, crypt::Encoding::base64);
 		options.key.salt_bytes = (int)initdata.salt.size();
 	}
 }
@@ -416,15 +478,12 @@ void printOptions(const crypt::Options::Crypt& options)
 	size_t c_ivlen, c_blocksize;
 	getCipherInfo(options.cipher, options.mode, c_keylen, c_ivlen, c_blocksize);
 
-	std::cout << "options: " << help::getString(options.cipher) << " (key-length: " << c_keylen << " bytes, IV-length: " << c_ivlen << " bytes";
-	if (c_blocksize > 0) {
-		std::cout << ", blocksize: " << c_blocksize << " bytes";
+	std::cout << "options: " << help::getString(options.cipher) << "-" << c_keylen * 8;
+	if (!crypt::help::checkProperty(options.cipher, crypt::STREAM)) {
+		std::cout << "-" << crypt::help::getString(options.mode);
 	}
-	std::cout << ")";
-	if (help::validCipherMode(options.cipher, options.mode)) {
-		std::cout << ", " << help::getString(options.mode);
-	}	
-	std::cout << ", " << help::getString(options.key.algorithm);
+	std::cout << ", iv: " << c_ivlen << " bytes (" << help::getString(options.iv) << "), " << help::getString(options.key.algorithm);;
+
 	switch (options.key.algorithm) {
 	case KeyDerivation::pbkdf2:
 	{
@@ -441,7 +500,7 @@ void printOptions(const crypt::Options::Crypt& options)
 		std::cout << " (N:2^" << options.key.options[0] << ", r:" << options.key.options[1] << ", p:" << options.key.options[2] << ")";
 	}
 	}
-	std::cout << ", IV: " << help::getString(options.iv) << ", encoding: " << help::getString(options.encoding.enc) << std::endl;
+	std::cout << ", encoding: " << help::getString(options.encoding.enc) << std::endl;
 }
 
 // printout initialization data
@@ -463,29 +522,53 @@ void printInitData(const crypt::Options::Crypt& options, const crypt::InitData& 
 	}
 }
 
-void hash(const Arguments& args, const CLIOptions& opt, const byte* input, size_t input_length)
+void hash(const Arguments& args, const CLIOptions& opt, const byte* input, size_t input_length, bool isfile = false)
 {
 	std::basic_string<byte>		buffer;
 	std::vector<std::string>	digests;
 	crypt::Options::Hash		options;
 	std::ostringstream			out;
-	static const crypt::Hash	thashes[3] = { crypt::Hash::md5, crypt::Hash::sha1, crypt::Hash::sha3 };
+	static const crypt::Hash	thashes[5] = { crypt::Hash::crc32, crypt::Hash::md5, crypt::Hash::sha1, crypt::Hash::sha2, crypt::Hash::sha3 };
+	static const size_t			thashes_digests[5] = { 4, 16, 20, 32, 32 };
 
 	if (opt.encoding->count() && !crypt::help::getEncoding(args.encoding.c_str(), options.encoding)) {
 		throw CExc(CExc::Code::invalid_encoding);
 	}
 
 	if (opt.hash->count()) {
-		if (!crypt::help::getHash(args.hash.c_str(), options.algorithm)) {
+		std::string s(args.hash);
+		std::vector<size_t> pos;
+		splitArgument(s, pos, ':');
+
+		if (!crypt::help::getHash(s.c_str(), options.algorithm)) {
 			throw CExc(CExc::Code::invalid_hash);
 		}
-		crypt::hash(options, buffer, { { input, input_length } });
-		digests.push_back(std::string(buffer.begin(), buffer.end()));
-		out << crypt::help::getString(options.algorithm) << ": " << (const char*)buffer.c_str() << std::endl;
-	} else {		
-		for (size_t i = 0; i < 3; i++) {
-			options.algorithm = thashes[i];
+		if (pos.size() > 1) {
+			options.digest_length = std::atoi(&s[pos[1]]) / 8;
+			if (!crypt::help::checkHashDigest(options.algorithm, options.digest_length)) {
+				throw CExc(CExc::Code::invalid_hash);
+			}
+		} else {
+			options.digest_length = 0;
+		}
+		if (isfile) {
+			std::string filename((const char*)input, input_length);
+			crypt::hash(options, buffer, filename);
+		} else {
 			crypt::hash(options, buffer, { { input, input_length } });
+		}
+		digests.push_back(std::string(buffer.begin(), buffer.end()));
+		out << crypt::help::getString(options.algorithm) << "-" << options.digest_length * 8 << ": " << (const char*)buffer.c_str() << std::endl;
+	} else {		
+		for (size_t i = 0; i < 5; i++) {
+			options.algorithm = thashes[i];
+			options.digest_length = thashes_digests[i];
+			if (isfile) {
+				std::string filename((const char*)input, input_length);
+				crypt::hash(options, buffer, filename);
+			} else {
+				crypt::hash(options, buffer, { { input, input_length } });
+			}
 			digests.push_back(std::string(buffer.begin(), buffer.end()));
 			out << crypt::help::getString(options.algorithm) << ": " << (const char*)buffer.c_str() << std::endl;
 		}
@@ -524,7 +607,7 @@ void hash(const Arguments& args, const CLIOptions& opt, const byte* input, size_
 	}
 }
 
-void decrypt(const Arguments& args, const CLIOptions& opt, const byte* input, size_t input_length)
+void decrypt(Arguments& args, const CLIOptions& opt, const byte* input, size_t input_length)
 {
 	std::basic_string<byte>	outputData;
 	crypt::Options::Crypt	options;
@@ -540,24 +623,17 @@ void decrypt(const Arguments& args, const CLIOptions& opt, const byte* input, si
 		throw CExc(CExc::Code::only_utf8_decrypt);
 	}
 
-	if (!opt.password->count() || args.password.size() == 0) {
-		if (!*opt.nointeraction) {
-			setEcho(false);
-			std::cout << "enter password: ";
-			crypt::secure_string password;
-			readLine(password);
-			options.password.set(password.c_str(), password.size(), crypt::Encoding::ascii);
-			std::cout << std::endl;
-			setEcho(true);
-		} else {
+	checkPassword(opt.password, args.password, options);
+	if (!options.password.size()) {
+		if (*opt.nointeraction) {
 			throw CExc(CExc::Code::password_missing);
 		}
-	} else {
-		options.password.set(args.password.c_str(), args.password.size(), crypt::Encoding::ascii);
+		if (!getUserInput("enter password", options.password, crypt::Encoding::ascii, 3, true, false)) {
+			throw CExc(CExc::Code::password_missing);
+		}
 	}
 
 	checkCipher(opt.cipher, args.cipher, options);
-	checkCipherMode(opt.mode, args.mode, options);
 	checkKeyDerivation(opt.keyderivation, args.keyderivation, options);
 	checkTag(opt.tag, args.tag, init);
 	checkIV(opt.iv, args.iv, options, init);
@@ -572,11 +648,10 @@ void decrypt(const Arguments& args, const CLIOptions& opt, const byte* input, si
 			printOptions(options);
 		}
 		if (!*opt.nointeraction) {
-			if ((options.mode == crypt::Mode::ccm || options.mode == crypt::Mode::gcm || options.mode == crypt::Mode::eax) && !init.tag.size()) {
-				std::cout << "tag data missing. please specify (base64): ";
-				crypt::secure_string tstr;
-				readLine(tstr);
-				setUserData(tstr.c_str(), tstr.size(), init.tag);
+			if (!crypt::help::checkProperty(options.cipher, crypt::STREAM) && (options.mode == crypt::Mode::ccm || options.mode == crypt::Mode::gcm || options.mode == crypt::Mode::eax) && !init.tag.size()) {
+				if (!getUserInput("please specify tag", init.tag, crypt::Encoding::base64, 2, false, true)) {
+					throw CExc(CExc::Code::invalid_tag);
+				}
 			}
 		}
 		if (!*opt.silent) {
@@ -588,24 +663,17 @@ void decrypt(const Arguments& args, const CLIOptions& opt, const byte* input, si
 				// nppcrypt preferences file not present
 				std::cout << "hmac authentication skipped (presets not available)." << std::endl;
 			} else {
-				if (opt.hmac_password->count()) {
-					if (!header.checkHMAC()) {
-						throw CExc(CExc::Code::hmac_auth_failed);
+				checkHMACKey(opt.hmac_key, args.hmac_key, hmac);
+				if (!hmac.hash.key.size()) {
+					if (*opt.nointeraction) {
+						throw CExc(CExc::Code::hmac_key_missing);
 					}
-				} else {
-					if (!*opt.nointeraction) {
-						std::cout << "hmac password missing. please specify: ";
-						crypt::secure_string input;
-						setEcho(false);
-						readLine(input);
-						setEcho(true);
-						std::cout << std::endl;
-						if (!header.checkHMAC()) {
-							throw CExc(CExc::Code::hmac_auth_failed);
-						}
-					} else {
-						std::cout << "hmac authentication skipped (--hmac-password missing)" << std::endl;
+					if (!getUserInput("enter HMAC key", hmac.hash.key, crypt::Encoding::ascii, 3, true, false)) {
+						throw CExc(CExc::Code::hmac_key_missing);
 					}
+				}
+				if (!header.checkHMAC()) {
+					throw CExc(CExc::Code::hmac_auth_failed);
 				}
 			}
 		}
@@ -621,22 +689,19 @@ void decrypt(const Arguments& args, const CLIOptions& opt, const byte* input, si
 		}
 		if (!*opt.nointeraction) {
 			if (options.key.salt_bytes > 0 && !init.salt.size()) {
-				std::cout << "salt data missing. please specify: ";
-				crypt::secure_string temp;
-				readLine(temp);
-				setUserData(temp.c_str(), temp.size(), init.salt);
+				if (!getUserInput("salt data missing. please specify", init.salt, crypt::Encoding::base64, 2, false, true)) {
+					throw CExc(CExc::Code::salt_missing);
+				}
 			}
 			if (options.iv == crypt::IV::random && !init.iv.size()) {
-				std::cout << "IV data missing. please specify: ";
-				crypt::secure_string temp;
-				readLine(temp);
-				setUserData(temp.c_str(), temp.size(), init.iv);
+				if (!getUserInput("IV data missing. please specify", init.iv, crypt::Encoding::base64, 2, false, true)) {
+					throw CExc(CExc::Code::iv_missing);
+				}
 			}
-			if ((options.mode == crypt::Mode::ccm || options.mode == crypt::Mode::gcm || options.mode == crypt::Mode::eax) && !init.tag.size()) {
-				std::cout << "tag data missing. please specify: ";
-				crypt::secure_string temp;
-				readLine(temp);
-				setUserData(temp.c_str(), temp.size(), init.tag);
+			if (!crypt::help::checkProperty(options.cipher, crypt::STREAM) && (options.mode == crypt::Mode::ccm || options.mode == crypt::Mode::gcm || options.mode == crypt::Mode::eax) && !init.tag.size()) {
+				if (!getUserInput("tag data missing. please specify", init.tag, crypt::Encoding::base64, 2, false, true)) {
+					throw CExc(CExc::Code::iv_missing);
+				}
 			}
 		}
 		if(!*opt.silent) {
@@ -659,55 +724,34 @@ void encrypt(Arguments& args, const CLIOptions& opt, const byte* input, size_t i
 	std::basic_string<byte>	outputData;
 	crypt::Options::Crypt	options;
 	CryptHeader::HMAC		hmac;
+	CryptHeaderWriter		header(options, hmac);
 
-	if (!opt.password->count() || args.password.size() == 0) {
-		if (!*opt.nointeraction) {
-			crypt::secure_string pw1, pw2;
-			size_t counter = 0;
-			setEcho(false);
-			while (true) {
-				std::cout << "enter password: ";
-				readLine(pw1);
-				std::cout << std::endl << "repeat password: ";
-				readLine(pw2);;
-				std::cout << std::endl;
-				if (pw1.compare(pw2) == 0) {
-					if (setUserData(pw1.c_str(), pw1.size(), options.password)) {
-						break;
-					} else {
-						std::cout << "invalid password (empty)." << std::endl;
-					}
-				} else {
-					std::cout << "passwords did not match!" << std::endl;
-				}
-				counter++;
-				if(counter >= 5) {
-					setEcho(true);
-					throw CExc(CExc::Code::passwords_dont_match);
-				}
-			}
-			setEcho(true);
-		} else {
+	checkPassword(opt.password, args.password, options);
+
+	if (!options.password.size()) {
+		if (*opt.nointeraction) {
 			throw CExc(CExc::Code::password_missing);
 		}
-	} else {
-		setUserData(args.password.c_str(), args.password.size(), options.password);
-		for (size_t i = 0; i < args.password.size(); i++) {
-			args.password[i] = 0;
-		}
-		if (!options.password.size()) {
+		if (!getUserInput("enter password", options.password, crypt::Encoding::ascii, 3, true, false)) {
 			throw CExc(CExc::Code::password_missing);
 		}
 	}
-
-	CryptHeaderWriter header(options, hmac);
 	
 	checkCipher(opt.cipher, args.cipher, options);
-	checkCipherMode(opt.mode, args.mode, options);
 	checkIV(opt.iv, args.iv, options, header.initData());
 	checkKeyDerivation(opt.keyderivation, args.keyderivation, options);
 	checkEncoding(opt.encoding, args.encoding, options);
 	checkHMAC(opt.hmac, args.hmac, hmac);
+	checkHMACKey(opt.hmac_key, args.hmac_key, hmac);
+
+	if (hmac.enable && !hmac.hash.key.size()) {
+		if (*opt.nointeraction) {
+			throw CExc(CExc::Code::hmac_key_missing);
+		}
+		if (!getUserInput("enter HMAC key", hmac.hash.key, crypt::Encoding::ascii, 2, true, false)) {
+			throw CExc(CExc::Code::hmac_key_missing);
+		}
+	}
 
 	if (!*opt.silent) {
 		if (opt.output->count()) {
@@ -732,7 +776,7 @@ void encrypt(Arguments& args, const CLIOptions& opt, const byte* input, size_t i
 		if (header.size()) {
 			std::cout << header.c_str();
 		}
-		if (!*opt.silent || *opt.noheader) {
+		if (!*opt.silent && *opt.noheader) {
 			printInitData(options, header.initData());
 		}
 		std::cout << outputData.c_str() << std::endl;
@@ -751,20 +795,19 @@ int main(int argc, char** argv)
 		Arguments	args;
 		CLIOptions	opt;
 		// setup CLI11 parser
-		opt.action = app.add_option("-a,--action", args.action, "set action (encrypt|decrypt|hash) [default: hash]");
+		opt.action = app.add_option("action", args.action, "(enc|dec|hash)");
 		opt.hash = app.add_option("--hash", args.hash, "hash algorithm: (adler32|blake2b|blake2s|cmac_aes|crc32|keccak|md2|md4|md5|ripemd|sha1|sha2|sha3|siphash24|siphash48|sm3|tiger|whirlpool)[:Digestlength] i.e.: sha3:512");
 		opt.password = app.add_option("-p,--password", args.password, "password [(utf8(default)|hex|base32|base64):]password");
 		opt.input = app.add_option("input", args.input, "input (file or string)");
 		opt.output = app.add_option("-o,--output", args.output, "output file");
-		opt.cipher = app.add_option("-c,--cipher", args.cipher, "cipher: (threeway|aria|blowfish|btea|camellia|cast128|cast256|chacha20|des|des_ede2|des_ede3|desx|gost|idea|kalyna128|kalyna256|kalyna512|mars|panama|rc2|rc4|rc5|rc6|rijndael|saferk|safersk|salsa20|seal|seed|serpent|shacal2|shark|simon128|skipjack|sm4|sosemanuk|speck128|square|tea|threefish256|threefish512|threefish1024|twofish|wake|xsalsa20|xtea)[:Keylength] i.e.: camellia:128 , default: rijndael:256");
-		opt.mode = app.add_option("-m,--mode", args.mode, "cipher mode: (ecb|cbc|cbc_cts|cfb|ofb|ctr|eax|ccm|gcm)");
+		opt.cipher = app.add_option("-c,--cipher", args.cipher, "cipher[:keylength[:mode]] i.e. camellia:256:cbc, default: rijndael:256:gcm\nciphers: (threeway|aria|blowfish|btea|camellia|cast128|cast256|chacha20|des|des_ede2|des_ede3|desx|gost|idea|kalyna128|kalyna256|kalyna512|mars|panama|rc2|rc4|rc5|rc6|rijndael|saferk|safersk|salsa20|seal|seed|serpent|shacal2|shark|simon128|skipjack|sm4|sosemanuk|speck128|square|tea|threefish256|threefish512|threefish1024|twofish|wake|xsalsa20|xtea),\nmodes: (ecb|cbc|cbc_cts|cfb|ofb|ctr|eax|ccm|gcm)");
 		opt.keyderivation = app.add_option("-k,--key-derivation", args.keyderivation, "key derivation algorithm [default:scrypt]: (pbkdf2|bcrypt|scrypt)[:*option1*[:*option2*[:*option3*]]]");
 		opt.encoding = app.add_option("-e,--encoding", args.encoding, "encoding [default:base64]: (ascii|base16|base32|base64)[:(windows|unix)[:*linelength*[:*uppercase(true|false)*]]]");
 		opt.tag = app.add_option("-t,--tag", args.tag, "tag-value: [(utf8|hex|base32|base64(default)):]tagdata");
 		opt.salt = app.add_option("-s,--salt", args.salt, "salt-value: [(utf8|hex|base32|base64(default)):]saltdata");
 		opt.iv = app.add_option("-v,--iv", args.iv, "IV: (random|keyderivation|zero) or [(utf8|hex|base32|base64(default)):]ivdata");
-		opt.hmac = app.add_option("--hmac", args.hmac, "create hmac to authenticate header and encrypted data: *hash*:*password*");
-		opt.hmac_password = app.add_option("--hmac-password", args.hmac_password, "authenticate encrypted data before decryption: *password*");
+		opt.hmac = app.add_option("--hmac", args.hmac, "create hmac to authenticate header and encrypted data: hash:length i.e. sha3:256");
+		opt.hmac_key = app.add_option("--hmac-key", args.hmac_key, "hmac-key: [(utf8(default)|hex|base32|base64):]*key*");
 		opt.noheader = app.add_flag("--noheader", "no header output");
 		opt.silent = app.add_flag("--silent", "silent mode");
 		opt.nointeraction = app.add_flag("--auto", "no user interaction");
@@ -777,9 +820,9 @@ int main(int argc, char** argv)
 		} else {
 			if (args.action.compare("hash") == 0) {
 				action = Action::hash;
-			} else if (args.action.compare("decrypt") == 0) {
+			} else if (args.action.compare("dec") == 0) {
 				action = Action::decrypt;
-			} else if (args.action.compare("encrypt") == 0) {
+			} else if (args.action.compare("enc") == 0) {
 				action = Action::encrypt;
 			} else {
 				throw CExc(CExc::Code::invalid_crypt_action);
@@ -808,7 +851,7 @@ int main(int argc, char** argv)
 		case Action::hash:
 		{
 			if (file_exists(args.input)) {
-				//hash()
+				hash(args, opt, (const byte*)args.input.c_str(), args.input.size(), true);
 			} else {
 				hash(args, opt, inputData.c_str(), inputData.size());
 			}

@@ -37,6 +37,8 @@ static const char* error_msgs[] =
 	/* salt_missing					*/ "Salt-data missing.",
 	/* iv_missing					*/ "IV-data missing.",
 	/* keylength_missing            */ "Key-length missing.",
+	/* hmac_key_missing             */ "HMAC key missing.",
+	/* cipher_mode_missing          */ "cipher mode missing.",
 	/* authentication_failed		*/ "Authentication failed.",
 	/* hmac_auth_failed				*/ "HMAC Authentication failed.",
 	/* decode_base16				*/ "Failed to decode base16.",

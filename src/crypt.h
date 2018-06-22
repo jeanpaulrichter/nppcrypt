@@ -180,9 +180,9 @@ namespace crypt
 	/* -- decrypt -- */
 	void	decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init);
 	/* -- hash data -- */
-	void	hash(const Options::Hash& options, std::basic_string<byte>& buffer, std::initializer_list<std::pair<const byte*, size_t>> in);
+	void	hash(Options::Hash& options, std::basic_string<byte>& buffer, std::initializer_list<std::pair<const byte*, size_t>> in);
 	/* -- hash file -- */
-	void	hash(const Options::Hash& options, std::basic_string<byte>& buffer, const std::string& path);
+	void	hash(Options::Hash& options, std::basic_string<byte>& buffer, const std::string& path);
 	/* -- sha3 shake128 hash -- */
 	void	shake128(const byte* in, size_t in_len, byte* out, size_t out_len);
 	/* -- convert encoding -- */
