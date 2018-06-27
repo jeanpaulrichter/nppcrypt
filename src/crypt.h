@@ -55,7 +55,7 @@ namespace crypt
 
 	namespace Constants
 	{
-		const int salt_max =			512;			// max salt bytes
+		const size_t salt_max =			512;			// max salt bytes
 		const Hash pbkdf2_default_hash = Hash::sha3;	// pbkdf2: default hash ( see enum Hash )
 		const int pbkdf2_default_hash_digest = 32;		// pbkdf2: hash digest length
 		const int pbkdf2_iter_default = 5000;			// pbkdf2: default iterations
@@ -122,7 +122,7 @@ namespace crypt
 				Key() : algorithm(KeyDerivation::scrypt), salt_bytes(16), length(32) { options[0] = Constants::scrypt_N_default; options[1] = Constants::scrypt_r_default; options[2] = Constants::scrypt_p_default; };
 				KeyDerivation		algorithm;
 				size_t				length;
-				int					salt_bytes;
+				size_t				salt_bytes;
 				int					options[6];
 			};
 			Key key;

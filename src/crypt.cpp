@@ -1048,30 +1048,6 @@ namespace intern
 				}
 				break;
 			}
-			case Hash::siphash24:
-			{
-				if (options.digest_length == 8) {
-					return new SipHash<2, 4, false>;
-				} else if (options.digest_length == 16) {
-					return new SipHash<2, 4, true>;
-				} else {
-					options.digest_length = 16;
-					return new SipHash<2, 4, true>;
-				}
-				break;
-			}
-			case Hash::siphash48:
-			{
-				if (options.digest_length == 8) {
-					return new SipHash<4, 8, false>;
-				} else if (options.digest_length == 16) {
-					return new SipHash<4, 8, true>;
-				} else {
-					options.digest_length = 16;
-					return new SipHash<4, 8, true>;
-				}
-				break;
-			}
 			case Hash::sm3:
 			{
 				options.digest_length = 32;

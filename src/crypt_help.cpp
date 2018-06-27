@@ -14,6 +14,8 @@ GNU General Public License for more details.
 */
 
 #include "crypt_help.h"
+#include "exception.h"
+#include "mdef.h"
 
 template<typename T>
 T ipow(T base, T exp)
@@ -405,6 +407,105 @@ bool crypt::help::getHash(const char* s, Hash& h)
 		}
 	}
 	return false;
+}
+
+void crypt::help::validateCryptOptions(Options::Crypt options, bool exceptions)
+{
+	// ---------- cipher mode & keylength
+	if (!checkProperty(options.cipher, STREAM) && !checkCipherMode(options.cipher, options.mode)) {
+		if (checkCipherMode(options.cipher, Mode::gcm)) {
+			options.mode = Mode::gcm;
+		} else {
+			options.mode = Mode::cbc;
+		}
+		if (exceptions) {
+			throw CExc(CExc::Code::invalid_mode);
+		}
+	}
+	if (options.key.length > 0 && !checkCipherKeylength(options.cipher, options.key.length)) {
+		options.key.length = 0;
+		if (exceptions) {
+			throw CExc(CExc::Code::invalid_keylength);
+		}
+	}
+	// ---------- keyderivation
+	switch (options.key.algorithm) {
+	case KeyDerivation::pbkdf2:
+	{
+		if (options.key.options[0] < 0 || options.key.options[0] >= (int)crypt::Hash::COUNT || !checkProperty((crypt::Hash)options.key.options[0], HMAC_SUPPORT)) {
+			options.key.options[0] = (int)Constants::pbkdf2_default_hash;
+			options.key.options[1] = Constants::pbkdf2_default_hash_digest;
+			if (exceptions) {
+				throw CExc(CExc::Code::invalid_pbkdf2_hash);
+			}
+		}
+		if (options.key.options[1] != 0 && !crypt::help::checkHashDigest((Hash)options.key.options[0], (unsigned int)options.key.options[1])) {
+			options.key.options[1] = 0;
+			if (exceptions) {
+				throw CExc(CExc::Code::invalid_pbkdf2_hash);
+			}
+		}
+		if (options.key.options[2] < crypt::Constants::pbkdf2_iter_min || options.key.options[2] > crypt::Constants::pbkdf2_iter_max) {
+			options.key.options[2] = crypt::Constants::pbkdf2_iter_default;
+			if (exceptions) {
+				throw CExc(CExc::Code::invalid_pbkdf2);
+			}
+		}
+		break;
+	}
+	case crypt::KeyDerivation::bcrypt:
+	{
+		if (options.key.options[0] < crypt::Constants::bcrypt_iter_min || options.key.options[0] > crypt::Constants::bcrypt_iter_max) {
+			options.key.options[0] = crypt::Constants::bcrypt_iter_default;
+			if (exceptions) {
+				throw CExc(CExc::Code::invalid_bcrypt);
+			}
+		}
+		break;
+	}
+	case crypt::KeyDerivation::scrypt:
+	{
+		if (options.key.options[0] < crypt::Constants::scrypt_N_min || options.key.options[0] > crypt::Constants::scrypt_N_max) {
+			options.key.options[0] = crypt::Constants::scrypt_N_default;
+			if (exceptions) {
+				throw CExc(CExc::Code::invalid_scrypt);
+			}
+		}
+		if (options.key.options[1] < crypt::Constants::scrypt_r_min || options.key.options[1] > crypt::Constants::scrypt_r_max) {
+			options.key.options[1] = crypt::Constants::scrypt_r_default;
+			if (exceptions) {
+				throw CExc(CExc::Code::invalid_scrypt);
+			}
+		}
+		if (options.key.options[2] < crypt::Constants::scrypt_p_min || options.key.options[2] > crypt::Constants::scrypt_p_max) {
+			options.key.options[2] = crypt::Constants::scrypt_p_default;
+			if (exceptions) {
+				throw CExc(CExc::Code::invalid_scrypt);
+			}
+		}
+		break;
+	}
+	}
+	// ---------- salt
+	if (options.key.salt_bytes > Constants::salt_max) {
+		options.key.salt_bytes = 16;
+		if (exceptions) {
+			throw CExc(CExc::Code::invalid_salt);
+		}
+	}
+	if (options.key.algorithm == KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
+		options.key.salt_bytes = 16;
+		if (exceptions) {
+			throw CExc(CExc::Code::invalid_bcrypt_saltlength);
+		}
+	}
+	// ----------- encoding
+	if (options.encoding.linelength > NPPC_MAX_LINE_LENGTH) {
+		options.encoding.linelength = NPPC_MAX_LINE_LENGTH;
+		if (exceptions) {
+			throw CExc(CExc::Code::invalid_linelength);
+		}
+	}
 }
 
 crypt::Mode crypt::help::getModeByIndex(crypt::Cipher cipher, int index)

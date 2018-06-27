@@ -49,6 +49,8 @@ namespace crypt
 		static bool			checkHashDigest(Hash h, unsigned int digest);
 		static bool			checkCipherKeylength(Cipher cipher, size_t keylength);
 
+		static void			validateCryptOptions(Options::Crypt options, bool exceptions = true);
+
 		static Mode			getModeByIndex(Cipher cipher, int index);
 		static int			getModeIndex(Cipher cipher, Mode mode);
 		static int			getCipherCategory(Cipher cipher);
