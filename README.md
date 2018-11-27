@@ -5,22 +5,16 @@ encryption-tool / plugin for notepad++ (https://notepad-plus-plus.org).
 
 features: encryption/decryption with symmetric ciphers like aes. hash-functions like sha3. generation of random values (i.e. for passwords), various encoding options.
 
-##### About  1.0.1.5:
-Although one might not notice it when using only the notepad++ plugin, but 1.0.1.5 is quite a big change. the result (hopefully) is: cleaner code, easier compiling ([FAQ](#faq_6)) and finally the introduction of a cmdline version of nppcrypt (with linux support!). For more information on the latter see [FAQ](#faq_7). A lot of changes mean potentially a lot of bugs. I would be thankful for everybody who has the time to test the new version and especially the commandline tool.
-
 ##### download:
 1.0.1.5 from github:
 * x64:: [download](https://github.com/jeanpaulrichter/nppcrypt/releases/download/1.0.1.5/nppcrypt_1.0.1.5_x64.zip)
 * x86:: [download](https://github.com/jeanpaulrichter/nppcrypt/releases/download/1.0.1.5/nppcrypt_1.0.1.5_x86.zip)
-###### 1.0.1.5 (test/alpha)
-* npp plugin x86:: [download](http://www.cerberus-design.de/nppcrypt/nppcryptv1015a.x86.zip) (md5: AC7DC0F77189905F3BA875286A1269E8)
-* npp plugin x64:: [download](http://www.cerberus-design.de/nppcrypt/nppcryptv1015a.x64.zip) (md5: F5C907FAA558B1A02F433010252BBD51)
-* commandline tool x86:: [download](http://www.cerberus-design.de/nppcrypt/clnppcryptv1015a.x86.zip) (md5: 097A5D5F7D60A90C0C030F3C8C2B0494)
-* commandline tool x64:: [download](http://www.cerberus-design.de/nppcrypt/clnppcryptv1015a.x64.zip) (md5: 474BF0490ACB1580BC304F20938E4F81)
 * Linux version: see [FAQ: compiling nppcrypt](#faq_6)
-###### 1.0.1.4
-* x86:: [download](http://www.cerberus-design.de/nppcrypt/nppcryptv1014.x86.zip) (md5: 038E4EF7D01858A3ED32F49ACAAADAC5)
-* x64:: [download](http://www.cerberus-design.de/nppcrypt/nppcryptv1014.x64.zip) (md5: 0CE1EE405A930D083F74CB085667E73F)
+###### old versions:
+* 1.0.1.4: [x86](http://www.cerberus-design.de/nppcrypt_1.0.1.4_x86.zip) (md5: 038E4EF7D01858A3ED32F49ACAAADAC5), [x64](http://www.cerberus-design.de/nppcrypt_1.0.1.4_x64.zip) (md5: 0CE1EE405A930D083F74CB085667E73F)
+* 1.0.1.3: [x86](http://www.cerberus-design.de/nppcrypt_1.0.1.3_x86.zip) (md5: 0191B7DA5389CE95D637705F13154ED6), [x64](http://www.cerberus-design.de/nppcrypt_1.0.1.3_x64.zip) (md5: B4F6C5BF060E9F5491EF5E7DF37D8D55)
+* 1.0.1.2: [x86](http://www.cerberus-design.de/nppcrypt_1.0.1.2.zip) (md5: 08255E55BB4F5FD4ACED2E5849F0FAFA)
+* 1.0.1.0: [x86](http://www.cerberus-design.de/nppcrypt_1.0.1.0.zip) (md5: B1260E531C39DD1E342D2CE5D85095C2)
 
 ##### email:
 kontakt (at) cerberus-design . de
