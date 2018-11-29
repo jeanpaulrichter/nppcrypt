@@ -203,23 +203,13 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 			}
 			case IDC_CRYPT_IV_CUSTOM:
 			{
-				help.iv.setTooltip(crypt::help::getInfo(crypt::IV::custom));
-				::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), true);
-				::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ENC), true);
+				updateIVControls();
 				::SetFocus(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT));
 				break;
 			}
 			case IDC_CRYPT_IV_RANDOM: case IDC_CRYPT_IV_KEY: case IDC_CRYPT_IV_ZERO:
 			{
-				if (LOWORD(wParam) == IDC_CRYPT_IV_RANDOM) {
-					help.iv.setTooltip(crypt::help::getInfo(crypt::IV::random));
-				} else if (LOWORD(wParam) == IDC_CRYPT_IV_KEY) {
-					help.iv.setTooltip(crypt::help::getInfo(crypt::IV::keyderivation));
-				} else {
-					help.iv.setTooltip(crypt::help::getInfo(crypt::IV::zero));
-				}
-				::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), false);
-				::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ENC), false);
+				updateIVControls();
 				break;
 			}
 			case IDC_CRYPT_PASSWORD_SHOW:
@@ -256,10 +246,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 			case IDC_CRYPT_MODE:
 			{
 				crypt::Mode tmode = crypt::help::getModeByIndex(current.cipher, (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0));
-				help.mode.setURL(crypt::help::getHelpURL(tmode));
-				help.mode.setTooltip(crypt::help::getInfo(tmode));
-				help.mode.setWarning((tmode == crypt::Mode::ecb));
-				updateCipherInfo(current.cipher, tmode);
+				updateCipherModeInfo(tmode);
 				PostMessage(tab.basic, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(tab.basic, IDC_CRYPT_PASSWORD), TRUE);
 				break;
 			}
@@ -430,9 +417,7 @@ void DlgCrypt::setupDialog()
 
 	help.cipher.setup(_hInst, tab.basic, ::GetDlgItem(tab.basic, IDC_CRYPT_HELP_CIPHER));
 	help.mode.setup(_hInst, tab.basic, ::GetDlgItem(tab.basic, IDC_CRYPT_HELP_MODE));
-	help.mode.setURL(crypt::help::getHelpURL(crypt->options.mode));
-	help.mode.setTooltip(crypt::help::getInfo(crypt->options.mode));
-	help.mode.setWarning((crypt->options.mode == crypt::Mode::ecb));
+	updateCipherModeInfo(crypt->options.mode);
 
 	current.key_length = crypt->options.key.length;
 	updateCipherControls();
@@ -560,6 +545,10 @@ void DlgCrypt::setupDialog()
 		}
 		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_RANDOM), false);
 	}
+	if (crypt->options.mode == crypt::Mode::ecb) {
+		updateIVControls(true);
+	}
+
 
 	if (!::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
 		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), false);
@@ -625,7 +614,7 @@ void DlgCrypt::setupDialog()
 void DlgCrypt::changeActiveTab(int id)
 {
 	if (current.tab == 3 && id != 3) {
-		if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
+		if (::IsWindowEnabled(::GetDlgItem(tab.iv, IDC_CRYPT_IV_CUSTOM)) && ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
 			crypt::UserData ivdata;
 			invalid.iv = !checkCustomIV(ivdata, true);
 			if (invalid.iv) {
@@ -765,19 +754,21 @@ bool DlgCrypt::prepareOptions()
 		}
 
 		// ------- iv
-		if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_GETCHECK, 0, 0)) {
-			crypt->options.iv = crypt::IV::random;
-		} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0)) {
-			crypt->options.iv = crypt::IV::keyderivation;
-		} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
-			crypt->options.iv = crypt::IV::zero;
-		} else {
-			crypt->options.iv = crypt::IV::custom;
-			crypt::UserData data;
-			if (!checkCustomIV(data, true)) {
-				throw CExc::CExc(CExc::Code::invalid_iv);
+		if (crypt->options.mode != crypt::Mode::ecb) {
+			if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_GETCHECK, 0, 0)) {
+				crypt->options.iv = crypt::IV::random;
+			} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0)) {
+				crypt->options.iv = crypt::IV::keyderivation;
+			} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
+				crypt->options.iv = crypt::IV::zero;
 			} else {
-				ivdata->set(data.BytePtr(), data.size());
+				crypt->options.iv = crypt::IV::custom;
+				crypt::UserData data;
+				if (!checkCustomIV(data, true)) {
+					throw CExc::CExc(CExc::Code::invalid_iv);
+				} else {
+					ivdata->set(data.BytePtr(), data.size());
+				}
 			}
 		}
 
@@ -826,6 +817,7 @@ bool DlgCrypt::OnClickOK()
 	}
 	// custom iv valid?
 	if (((operation == Operation::Enc && !confirm_password) || operation == Operation::Dec)
+		&& ::IsWindowEnabled(::GetDlgItem(tab.iv, IDC_CRYPT_IV_CUSTOM))
 		&& !!::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
 		crypt::UserData ivdata;
 		invalid.iv = !checkCustomIV(ivdata, true);
@@ -1052,6 +1044,47 @@ void DlgCrypt::updateCipherInfo(crypt::Cipher cipher, crypt::Mode mode)
 	::SetDlgItemText(tab.iv, IDC_CRYPT_IV_CUSTOM, s2.str().c_str());
 }
 
+void DlgCrypt::updateCipherModeInfo(crypt::Mode mode)
+{
+	bool isECB = (mode == crypt::Mode::ecb);
+
+	help.mode.setURL(crypt::help::getHelpURL(mode));
+	help.mode.setTooltip(crypt::help::getInfo(mode));
+	help.mode.setWarning(isECB);	
+	updateIVControls(isECB);
+}
+
+void DlgCrypt::updateIVControls(bool disable)
+{
+	if (operation == Operation::Dec) {
+		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_RANDOM), false);
+	} else {
+		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_RANDOM), !disable);
+	}	
+	::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_KEY), !disable);
+	::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ZERO), !disable);
+	::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_CUSTOM), !disable);
+	if (disable) {
+		help.iv.setTooltip("No IV needed (ECB-Mode)");
+		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), false);
+		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ENC), false);
+	} else {
+		bool enableInput = false;
+		if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
+			help.iv.setTooltip(crypt::help::getInfo(crypt::IV::custom));
+			enableInput = true;
+		} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
+			help.iv.setTooltip(crypt::help::getInfo(crypt::IV::zero));
+		} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0)) {
+			help.iv.setTooltip(crypt::help::getInfo(crypt::IV::keyderivation));
+		} else {
+			help.iv.setTooltip(crypt::help::getInfo(crypt::IV::random));
+		}
+		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), enableInput);
+		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ENC), enableInput);
+	}
+}
+
 void DlgCrypt::updateEncodingControls(crypt::Encoding enc)
 {
 	help.encoding.setURL(crypt::help::getHelpURL(enc));
@@ -1252,13 +1285,8 @@ void DlgCrypt::updateCipherControls()
 			::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_SETCURSEL, i, 0);
 		} else {
 			new_mode = crypt::help::getModeByIndex(current.cipher, 0);
-			help.mode.setURL(crypt::help::getHelpURL(new_mode));
-			help.mode.setTooltip(crypt::help::getInfo(new_mode));
-			help.mode.setWarning((new_mode == crypt::Mode::ecb));
+			updateCipherModeInfo(new_mode);
 			::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_SETCURSEL, 0, 0);
-			if (old_mode == crypt::Mode::gcm) {
-				::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ZERO), true);
-			}
 		}		
 	}
 	help.cipher.setURL(crypt::help::getHelpURL(current.cipher));

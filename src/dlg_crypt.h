@@ -63,6 +63,10 @@ private:
 	
 	/**** update controls to show information about current cipher ****/
 	void updateCipherInfo(crypt::Cipher cipher, crypt::Mode mode);
+	/**** update controls to reflect currently selected cipher-mode ****/
+	void updateCipherModeInfo(crypt::Mode mode);
+	/**** update IV controls ****/
+	void updateIVControls(bool disable = false);
 	/**** enable/disable controls based on currently selected encoding ****/
 	void updateEncodingControls(crypt::Encoding enc);
 	/**** update Hashlength Combobox */

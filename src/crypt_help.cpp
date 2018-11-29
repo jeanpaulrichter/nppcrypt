@@ -108,7 +108,7 @@ static const unsigned int cipher_keys[unsigned(crypt::Cipher::COUNT)][3] =
 	/* kalyna256		*/	{32, 32, 2},
 	/* kalyna512		*/	{64, 0, 1},
 	/* mars				*/	{16, 8, 3},
-	/* panama			*/	{32, 0, 0},
+	/* panama			*/	{32, 0, 1},
 	/* rc2				*/	{16, 16, 4},
 	/* rc4				*/  {16, 16, 4},
 	/* rc5				*/  {16, 16, 4},

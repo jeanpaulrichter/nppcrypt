@@ -1555,6 +1555,8 @@ bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, size_t& key_le
 	}
 	if (mode == Mode::ccm) {
 		iv_length = Constants::ccm_iv_length;
+	} else if (mode == Mode::ecb) {
+		iv_length = 0;
 	}
 	return true;
 }
@@ -1767,7 +1769,11 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			if (!pEnc) {
 				throw CExc(CExc::Code::invalid_mode);
 			}
-			pEnc->SetKeyWithIV(tKey.data(), key_len, ptVec, iv_len);
+			if (options.mode == Mode::ecb) {
+				pEnc->SetKey(tKey.data(), key_len);
+			} else {
+				pEnc->SetKeyWithIV(tKey.data(), key_len, ptVec, iv_len);
+			}
 			switch (options.encoding.enc)
 			{
 			case Encoding::ascii:
@@ -1849,29 +1855,27 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		ptSalt = init.salt.BytePtr();
 	}
-	// --------------------------- prepare iv vector:
-	if (options.iv == crypt::IV::keyderivation)	{
-		tKey.resize(key_len + iv_len);
-		if (iv_len > 0) {
+	// --------------------------- prepare iv vector & key-block:
+	if (options.mode != Mode::ecb && iv_len > 0) {
+		if (options.iv == crypt::IV::keyderivation) {
+			tKey.resize(key_len + iv_len);
 			ptVec = &tKey[key_len];
-		}
-	} else if (options.iv == crypt::IV::random || options.iv == crypt::IV::custom) {
-		tKey.resize(key_len);
-		if (iv_len > 0)	{
+		} else if (options.iv == crypt::IV::random || options.iv == crypt::IV::custom) {
+			tKey.resize(key_len);
 			if (!init.iv.size()) {
 				throw CExc(CExc::Code::iv_missing);
-			}			
+			}
 			if (init.iv.size() != iv_len) {
 				throw CExc(CExc::Code::invalid_iv);
 			}
 			ptVec = init.iv.BytePtr();
-		}
-	} else if (options.iv == crypt::IV::zero) {
-		tKey.resize(key_len);
-		if (iv_len) {
+		} else if (options.iv == crypt::IV::zero) {
+			tKey.resize(key_len);
 			init.iv.zero(iv_len);
 			ptVec = init.iv.BytePtr();
 		}
+	} else {
+		tKey.resize(key_len);
 	}
 	intern::calcKey(tKey, options.password, init.salt, options.key);
 
@@ -1945,7 +1949,11 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			if (!pEnc) {
 				throw CExc(CExc::Code::invalid_mode);
 			}
-			pEnc->SetKeyWithIV(tKey.data(), key_len, ptVec, iv_len);
+			if (options.mode == Mode::ecb) {
+				pEnc->SetKey(tKey.data(), key_len);
+			} else {
+				pEnc->SetKeyWithIV(tKey.data(), key_len, ptVec, iv_len);
+			}
 
 			switch (options.encoding.enc)
 			{
