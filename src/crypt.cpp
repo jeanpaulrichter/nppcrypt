@@ -108,7 +108,7 @@ namespace Strings
 using namespace crypt;
 
 // ===========================================================================================================================================================================================
-// of course it would be much more elegant to use the factory, but that would mean a lot of never used registrations etc
+// TODO: maybe the factory should be used ... ( cryptopp/factory.h )
 // ===========================================================================================================================================================================================
 
 namespace intern
@@ -364,18 +364,17 @@ namespace intern
 			}
 			break;
 		}
-		case Cipher::btea:
+		/*case Cipher::btea:
 		{
-			return encryption ? (SymmetricCipher*)(new BTEA::Encryption) : (SymmetricCipher*)(new BTEA::Decryption);
-			/*switch (mode) {
+			switch (mode) {
 			case Mode::ecb: return encryption ? (SymmetricCipher*)(new ECB_Mode<BTEA>::Encryption) : (new ECB_Mode<BTEA>::Decryption);
 			case Mode::cbc: return encryption ? (SymmetricCipher*)(new CBC_Mode<BTEA>::Encryption) : (new CBC_Mode<BTEA>::Decryption);
 			case Mode::cfb: return encryption ? (SymmetricCipher*)(new CFB_Mode<BTEA>::Encryption) : (new CFB_Mode<BTEA>::Decryption);
 			case Mode::ofb: return encryption ? (SymmetricCipher*)(new OFB_Mode<BTEA>::Encryption) : (new OFB_Mode<BTEA>::Decryption);
 			case Mode::ctr: return encryption ? (SymmetricCipher*)(new CTR_Mode<BTEA>::Encryption) : (new CTR_Mode<BTEA>::Decryption);
-			}*/
+			}
 			break;
-		}
+		}*/
 		case Cipher::camellia:
 		{
 			switch (mode) {
@@ -1374,10 +1373,6 @@ bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, size_t& key_le
 		block_size = iv_length = Blowfish::BLOCKSIZE;
 		key_length = (key_length == 0) ? Blowfish::DEFAULT_KEYLENGTH : Blowfish::StaticGetValidKeyLength(key_length);
 		break;
-	case Cipher::btea:
-		block_size = iv_length = 0;
-		key_length = BTEA::KEYLENGTH;
-		break;
 	case Cipher::camellia:
 		block_size = iv_length = Camellia::BLOCKSIZE;
 		key_length = (key_length == 0) ? Camellia::DEFAULT_KEYLENGTH : Camellia::StaticGetValidKeyLength(key_length);
@@ -1553,10 +1548,12 @@ bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, size_t& key_le
 		key_length = XTEA::KEYLENGTH;
 		break;
 	}
-	if (mode == Mode::ccm) {
-		iv_length = Constants::ccm_iv_length;
-	} else if (mode == Mode::ecb) {
-		iv_length = 0;
+	if (block_size > 0) {
+		if (mode == Mode::ccm) {
+			iv_length = Constants::ccm_iv_length;
+		} else if (mode == Mode::ecb) {
+			iv_length = 0;
+		}
 	}
 	return true;
 }
@@ -1670,30 +1667,33 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		ptSalt = init.salt.BytePtr();
 	}
 	// --------------------------- prepare iv & key vector
-	if (options.iv == crypt::IV::keyderivation)	{
+	if (options.iv == crypt::IV::keyderivation) {
 		tKey.resize(key_len + iv_len);
-		if (iv_len > 0) {
-			ptVec = &tKey[key_len];
-		}
-	} else if (options.iv == crypt::IV::random)	{
+	} else {
 		tKey.resize(key_len);
-		if (iv_len > 0)	{
+	}
+	if (iv_len > 0) {
+		switch (options.iv) {
+		case IV::keyderivation:
+			ptVec = &tKey[key_len];
+			break;
+		case IV::random:
 			init.iv.random(iv_len);
 			ptVec = init.iv.BytePtr();
-		}
-	} else if (options.iv == crypt::IV::zero) {
-		tKey.resize(key_len);
-		if (iv_len)	{
+			break;
+		case IV::zero:
 			init.iv.zero(iv_len);
 			ptVec = init.iv.BytePtr();
+			break;
+		case IV::custom:
+			if (iv_len != init.iv.size()) {
+				throw CExc(CExc::Code::invalid_iv);
+			}
+			ptVec = init.iv.BytePtr();
+			break;
 		}
-	} else if (options.iv == crypt::IV::custom) {
-		tKey.resize(key_len);
-		if (iv_len != init.iv.size()) {
-			throw CExc(CExc::Code::invalid_iv);
-		}
-		ptVec = init.iv.BytePtr();
 	}
+	// --------------------------- calculate key
 	intern::calcKey(tKey, options.password, init.salt, options.key);
 
 	try	{
@@ -1769,7 +1769,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			if (!pEnc) {
 				throw CExc(CExc::Code::invalid_mode);
 			}
-			if (options.mode == Mode::ecb) {
+			if (iv_len == 0) {
 				pEnc->SetKey(tKey.data(), key_len);
 			} else {
 				pEnc->SetKeyWithIV(tKey.data(), key_len, ptVec, iv_len);
@@ -1856,7 +1856,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		ptSalt = init.salt.BytePtr();
 	}
 	// --------------------------- prepare iv vector & key-block:
-	if (options.mode != Mode::ecb && iv_len > 0) {
+	if (iv_len > 0) {
 		if (options.iv == crypt::IV::keyderivation) {
 			tKey.resize(key_len + iv_len);
 			ptVec = &tKey[key_len];
@@ -1877,6 +1877,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	} else {
 		tKey.resize(key_len);
 	}
+	// --------------------------- calculate key:
 	intern::calcKey(tKey, options.password, init.salt, options.key);
 
 	try	{
@@ -1949,7 +1950,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			if (!pEnc) {
 				throw CExc(CExc::Code::invalid_mode);
 			}
-			if (options.mode == Mode::ecb) {
+			if (iv_len == 0) {
 				pEnc->SetKey(tKey.data(), key_len);
 			} else {
 				pEnc->SetKeyWithIV(tKey.data(), key_len, ptVec, iv_len);

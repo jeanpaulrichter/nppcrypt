@@ -61,12 +61,7 @@ private:
 	/**** check custom hmac key ****/
 	bool checkHMACKey(crypt::UserData& data, bool reencode);
 	
-	/**** update controls to show information about current cipher ****/
-	void updateCipherInfo(crypt::Cipher cipher, crypt::Mode mode);
-	/**** update controls to reflect currently selected cipher-mode ****/
-	void updateCipherModeInfo(crypt::Mode mode);
-	/**** update IV controls ****/
-	void updateIVControls(bool disable = false);
+
 	/**** enable/disable controls based on currently selected encoding ****/
 	void updateEncodingControls(crypt::Encoding enc);
 	/**** update Hashlength Combobox */
@@ -75,6 +70,9 @@ private:
 	void updateKeyDerivationControls();
 	/**** update controls on cipher change ****/
 	void updateCipherControls();
+
+	void updateCipherInfo();
+	void onIVSelectionChanged();
 	
 	Operation				operation;
 	const std::wstring*		filename;
@@ -87,6 +85,7 @@ private:
 		CurSelection() : tab(-1), iv_length(0) {};
 
 		crypt::Cipher			cipher;
+		crypt::Mode				mode;
 		crypt::KeyDerivation	key_derivation;
 		crypt::secure_string	password;
 		int						tab;

@@ -26,7 +26,7 @@ namespace crypt
 	typedef std::basic_string<wchar_t, std::char_traits<wchar_t>, CryptoPP::AllocatorWithCleanup<wchar_t> > secure_wstring;
 
 	enum class Cipher : unsigned {		
-		threeway, aria, blowfish, btea, camellia, cast128, cast256, chacha20, des, des_ede2, des_ede3, desx, gost, idea, kalyna128, kalyna256, kalyna512, mars, panama, rc2, rc4, rc5, rc6, rijndael, saferk, safersk, salsa20, seal, seed, serpent, shacal2, shark, simon128, skipjack, sm4, sosemanuk, speck128, square, tea, threefish256, threefish512, threefish1024, twofish, wake, xsalsa20, xtea, COUNT
+		threeway, aria, blowfish, camellia, cast128, cast256, chacha20, des, des_ede2, des_ede3, desx, gost, idea, kalyna128, kalyna256, kalyna512, mars, panama, rc2, rc4, rc5, rc6, rijndael, saferk, safersk, salsa20, seal, seed, serpent, shacal2, shark, simon128, skipjack, sm4, sosemanuk, speck128, square, tea, threefish256, threefish512, threefish1024, twofish, wake, xsalsa20, xtea, COUNT
 	};
 	
 	enum class Mode : unsigned {

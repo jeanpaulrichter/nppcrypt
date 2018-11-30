@@ -42,7 +42,6 @@ static const unsigned int cipher_properties[unsigned(crypt::Cipher::COUNT)] =
 	/* threeway			*/	BLOCK | WEAK,
 	/* aria				*/	BLOCK | EAX | CCM | GCM,
 	/* blowfish			*/	BLOCK | WEAK,
-	/* btea				*/	BLOCK | WEAK,
 	/* camellia			*/	BLOCK | EAX | CCM | GCM,
 	/* cast128			*/	BLOCK,
 	/* cast256			*/	BLOCK | EAX | CCM | GCM,
@@ -93,7 +92,6 @@ static const unsigned int cipher_keys[unsigned(crypt::Cipher::COUNT)][3] =
 	/* threeway			*/	{12, 0, 1},
 	/* aria				*/	{16, 8, 3},
 	/* blowfish			*/	{16, 16, 2},
-	/* btea				*/	{16, 0, 1},
 	/* camellia			*/  {16, 8, 3},
 	/* cast128			*/	{16, 0, 1},
 	/* cast256			*/	{16, 4, 5},
@@ -186,18 +184,18 @@ static const unsigned int hash_digests[unsigned(crypt::Hash::COUNT)] =
 #define CIPHER_CAT_COUNT 4
 static const int cipher_categories[4][2] =
 {
-	/* A - D	*/ { 0, 11 },
-	/* E - R	*/ { 12, 23 },
-	/* S		*/ { 24, 37 },
-	/* T - Z	*/ { 38, 45 }
+	/* A - D	*/ { 0, 10 },
+	/* E - R	*/ { 11, 22 },
+	/* S		*/ { 23, 36 },
+	/* T - Z	*/ { 37, 44 }
 };
 
 // ----------------------------- STRINGS ---------------------------------------------------------------------------------------------------------------------------------------------------------
 namespace Strings {
-	static const char*	cipher[] = { "3way", "aria", "blowfish", "btea", "camellia", "cast128", "cast256", "chacha", "des", "des_ede2", "des_ede3", "desx", "gost", "idea", "kalyna128", "kalyna256", "kalyna512", "mars", "panama", "rc2", "rc4", "rc5", "rc6", "rijndael", "saferk", "safersk", "salsa20", "seal", "seed", "serpent", "shacal2", "shark", "simon128", "skipjack", "sm4", "sosemanuk", "speck128", "square", "tea", "threefish256", "threefish512", "threefish1024", "twofish", "wake", "xSalsa20", "xtea" };
-	static const char*	cipher_label[] = { "3-way", "ARIA", "Blowfish", "XTEA#Block_TEA", "Camellia", "CAST-128", "CAST-256", "ChaCha", "DES", "2TDEA", "3TDEA", "DES-X", "GOST", "IDEA", "Kalyna-128", "Kalyna-256", "Kalyna-512", "MARS", "Panama", "RC2", "RC4", "RC5", "RC6", "Rijndael", "SAFER-K", "SAFER-SK", "Salsa20", "SEAL", "SEED", "Serpent", "SHACAL-2", "SHARK", "Simon-128", "Skipjack", "SM4", "Sosemanuk", "Speck-128", "Square", "TEA", "Threefish-256", "Threefish-512", "Threefish-1024", "Twofish", "WAKE", "XSalsa20", "XTEA" };
-	static const char*	cipher_info_url[] = { "3-Way", "ARIA_(cipher)", "Blowfish_(cipher)", "XTEA", "Camellia_(cipher)", "CAST-128", "CAST-256", "Salsa20#ChaCha_variant", "Data_Encryption_Standard", "Triple_DES", "Triple_DES", "DES-X", "GOST_(block_cipher)", "International_Data_Encryption_Algorithm", "Kalyna_(cipher)", "Kalyna_(cipher)", "Kalyna_(cipher)", "MARS_(cryptography)", "Panama_(cryptography)", "RC2", "RC4", "RC5", "RC6", "Advanced_Encryption_Standard", "SAFER", "SAFER", "Salsa20", "SEAL_(cipher)", "SEED", "Serpent_(cipher)", "SHACAL", "SHARK", "Simon_(cipher)", "Skipjack_(cipher)", "SM4_algorithm", "SOSEMANUK", "Speck_(cipher)", "Square_(cipher)", "Tiny_Encryption_Algorithm", "Threefish", "Threefish", "Threefish", "Twofish", "WAKE_(cipher)", "Salsa20", "XTEA" };
-	static const char*	cipher_info[] = { "Joan Daemen, 1993", "South Korean standard, 2003", "Bruce Schneier, 1993", "Roger Needham, David Wheeler, 1997", "Mitsubishi Electric, 2000", "Carlisle Adams and Stafford Tavares, 1996", "Carlisle Adams, Stafford Tavares et al., 1998", "Daniel J. Bernstein, 2008", "IBM, 1975", "2-key Triple DES", "3-key Triple DES", "Ron Rivest, 1994", "Soviet standard, 1970s", "Xuejia Lai and James Massey, 1991", "Ukrainian standard based on rijndael", "Ukrainian standard based on rijndael", "Ukrainian standard based on rijndael", "IBM, 1998", "Joan Daemen, Craig Clapp, 1998", "Ronald Rivest, 1987", "Ronald Rivest, 1987", "Ronald Rivest, 1994", "Ron Rivest et. al., 1998", "Vincent Rijmen, Joan Daemen, 1998", "James Massey, 1993", "James Massey, 1993", "Daniel J. Bernstein, 2007", "Phillip Rogaway, Don Coppersmith, 1997", "Korea Information Security Agency, 1998", "Ross Anderson, Eli Biham, Lars Knudsen, 1998", "Helena Handschuh, David Naccache", "Vincent Rijmen et al., 1996", "NSA, 2013", "NSA, 1998", "Lu Shu-wang, 2006", "C. Berbain, O. Billet, et al.", "NSA, 2013", "Joan Daemen, Vincent Rijmen, 1997", "Roger Needham, David Wheeler, 1994", "Bruce Schneier et al., 2008", "Bruce Schneier et al., 2008", "Bruce Schneier et al., 2008", "Bruce Schneier, 1998", "David Wheeler, 1993", "Daniel J. Bernstein, 2007", "Needham and Wheeler, 1997" };
+	static const char*	cipher[] = { "3way", "aria", "blowfish", "camellia", "cast128", "cast256", "chacha", "des", "des_ede2", "des_ede3", "desx", "gost", "idea", "kalyna128", "kalyna256", "kalyna512", "mars", "panama", "rc2", "rc4", "rc5", "rc6", "rijndael", "saferk", "safersk", "salsa20", "seal", "seed", "serpent", "shacal2", "shark", "simon128", "skipjack", "sm4", "sosemanuk", "speck128", "square", "tea", "threefish256", "threefish512", "threefish1024", "twofish", "wake", "xSalsa20", "xtea" };
+	static const char*	cipher_label[] = { "3-way", "ARIA", "Blowfish", "Camellia", "CAST-128", "CAST-256", "ChaCha", "DES", "2TDEA", "3TDEA", "DES-X", "GOST", "IDEA", "Kalyna-128", "Kalyna-256", "Kalyna-512", "MARS", "Panama", "RC2", "RC4", "RC5", "RC6", "Rijndael", "SAFER-K", "SAFER-SK", "Salsa20", "SEAL", "SEED", "Serpent", "SHACAL-2", "SHARK", "Simon-128", "Skipjack", "SM4", "Sosemanuk", "Speck-128", "Square", "TEA", "Threefish-256", "Threefish-512", "Threefish-1024", "Twofish", "WAKE", "XSalsa20", "XTEA" };
+	static const char*	cipher_info_url[] = { "3-Way", "ARIA_(cipher)", "Blowfish_(cipher)", "Camellia_(cipher)", "CAST-128", "CAST-256", "Salsa20#ChaCha_variant", "Data_Encryption_Standard", "Triple_DES", "Triple_DES", "DES-X", "GOST_(block_cipher)", "International_Data_Encryption_Algorithm", "Kalyna_(cipher)", "Kalyna_(cipher)", "Kalyna_(cipher)", "MARS_(cryptography)", "Panama_(cryptography)", "RC2", "RC4", "RC5", "RC6", "Advanced_Encryption_Standard", "SAFER", "SAFER", "Salsa20", "SEAL_(cipher)", "SEED", "Serpent_(cipher)", "SHACAL", "SHARK", "Simon_(cipher)", "Skipjack_(cipher)", "SM4_algorithm", "SOSEMANUK", "Speck_(cipher)", "Square_(cipher)", "Tiny_Encryption_Algorithm", "Threefish", "Threefish", "Threefish", "Twofish", "WAKE_(cipher)", "Salsa20", "XTEA" };
+	static const char*	cipher_info[] = { "Joan Daemen, 1993", "South Korean standard, 2003", "Bruce Schneier, 1993", "Mitsubishi Electric, 2000", "Carlisle Adams and Stafford Tavares, 1996", "Carlisle Adams, Stafford Tavares et al., 1998", "Daniel J. Bernstein, 2008", "IBM, 1975", "2-key Triple DES", "3-key Triple DES", "Ron Rivest, 1994", "Soviet standard, 1970s", "Xuejia Lai and James Massey, 1991", "Ukrainian standard based on rijndael", "Ukrainian standard based on rijndael", "Ukrainian standard based on rijndael", "IBM, 1998", "Joan Daemen, Craig Clapp, 1998", "Ronald Rivest, 1987", "Ronald Rivest, 1987", "Ronald Rivest, 1994", "Ron Rivest et. al., 1998", "Vincent Rijmen, Joan Daemen, 1998", "James Massey, 1993", "James Massey, 1993", "Daniel J. Bernstein, 2007", "Phillip Rogaway, Don Coppersmith, 1997", "Korea Information Security Agency, 1998", "Ross Anderson, Eli Biham, Lars Knudsen, 1998", "Helena Handschuh, David Naccache", "Vincent Rijmen et al., 1996", "NSA, 2013", "NSA, 1998", "Lu Shu-wang, 2006", "C. Berbain, O. Billet, et al.", "NSA, 2013", "Joan Daemen, Vincent Rijmen, 1997", "Roger Needham, David Wheeler, 1994", "Bruce Schneier et al., 2008", "Bruce Schneier et al., 2008", "Bruce Schneier et al., 2008", "Bruce Schneier, 1998", "David Wheeler, 1993", "Daniel J. Bernstein, 2007", "Needham and Wheeler, 1997" };
 	static const char*	cipher_categories[] = { "A - D", "E - R", "S", "T - Z" };
 
 	static const char*	mode[] = { "ecb", "cbc", "cfb", "ofb", "ctr", "eax", "ccm", "gcm" };
