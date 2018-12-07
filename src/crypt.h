@@ -55,30 +55,30 @@ namespace crypt
 
 	namespace Constants
 	{
-		const size_t salt_max =			512;			// max salt bytes
-		const Hash pbkdf2_default_hash = Hash::sha3;	// pbkdf2: default hash ( see enum Hash )
-		const int pbkdf2_default_hash_digest = 32;		// pbkdf2: hash digest length
-		const int pbkdf2_iter_default = 5000;			// pbkdf2: default iterations
-		const int pbkdf2_iter_min =		1;				// pbkdf2: min iterations 
-		const int pbkdf2_iter_max =		10000000;		// pbkdf2: max iterations
-		const int bcrypt_iter_default = 8;				// bcrypt: default iterations (2^x)
-		const int bcrypt_iter_min =		4;				// bcrypt: min iterations (2^x)
-		const int bcrypt_iter_max =		32;				// bcrypt: max iterations (2^x)
-		const int scrypt_N_default =	14;				// scrypt: default N (2^x)
-		const int scrypt_N_min =		2;				// scrypt: min N (2^x)
-		const int scrypt_N_max =		32;				// scrypt: max N (2^x)
-		const int scrypt_r_default =	8;				// scrypt: default r
-		const int scrypt_r_min =		1;				// scrypt: min r
-		const int scrypt_r_max =		256;			// scrypt: max r
-		const int scrypt_p_default =	1;				// scrypt: default p
-		const int scrypt_p_min =		1;				// scrypt: min r
-		const int scrypt_p_max =		256;			// scrypt: max r
-		const int gcm_iv_length =		16;				// IV-Length for gcm mode
-		const int ccm_iv_length =		13;				// IV-Length for ccm mode, possible values: 7-13
-		const int rand_char_max =		4096;			// max number of random bytes ( UserData::random() )
-		const int gcm_tag_size =		16;				// gcm tag size in bytes
-		const int ccm_tag_size =		16;				// ccm tag size in bytes
-		const int eax_tag_size =		16;				// eax tag size in bytes
+		const size_t salt_max =			512;			/* max salt bytes */
+		const Hash pbkdf2_default_hash = Hash::sha3;	/* pbkdf2: default hash ( see enum Hash ) */
+		const int pbkdf2_default_hash_digest = 32;		/* pbkdf2: hash digest length */
+		const int pbkdf2_iter_default = 5000;			/* pbkdf2: default iterations */
+		const int pbkdf2_iter_min =		1;				/* pbkdf2: min iterations  */
+		const int pbkdf2_iter_max =		10000000;		/* pbkdf2: max iterations */
+		const int bcrypt_iter_default = 8;				/* bcrypt: default iterations (2^x) */
+		const int bcrypt_iter_min =		4;				/* bcrypt: min iterations (2^x) */
+		const int bcrypt_iter_max =		32;				/* bcrypt: max iterations (2^x) */
+		const int scrypt_N_default =	14;				/* scrypt: default N (2^x) */
+		const int scrypt_N_min =		2;				/* scrypt: min N (2^x) */
+		const int scrypt_N_max =		32;				/* scrypt: max N (2^x) */
+		const int scrypt_r_default =	8;				/* scrypt: default r */
+		const int scrypt_r_min =		1;				/* scrypt: min r */
+		const int scrypt_r_max =		256;			/* scrypt: max r */
+		const int scrypt_p_default =	1;				/* scrypt: default p */
+		const int scrypt_p_min =		1;				/* scrypt: min r */
+		const int scrypt_p_max =		256;			/* scrypt: max r */
+		const int gcm_iv_length =		16;				/* IV-Length for gcm mode */
+		const int ccm_iv_length =		13;				/* IV-Length for ccm mode, possible values: 7-13 */
+		const int rand_char_max =		4096;			/* max number of random bytes ( UserData::random() ) */
+		const int gcm_tag_size =		16;				/* gcm tag size in bytes */
+		const int ccm_tag_size =		16;				/* ccm tag size in bytes */
+		const int eax_tag_size =		16;				/* eax tag size in bytes */
 	};
 
 	class UserData
@@ -104,6 +104,14 @@ namespace crypt
 
 	private:
 		CryptoPP::SecByteBlock	data;
+	};
+
+	/* used by encrypt() and decrypt() to receive or return iv/salt/tag data */
+	struct InitData
+	{
+		UserData		iv;
+		UserData		salt;
+		UserData		tag;
 	};
 
 	namespace Options
@@ -162,29 +170,28 @@ namespace crypt
 			int				linelength;
 		};
 	};
-
-	/* -- used by encrypt() and decrypt() to receive or return iv/salt/tag data -- */
-	struct InitData
-	{
-		UserData		iv;
-		UserData		salt;
-		UserData		tag;
-	};
 	
 	/* -- check parameters of cipher or receive default values -- */
 	bool	getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, size_t& key_length, size_t& iv_length, size_t& block_size);
+
 	/* -- check parameters of hash or receive default values -- */
 	bool	getHashInfo(Hash h, size_t& length, size_t& keylength);
+
 	/* -- encrypt -- */
 	void	encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init);
+
 	/* -- decrypt -- */
 	void	decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init);
+
 	/* -- hash data -- */
 	void	hash(Options::Hash& options, std::basic_string<byte>& buffer, std::initializer_list<std::pair<const byte*, size_t>> in);
+
 	/* -- hash file -- */
 	void	hash(Options::Hash& options, std::basic_string<byte>& buffer, const std::string& path);
+
 	/* -- sha3 shake128 hash -- */
 	void	shake128(const byte* in, size_t in_len, byte* out, size_t out_len);
+
 	/* -- convert encoding -- */
 	void	convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options);	
 };

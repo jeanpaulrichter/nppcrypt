@@ -185,8 +185,7 @@ void HelpCtrl::setTooltip(const char* s)
 		std::wstring temp;
 		helper::Windows::utf8_to_wchar(s, (int)strlen(s), temp);
 		_settooltip((LPWSTR)temp.c_str());
-	}
-	catch (...) {}
+	} catch (...) {}
 }
 
 void HelpCtrl::enableTooltip(bool v)

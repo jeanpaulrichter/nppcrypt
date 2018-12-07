@@ -202,6 +202,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					}
 				}
 
+				crypt::IV iv_save = crypt.options.iv;
 				if (dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &crypt, &header.initData().iv, &filename)) {
 					std::basic_string<byte> buffer;
 					crypt::decrypt(header.encryptedData(), header.encryptedDataLength(), buffer, crypt.options, header.initData());
@@ -212,6 +213,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
 					::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
 
+					crypt.options.iv = iv_save;
 					crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
 				}
 			}
@@ -291,7 +293,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &crypt, &header.initData().iv, &filename)) {
 							crypt::encrypt(pData, data_length, buffer, crypt.options, header.initData());
 							header.create(&buffer[0], buffer.size());
-							if(fiter!=crypt_files.end()) {
+							if(fiter == crypt_files.end()) {
 								crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
 							}
 						} else {
@@ -312,6 +314,15 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 			helper::Windows::error(nppData._nppHandle, exc.what());
 		} catch(...) {
 			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+		}
+		break;
+	}
+	case NPPN_FILEBEFORECLOSE:
+	{
+		std::wstring path, filename, extension;
+		helper::Buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
+		if (preferences.files.extension.compare(extension) == 0) {
+			crypt_files.erase(path);
 		}
 		break;
 	}
@@ -368,8 +379,12 @@ void DecryptDlg()
 		if (!helper::Scintilla::getSelection(&pData, &data_length, &sel_start)) {
 			return;
 		}
+
+		crypt::IV current_iv_method = current.crypt.options.iv;
+
 		CryptHeaderReader	header(current.crypt.options, current.crypt.hmac);		
 
+		/* parse header and check hmac if present */
 		if (header.parse(pData, data_length)) {
 			if (current.crypt.hmac.enable) {
 				if (current.crypt.hmac.keypreset_id < 0) {
@@ -395,6 +410,8 @@ void DecryptDlg()
 
 		if(dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &current.crypt, &header.initData().iv)) {
 			crypt::InitData& s_init = header.initData();
+
+			/* check if salt or tag data is mising */
 			size_t need_salt_len = (current.crypt.options.key.salt_bytes > 0 && s_init.salt.size() != current.crypt.options.key.salt_bytes) ? current.crypt.options.key.salt_bytes : 0;
 			size_t need_tag_len = 0;
 			if (current.crypt.options.mode == crypt::Mode::gcm && s_init.tag.size() != crypt::Constants::gcm_tag_size) {
@@ -417,6 +434,9 @@ void DecryptDlg()
 			helper::Scintilla::replaceSelection(buffer);
 
 			current.crypt.options.password.clear();
+
+			// DlgCrypt might have changed IV method from random to custom 
+			current.crypt.options.iv = current_iv_method;
 		}
 	} catch(CExc& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());

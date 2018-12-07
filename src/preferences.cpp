@@ -89,7 +89,11 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 			}
 			pTemp = xml_temp->Attribute("extension");
 			if (pTemp) {
-				helper::Windows::utf8_to_wchar(pTemp, -1, files.extension);
+				try {
+					helper::Windows::utf8_to_wchar(pTemp, -1, files.extension);
+				} catch(...) {
+					files.extension = TEXT("nppcrypt");
+				}
 				if (files.extension.size() > NPPC_FILE_EXT_MAXLENGTH) {
 					files.extension = files.extension.substr(0, NPPC_FILE_EXT_MAXLENGTH);
 				}
@@ -246,7 +250,11 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 				if (pLabel && strlen(pLabel) > 0 && pValue && strlen(pValue) == 24) {
 					KeyPreset		temp_key;
 					std::wstring	temp_str;
-					helper::Windows::utf8_to_wchar(pLabel, -1, temp_str);
+					try {
+						helper::Windows::utf8_to_wchar(pLabel, -1, temp_str);
+					} catch (...) {
+						temp_str = TEXT("???");
+					}
 					CryptoPP::StringSource((const byte*)pValue, 24, true, new CryptoPP::Base64Decoder(new CryptoPP::ArraySink(temp_key.data, 16)));
 					size_t i = 0;
 					while (i < temp_str.size() && i <= 30) {
@@ -279,7 +287,11 @@ void CPreferences::save(CurrentOptions& current)
 		std::string			temp_str;
 		fout << std::fixed;
 		fout << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << eol << "<nppcrypt_preferences version=\"" << NPPC_VERSION << "\">" << eol;
-		helper::Windows::wchar_to_utf8(files.extension.c_str(), (int)files.extension.size(), temp_str);
+		try {
+			helper::Windows::wchar_to_utf8(files.extension.c_str(), (int)files.extension.size(), temp_str);
+		} catch (...) {
+			temp_str = "nppcrypt";
+		}
 		fout << "<files enabled=\"" << bool_str[files.enable] << "\" askonsave=\"" << bool_str[files.askonsave] << "\" extension=\"" << temp_str << "\" />" << eol;
 		fout << "<crypt_basic cipher=\"" << crypt::help::getString(current.crypt.options.cipher) << "\" mode=\"" << crypt::help::getString(current.crypt.options.mode) << "\" iv=\"" << crypt::help::getString(current.crypt.options.iv) << "\" />" << eol;
 		fout << "<crypt_encoding enc=\"" << crypt::help::getString(current.crypt.options.encoding.enc) << "\" eol=\"" << crypt::help::getString(current.crypt.options.encoding.eol) << "\" linebreaks=\"" << bool_str[current.crypt.options.encoding.linebreaks];
@@ -311,7 +323,11 @@ void CPreferences::save(CurrentOptions& current)
 		fout << "\" linebreaks=\"" << bool_str[current.convert.linebreaks] << "\" uppercase=\"" << bool_str[current.convert.uppercase] << "\" />" << eol;
 		fout << "<key_presets>" << eol;
 		for (size_t i = 1; i < keys.size(); i++) {
-			helper::Windows::wchar_to_utf8(keys[i].label, -1, temp_str);
+			try {
+				helper::Windows::wchar_to_utf8(keys[i].label, -1, temp_str);
+			} catch (...) {
+				temp_str = "?";
+			}
 			fout << "<key label=\"" << temp_str.c_str() << "\" value=\"";
 			temp_str.clear();
 			CryptoPP::ArraySource(keys[i].data, 16, true, new CryptoPP::Base64Encoder(new CryptoPP::StringSink(temp_str), false));

@@ -896,7 +896,7 @@ char *_crypt_gensalt_blowfish_rn(const char *prefix, unsigned long count,
 	output[1] = '2';
 	output[2] = prefix[2];
 	output[3] = '$';
-	output[4] = '0' + count / 10;
+	output[4] = '0' + (char)(count / 10);
 	output[5] = '0' + count % 10;
 	output[6] = '$';
 

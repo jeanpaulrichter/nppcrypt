@@ -870,7 +870,7 @@ int crypt::help::CipherKeys::operator*() const
 crypt::help::CipherKeys& crypt::help::CipherKeys::operator++()
 {
 	++i;
-	if (i >= cipher_keys[cipher_index][2]) {
+	if (i >= (int)cipher_keys[cipher_index][2]) {
 		i = -1;
 	}
 	return *this;

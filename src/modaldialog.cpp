@@ -103,7 +103,7 @@ void ModalDialog::setText(int id, const crypt::secure_string& str, HWND hwnd)
 	} else {
 		try {
 			crypt::secure_wstring temp;
-			helper::Windows::utf8_to_wchar(str.c_str(), str.size(), temp);
+			helper::Windows::utf8_to_wchar(str.c_str(), (int)str.size(), temp);
 			::SetDlgItemText(hwnd, id, temp.c_str());
 		} catch (CExc& exc) {
 			helper::Windows::error(_hSelf, exc.what());

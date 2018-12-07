@@ -209,7 +209,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 bool DlgHash::prepareOptions()
 {
 	options.algorithm = (crypt::Hash)::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
-	options.digest_length = crypt::help::getHashDigestByIndex(options.algorithm, ::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_GETCURSEL, 0, 0));
+	options.digest_length = crypt::help::getHashDigestByIndex(options.algorithm, (unsigned int)::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_GETCURSEL, 0, 0));
 
 	if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_GETCHECK, 0, 0)) {
 		options.encoding = crypt::Encoding::ascii;
@@ -234,6 +234,7 @@ bool DlgHash::prepareOptions()
 				::SetFocus(::GetDlgItem(_hSelf, IDC_HASH_KEY));
 				return false;
 			}
+
 		} else {
 			size_t keyid = (size_t)::SendDlgItemMessage(_hSelf, IDC_HASH_KEYLIST, CB_GETCURSEL, 0, 0);
 			options.key.set(preferences.getKey(keyid), 16);
@@ -258,6 +259,10 @@ bool DlgHash::checkKey(bool updatedata)
 		invalid_key = (data.size() == 0 || (keylength > 0 && data.size() != keylength));
 		if (!invalid_key && updatedata) {
 			options.key.set(data);
+			for (size_t i = 0; i < temp.size(); i++) {
+				temp[i] = '.';
+			}
+			setText(IDC_HASH_KEY, temp);
 		}
 	}
 	return !invalid_key;
@@ -276,7 +281,7 @@ void DlgHash::onChangeAlgorithm(size_t digest)
 		temp_str.append(TEXT(" Bits"));
 		::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_ADDSTRING, 0, (LPARAM)temp_str.c_str());
 	}
-	::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_SETCURSEL, crypt::help::getHashDigestIndex(cur_sel, digest), 0);
+	::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_SETCURSEL, crypt::help::getHashDigestIndex(cur_sel, (unsigned int)digest), 0);
 
 	// ----------------------------- Key Options ------------------------------------------------------------------- 
 	if (crypt::help::checkProperty(cur_sel, crypt::HMAC_SUPPORT) || crypt::help::checkProperty(cur_sel, crypt::KEY_SUPPORT)) {

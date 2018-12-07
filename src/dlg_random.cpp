@@ -44,19 +44,19 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
 		using namespace crypt;
 
 		switch (options.encoding) {
-		case Encoding::ascii: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BINARY, BM_SETCHECK, BST_CHECKED, 0); break;
-		case Encoding::base16: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE16, BM_SETCHECK, BST_CHECKED, 0); break;
-		case Encoding::base32: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE32, BM_SETCHECK, BST_CHECKED, 0); break;
-		case Encoding::base64: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE64, BM_SETCHECK, BST_CHECKED, 0); break;
+			case Encoding::ascii: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BINARY, BM_SETCHECK, BST_CHECKED, 0); break;
+			case Encoding::base16: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE16, BM_SETCHECK, BST_CHECKED, 0); break;
+			case Encoding::base32: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE32, BM_SETCHECK, BST_CHECKED, 0); break;
+			case Encoding::base64: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE64, BM_SETCHECK, BST_CHECKED, 0); break;
 		}
 
 		switch (options.restriction) {
-		case UserData::Restriction::none: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_BINARY, BM_SETCHECK, BST_CHECKED, 0); break;
-		case UserData::Restriction::digits: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_DIGITS, BM_SETCHECK, BST_CHECKED, 0); break;
-		case UserData::Restriction::letters: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_LETTERS, BM_SETCHECK, BST_CHECKED, 0); break;
-		case UserData::Restriction::alphanum: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ALPHANUM, BM_SETCHECK, BST_CHECKED, 0); break;
-		case UserData::Restriction::password: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_PASSWORD, BM_SETCHECK, BST_CHECKED, 0); break;
-		case UserData::Restriction::specials: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPECIALS, BM_SETCHECK, BST_CHECKED, 0); break;
+			case UserData::Restriction::none: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_BINARY, BM_SETCHECK, BST_CHECKED, 0); break;
+			case UserData::Restriction::digits: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_DIGITS, BM_SETCHECK, BST_CHECKED, 0); break;
+			case UserData::Restriction::letters: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_LETTERS, BM_SETCHECK, BST_CHECKED, 0); break;
+			case UserData::Restriction::alphanum: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ALPHANUM, BM_SETCHECK, BST_CHECKED, 0); break;
+			case UserData::Restriction::password: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_PASSWORD, BM_SETCHECK, BST_CHECKED, 0); break;
+			case UserData::Restriction::specials: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPECIALS, BM_SETCHECK, BST_CHECKED, 0); break;
 		}
 
 		help_restrictions.setup(_hInst, _hSelf, ::GetDlgItem(_hSelf, IDC_RANDOM_HELP));
@@ -154,6 +154,20 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
 					help_enc.setWarning(true);
 					help_enc.setTooltip(crypt::help::getInfo(crypt::Encoding::ascii));
 				}
+				break;
+			}
+			case IDC_RANDOM_ALPHANUM: case IDC_RANDOM_SPECIALS: case IDC_RANDOM_DIGITS: case IDC_RANDOM_LETTERS: case IDC_RANDOM_PASSWORD:
+			{
+				if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BINARY, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+					updateEncodingControls(crypt::Encoding::ascii);
+				} else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE16, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+					updateEncodingControls(crypt::Encoding::base16);
+				} else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE32, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+					updateEncodingControls(crypt::Encoding::base32);
+				} else {
+					updateEncodingControls(crypt::Encoding::base64);
+				}
+				break;
 			}
 			}
 			break;

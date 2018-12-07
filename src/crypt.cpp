@@ -1090,7 +1090,7 @@ namespace intern
 				throw CExc(CExc::Code::bcrypt_failed);
 			}
 			memset(output, 0, sizeof(output));
-			// _crypt_blowfish_rn need 0-terminated password...
+			// _crypt_blowfish_rn needs 0-terminated password...
 			std::string temp(password.size() + 1, 0);
 			memcpy(&temp[0], password.BytePtr(), password.size());
 			if (_crypt_blowfish_rn(temp.c_str(), settings, output, 64) == NULL) {
@@ -1204,6 +1204,8 @@ size_t crypt::UserData::set(const byte* s, size_t length)
 	return data.size();
 }
 
+
+
 bool crypt::UserData::random(size_t length, Restriction k, bool blocking)
 {
 	if (length > 0 && length <= Constants::rand_char_max) {
@@ -1257,21 +1259,16 @@ bool crypt::UserData::random(size_t length, Restriction k, bool blocking)
 		{
 			CryptoPP::AutoSeededRandomPool pool;
 			for (size_t i = 0; i < length; i++) {
-				long temp = CryptoPP::Integer(pool, 0, 65).ConvertToLong();
+				long temp = CryptoPP::Integer(pool, 0, 67).ConvertToLong();
 				if (temp < 10) {
 					data[i] = (byte)(48 + temp);
 				} else if (temp < 36) {
 					data[i] = (byte)(55 + temp);
 				} else if (temp < 62) {
-					data[i] = (byte)(61 + temp);
-				} else if (temp == 62) {
-					data[i] = 45;
-				} else if (temp == 63) {
-					data[i] = 95;
-				} else if (temp == 64) {
-					data[i] = 33;
-				} else if (temp == 65) {
-					data[i] = 63;
+					data[i] = (byte)(61 + temp); 
+				} else {
+					static const char password_chars[] = { '-', '_', '?', '!', '$', ':' };
+					data[i] = password_chars[temp - 62];
 				}
 			}
 			break;

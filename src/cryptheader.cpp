@@ -93,7 +93,7 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			throw CExc(CExc::Code::invalid_hmac_hash);
 		}
 		hmac.hash.digest_length = hmac_digest.size();
-		if (!crypt::help::checkHashDigest(hmac.hash.algorithm, hmac.hash.digest_length)) {
+		if (!crypt::help::checkHashDigest(hmac.hash.algorithm, (unsigned int)hmac.hash.digest_length)) {
 			throw CExc(CExc::Code::invalid_hmac_data);
 		}
 		xml_err = xml_nppcrypt->QueryIntAttribute("auth-key", &hmac.keypreset_id);

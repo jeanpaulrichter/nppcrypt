@@ -71,6 +71,8 @@ private:
 	/**** update controls on cipher change ****/
 	void updateCipherControls();
 
+	void updateHMACKeyControls();
+
 	void updateCipherInfo();
 	void onIVSelectionChanged();
 	

@@ -170,24 +170,33 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 			case IDC_CRYPT_AUTH_ENABLE:
 			{
 				if (operation == Operation::Enc) {
-					bool c = ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_GETCHECK, 0, 0) ? true : false;
-					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_HASH), c);
-					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH), c);
-					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_KEY_PRESET), c);
-					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM), c);
-					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_KEY_LIST), c);
-					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), c);
-					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_SHOW), c);
-					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_ENC), c);
-					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_STATIC1), c);
-					if (c && ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
-						::SetFocus(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE));
+					bool hmac_enabled = ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_GETCHECK, 0, 0) ? true : false;
+					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_HASH), hmac_enabled);
+					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH), hmac_enabled);
+					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_KEY_PRESET), hmac_enabled);
+					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM), hmac_enabled);
+					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_KEY_LIST), hmac_enabled);
+					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), hmac_enabled);
+					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_SHOW), hmac_enabled);
+					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_ENC), hmac_enabled);
+					::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_STATIC1), hmac_enabled);
+					if (hmac_enabled) {
+						updateHMACKeyControls();
+						if (!!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
+							::SetFocus(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE));
+						}
 					}
 				}
 				break;
 			}
+			case IDC_CRYPT_AUTH_KEY_PRESET:
+			{
+				updateHMACKeyControls();
+				break;
+			}
 			case IDC_CRYPT_AUTH_KEY_CUSTOM:
 			{
+				updateHMACKeyControls();
 				SendMessage(tab.auth, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), TRUE);
 				break;
 			}
@@ -196,9 +205,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				char c = ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_PW_SHOW, BM_GETCHECK, 0, 0) ? 0 : '*';
 				::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_PW_VALUE, EM_SETPASSWORDCHAR, c, 0);
 				InvalidateRect(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), 0, TRUE);
-				if (::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
-					::SetFocus(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE));
-				}
+				::SetFocus(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE));
 				break;
 			}
 			case IDC_CRYPT_IV_CUSTOM:
@@ -272,18 +279,27 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				::SetFocus(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT));
 				break;
 			}
-			case IDC_CRYPT_AUTH_KEY_LIST:
-			{
-				::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_SETCHECK, true, 0);
-				::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_SETCHECK, false, 0);
-				break;
-			}
+			//case IDC_CRYPT_AUTH_KEY_LIST:
+			//{
+			//	::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_SETCHECK, true, 0);
+			//	::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_SETCHECK, false, 0);
+			//	break;
+			//}
 			case IDC_CRYPT_AUTH_HASH:
 			{
 				crypt::Hash cur_sel = crypt::help::getHashByIndex(::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_GETCURSEL, 0, 0), crypt::HMAC_SUPPORT);
 				updateHashDigestControl(cur_sel, tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH);
 				::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH, CB_SETCURSEL, 0, 0);
-				::SetFocus(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE));
+				if (!!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
+					::SetFocus(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE));
+				}
+				break;
+			}
+			case IDC_CRYPT_AUTH_HASH_LENGTH:
+			{
+				if (!!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
+					::SetFocus(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE));
+				}
 				break;
 			}
 			case IDC_CRYPT_AUTH_PW_ENC:
@@ -397,6 +413,7 @@ void DlgCrypt::setupDialog()
 
 	// ------- Cipher -----------------------------------------------------------
 	current.cipher = crypt->options.cipher;
+	current.key_length = crypt->options.key.length;
 	current.mode = crypt->options.mode;
 	int category = crypt::help::getCipherCategory(current.cipher);
 
@@ -408,19 +425,13 @@ void DlgCrypt::setupDialog()
 	for (crypt::help::CipherNames it(category); *it; ++it) {
 		::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_ADDSTRING, 0, (LPARAM)helper::Windows::ToWCHAR(*it).c_str());
 	}
-	::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_SETCURSEL, crypt::help::getCipherIndex(current.cipher), 0);
+	::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_SETCURSEL, crypt::help::getCipherIndex(current.cipher), 0);	
 
 	// ------- Cipher Modes ------------------------------------------------------
-	//for(crypt::help::CipherModes it(current.cipher); *it; ++it) {
-	//	::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_ADDSTRING, 0, (LPARAM)helper::Windows::ToWCHAR(*it).c_str());
-	//}
-	//::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_SETCURSEL, crypt::help::getModeIndex(current.cipher, crypt->options.mode), 0);
 
 	help.cipher.setup(_hInst, tab.basic, ::GetDlgItem(tab.basic, IDC_CRYPT_HELP_CIPHER));
 	help.mode.setup(_hInst, tab.basic, ::GetDlgItem(tab.basic, IDC_CRYPT_HELP_MODE));
-
-	//current.key_length = crypt->options.key.length;
-
+	
 	// ------- Password
 	::SendDlgItemMessage(tab.basic, IDC_CRYPT_PASSWORD, EM_LIMITTEXT, NPPC_PASSWORD_MAXLENGTH, 0);
 	::SendDlgItemMessage(tab.basic, IDC_CRYPT_PASSWORD, EM_SETPASSWORDCHAR, '*', 0);
@@ -538,16 +549,12 @@ void DlgCrypt::setupDialog()
 			setText(IDC_CRYPT_IV_INPUT, temp, tab.iv);
 		}
 		if (crypt->options.iv == crypt::IV::random) {
+			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, false, 0);
 			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, true, 0);
 			help.iv.setTooltip(crypt::help::getInfo(crypt::IV::custom));
 		}
 		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_RANDOM), false);
 	}
-
-	//if (!::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
-	//	::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), false);
-	//	::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ENC), false);
-	//}	
 
 	// ------- Auth
 	::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_SETCHECK, crypt->hmac.enable, 0);
@@ -556,7 +563,7 @@ void DlgCrypt::setupDialog()
 	}
 	::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_SETCURSEL, crypt::help::getHashIndex(crypt->hmac.hash.algorithm, crypt::HMAC_SUPPORT), 0);
 	updateHashDigestControl(crypt->hmac.hash.algorithm, tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH);
-	::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH, CB_SETCURSEL, crypt::help::getHashDigestIndex(crypt->hmac.hash.algorithm, crypt->hmac.hash.digest_length), 0);
+	::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH, CB_SETCURSEL, crypt::help::getHashDigestIndex(crypt->hmac.hash.algorithm, (unsigned int)crypt->hmac.hash.digest_length), 0);
 	for (size_t i = 0; i < preferences.getKeyNum(); i++) {
 		::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_LIST, CB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
 	}
@@ -600,9 +607,19 @@ void DlgCrypt::setupDialog()
 		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_SHOW), crypt->hmac.enable);
 		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_ENC), crypt->hmac.enable);
 		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_STATIC1), crypt->hmac.enable);
+		if (crypt->hmac.enable) {
+			updateHMACKeyControls();
+		}
 	}
 	// ------- 
 	updateCipherControls();
+	if (current.iv_length > 0 && !!::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
+		crypt::UserData ivdata;
+		invalid.iv = !checkCustomIV(ivdata, true);
+		if (invalid.iv) {
+			InvalidateRect(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
+		}
+	}
 	changeActiveTab(0);
 }
 
@@ -621,7 +638,8 @@ void DlgCrypt::changeActiveTab(int id)
 	} else if (operation == Operation::Enc && current.tab == 4 && id != 4) {
 		if (!!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_GETCHECK, 0, 0) &&
 			!!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
-			invalid.hmac_key = !checkHMACKey(crypt->hmac.hash.key, true);
+			crypt::UserData tempkey;
+			invalid.hmac_key = !checkHMACKey(tempkey, true);
 			if (invalid.hmac_key) {
 				TabCtrl_SetCurSel(::GetDlgItem(_hSelf, IDC_CRYPT_TAB), 4);
 				InvalidateRect(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), NULL, NULL);
@@ -734,7 +752,7 @@ bool DlgCrypt::prepareOptions()
 			crypt->options.key.algorithm = crypt::KeyDerivation::pbkdf2;
 			crypt::Hash h = crypt::help::getHashByIndex(::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_GETCURSEL, 0, 0), crypt::HMAC_SUPPORT);
 			crypt->options.key.options[0] = (int)h;
-			crypt->options.key.options[1] = crypt::help::getHashDigestByIndex(h, ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH, CB_GETCURSEL, 0, 0));
+			crypt->options.key.options[1] = (int)crypt::help::getHashDigestByIndex(h, (unsigned int)::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH, CB_GETCURSEL, 0, 0));
 			crypt->options.key.options[2] = (int)::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_GETPOS32, 0, 0);
 		} else if (::SendDlgItemMessage(tab.key, IDC_CRYPT_KEY_BCRYPT, BM_GETCHECK, 0, 0)) {
 			crypt->options.key.algorithm = crypt::KeyDerivation::bcrypt;
@@ -748,16 +766,16 @@ bool DlgCrypt::prepareOptions()
 			crypt->options.key.options[2] = (int)::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_GETPOS32, 0, 0);
 		}
 
-		// ------- iv
-		if (crypt->options.mode != crypt::Mode::ecb) {
-			if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_GETCHECK, 0, 0)) {
-				crypt->options.iv = crypt::IV::random;
-			} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0)) {
-				crypt->options.iv = crypt::IV::keyderivation;
-			} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
-				crypt->options.iv = crypt::IV::zero;
-			} else {
-				crypt->options.iv = crypt::IV::custom;
+		// ------- iv		
+		if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_GETCHECK, 0, 0)) {
+			crypt->options.iv = crypt::IV::random;
+		} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0)) {
+			crypt->options.iv = crypt::IV::keyderivation;
+		} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
+			crypt->options.iv = crypt::IV::zero;
+		} else {
+			crypt->options.iv = crypt::IV::custom;
+			if (crypt->options.mode != crypt::Mode::ecb) {
 				crypt::UserData data;
 				if (!checkCustomIV(data, true)) {
 					throw CExc::CExc(CExc::Code::invalid_iv);
@@ -772,7 +790,7 @@ bool DlgCrypt::prepareOptions()
 			crypt->hmac.enable = (::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_GETCHECK, 0, 0) ? true : false);
 			if (crypt->hmac.enable) {
 				crypt->hmac.hash.algorithm = crypt::help::getHashByIndex(::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_GETCURSEL, 0, 0), crypt::HMAC_SUPPORT);
-				crypt->hmac.hash.digest_length = crypt::help::getHashDigestByIndex(crypt->hmac.hash.algorithm, ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH, CB_GETCURSEL, 0, 0));
+				crypt->hmac.hash.digest_length = crypt::help::getHashDigestByIndex(crypt->hmac.hash.algorithm, (unsigned int)::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH, CB_GETCURSEL, 0, 0));
 				crypt->hmac.hash.encoding = crypt::Encoding::base64;
 				crypt->hmac.hash.use_key = true;
 				if (::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_GETCHECK, 0, 0)) {
@@ -780,6 +798,11 @@ bool DlgCrypt::prepareOptions()
 					crypt->hmac.hash.key.set(preferences.getKey((size_t)crypt->hmac.keypreset_id), 16);
 				} else {
 					crypt->hmac.keypreset_id = -1;
+					invalid.hmac_key = !checkHMACKey(crypt->hmac.hash.key, true);
+					if (invalid.hmac_key) {
+						InvalidateRect(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), NULL, NULL);
+						throw CExc::CExc(CExc::Code::hmac_key_missing);
+					}
 				}
 			}
 		}
@@ -787,6 +810,12 @@ bool DlgCrypt::prepareOptions()
 		// ------- password
 		crypt::Encoding pw_encoding = (crypt::Encoding)::SendDlgItemMessage(tab.basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
 		crypt->options.password.set(current.password.c_str(), current.password.size(), pw_encoding);
+
+		// ------- cleanup
+		for (size_t i = 0; i < current.password.size(); i++) {
+			current.password[i] = '.';
+		}
+		setText(IDC_CRYPT_PASSWORD, current.password, tab.basic);
 		current.password.clear();
 	}
 	catch (CExc& exc) {
@@ -1178,9 +1207,6 @@ void DlgCrypt::updateKeyDerivationControls()
 
 void DlgCrypt::updateCipherControls()
 {
-	//crypt::Mode old_mode = crypt::help::getModeByIndex(current.cipher, (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0));
-	//crypt::Mode new_mode = old_mode;
-
 	std::wstring temp_str;
 	int cipher_cat = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER_TYPE, CB_GETCURSEL, 0, 0);
 	int cipher_index = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_GETCURSEL, 0, 0);
@@ -1211,17 +1237,16 @@ void DlgCrypt::updateCipherControls()
 	int cur_mode_count = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_GETCOUNT, 0, 0);
 	if (cur_mode_count == 0) {
 		::EnableWindow(::GetDlgItem(tab.basic, IDC_CRYPT_MODE), false);
-		help.mode.enable(false);
+		help.mode.display(false);
 	} else {
 		::EnableWindow(::GetDlgItem(tab.basic, IDC_CRYPT_MODE), true);
-		help.mode.enable(true);
+		help.mode.display(true);
 		// check if the current cipher supports the old mode:
 		int i = crypt::help::getModeIndex(current.cipher, current.mode);
 		if (i != -1) {
 			::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_SETCURSEL, i, 0);
 		} else {
 			current.mode = crypt::help::getModeByIndex(current.cipher, 0);
-			//updateCipherModeInfo(new_mode);
 			::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_SETCURSEL, 0, 0);
 		}		
 	}
@@ -1235,9 +1260,6 @@ void DlgCrypt::updateCipherControls()
 	}
 
 	updateCipherInfo();
-
-	//updateCipherInfo(current.cipher, new_mode);
-	//updateIVControls((current.iv_length == 0));
 
 	PostMessage(tab.basic, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(tab.basic, IDC_CRYPT_PASSWORD), TRUE);
 }
@@ -1298,4 +1320,22 @@ void DlgCrypt::onIVSelectionChanged()
 	}
 	::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), enableInput);
 	::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ENC), enableInput);
+}
+
+void DlgCrypt::updateHMACKeyControls()
+{
+	bool custom = ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0);
+	if (custom) {
+		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_KEY_LIST), false);
+
+		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), true);
+		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_ENC), true);
+		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_SHOW), true);
+	} else {
+		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_KEY_LIST), true);
+
+		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), false);
+		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_ENC), false);
+		::EnableWindow(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_SHOW), false);
+	}
 }
