@@ -1693,6 +1693,10 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	// --------------------------- calculate key
 	intern::calcKey(tKey, options.password, init.salt, options.key);
 
+	if (options.iv == IV::keyderivation) {
+		init.iv.set(ptVec, iv_len);
+	}
+
 	try	{
 		if (block_size && (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax)) {
 			std::unique_ptr<AuthenticatedSymmetricCipher> penc(intern::getAuthenticatedCipher(options.cipher, options.mode, true));
@@ -1852,28 +1856,19 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		ptSalt = init.salt.BytePtr();
 	}
+
 	// --------------------------- prepare iv vector & key-block:
+	tKey.resize(key_len);
 	if (iv_len > 0) {
-		if (options.iv == crypt::IV::keyderivation) {
-			tKey.resize(key_len + iv_len);
-			ptVec = &tKey[key_len];
-		} else if (options.iv == crypt::IV::random || options.iv == crypt::IV::custom) {
-			tKey.resize(key_len);
-			if (!init.iv.size()) {
-				throw CExc(CExc::Code::iv_missing);
-			}
-			if (init.iv.size() != iv_len) {
-				throw CExc(CExc::Code::invalid_iv);
-			}
-			ptVec = init.iv.BytePtr();
-		} else if (options.iv == crypt::IV::zero) {
-			tKey.resize(key_len);
-			init.iv.zero(iv_len);
-			ptVec = init.iv.BytePtr();
+		if (!init.iv.size()) {
+			throw CExc(CExc::Code::iv_missing);
 		}
-	} else {
-		tKey.resize(key_len);
+		if (init.iv.size() != iv_len) {
+			throw CExc(CExc::Code::invalid_iv);
+		}
+		ptVec = init.iv.BytePtr();
 	}
+
 	// --------------------------- calculate key:
 	intern::calcKey(tKey, options.password, init.salt, options.key);
 

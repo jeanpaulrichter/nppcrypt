@@ -202,7 +202,6 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					}
 				}
 
-				crypt::IV iv_save = crypt.options.iv;
 				if (dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &crypt, &header.initData().iv, &filename)) {
 					std::basic_string<byte> buffer;
 					crypt::decrypt(header.encryptedData(), header.encryptedDataLength(), buffer, crypt.options, header.initData());
@@ -213,7 +212,6 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
 					::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
 
-					crypt.options.iv = iv_save;
 					crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
 				}
 			}
@@ -380,8 +378,6 @@ void DecryptDlg()
 			return;
 		}
 
-		crypt::IV current_iv_method = current.crypt.options.iv;
-
 		CryptHeaderReader	header(current.crypt.options, current.crypt.hmac);		
 
 		/* parse header and check hmac if present */
@@ -434,9 +430,6 @@ void DecryptDlg()
 			helper::Scintilla::replaceSelection(buffer);
 
 			current.crypt.options.password.clear();
-
-			// DlgCrypt might have changed IV method from random to custom 
-			current.crypt.options.iv = current_iv_method;
 		}
 	} catch(CExc& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());

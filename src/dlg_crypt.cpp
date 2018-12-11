@@ -257,6 +257,11 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				PostMessage(tab.basic, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(tab.basic, IDC_CRYPT_PASSWORD), TRUE);
 				break;
 			}
+			case IDC_CRYPT_KEYLENGTH:
+			{
+				PostMessage(tab.basic, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(tab.basic, IDC_CRYPT_PASSWORD), TRUE);
+				break;
+			}
 			case IDC_CRYPT_PASSWORD_ENC:
 			{
 				crypt::secure_string temp;
@@ -279,12 +284,6 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				::SetFocus(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT));
 				break;
 			}
-			//case IDC_CRYPT_AUTH_KEY_LIST:
-			//{
-			//	::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_SETCHECK, true, 0);
-			//	::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_SETCHECK, false, 0);
-			//	break;
-			//}
 			case IDC_CRYPT_AUTH_HASH:
 			{
 				crypt::Hash cur_sel = crypt::help::getHashByIndex(::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_GETCURSEL, 0, 0), crypt::HMAC_SUPPORT);
@@ -532,28 +531,35 @@ void DlgCrypt::setupDialog()
 	updateKeyDerivationControls();
 
 	// ------- IV
-	::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, (crypt->options.iv == crypt::IV::random), 0);
-	::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_SETCHECK, (crypt->options.iv == crypt::IV::keyderivation), 0);
-	::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_SETCHECK, (crypt->options.iv == crypt::IV::zero), 0);
-	::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, (crypt->options.iv == crypt::IV::custom), 0);
-	setupInputEncodingSelect(tab.iv, IDC_CRYPT_IV_ENC);
 	::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_INPUT, EM_LIMITTEXT, NPPC_MAX_CUSTOM_IV_LENGTH, 0);
-
 	help.iv.setup(_hInst, tab.iv, ::GetDlgItem(tab.iv, IDC_CRYPT_HELP_IV));
 	help.iv.setURL(NPPC_CRYPT_IV_HELP_URL);
-	if(operation == Operation::Dec) {
-		if ((crypt->options.iv == crypt::IV::random || crypt->options.iv == crypt::IV::custom) && ivdata->size()) {
+	setupInputEncodingSelect(tab.iv, IDC_CRYPT_IV_ENC);
+
+	if (operation == Operation::Enc) {
+		if (filename != NULL && crypt->options.iv == crypt::IV::custom) {
+			// nppcrypt-file: no encryption with custom IV
+			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, true, 0);
+			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_SETCHECK, false, 0);
+			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_SETCHECK, false, 0);
+			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, false, 0);
+		} else {
+			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, (crypt->options.iv == crypt::IV::random), 0);
+			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_SETCHECK, (crypt->options.iv == crypt::IV::keyderivation), 0);
+			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_SETCHECK, (crypt->options.iv == crypt::IV::zero), 0);
+			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, (crypt->options.iv == crypt::IV::custom), 0);
+		}
+	} else {
+		::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, false, 0);
+		::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_SETCHECK, false, 0);
+		::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_SETCHECK, false, 0);
+		::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, true, 0);
+		if (ivdata->size() > 0) {
 			crypt::secure_string temp;
 			ivdata->get(temp, crypt::Encoding::base64);
 			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ENC, CB_SETCURSEL, (int)crypt::Encoding::base64, 0);
 			setText(IDC_CRYPT_IV_INPUT, temp, tab.iv);
 		}
-		if (crypt->options.iv == crypt::IV::random) {
-			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, false, 0);
-			::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, true, 0);
-			help.iv.setTooltip(crypt::help::getInfo(crypt::IV::custom));
-		}
-		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_RANDOM), false);
 	}
 
 	// ------- Auth
@@ -625,25 +631,21 @@ void DlgCrypt::setupDialog()
 
 void DlgCrypt::changeActiveTab(int id)
 {
-	if (current.tab == 3 && id != 3) {
+	if (id == 3) {
 		if (::IsWindowEnabled(::GetDlgItem(tab.iv, IDC_CRYPT_IV_CUSTOM)) && ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
 			crypt::UserData ivdata;
 			invalid.iv = !checkCustomIV(ivdata, true);
 			if (invalid.iv) {
-				TabCtrl_SetCurSel(::GetDlgItem(_hSelf, IDC_CRYPT_TAB), 3);
 				InvalidateRect(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
-				return;
 			}
 		}
-	} else if (operation == Operation::Enc && current.tab == 4 && id != 4) {
+	} else if (operation == Operation::Enc && id == 4) {
 		if (!!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_GETCHECK, 0, 0) &&
 			!!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
 			crypt::UserData tempkey;
 			invalid.hmac_key = !checkHMACKey(tempkey, true);
 			if (invalid.hmac_key) {
-				TabCtrl_SetCurSel(::GetDlgItem(_hSelf, IDC_CRYPT_TAB), 4);
 				InvalidateRect(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), NULL, NULL);
-				return;
 			}
 		}
 	}
@@ -766,22 +768,27 @@ bool DlgCrypt::prepareOptions()
 			crypt->options.key.options[2] = (int)::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_GETPOS32, 0, 0);
 		}
 
-		// ------- iv		
-		if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_GETCHECK, 0, 0)) {
-			crypt->options.iv = crypt::IV::random;
-		} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0)) {
-			crypt->options.iv = crypt::IV::keyderivation;
-		} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
-			crypt->options.iv = crypt::IV::zero;
-		} else {
-			crypt->options.iv = crypt::IV::custom;
-			if (crypt->options.mode != crypt::Mode::ecb) {
-				crypt::UserData data;
-				if (!checkCustomIV(data, true)) {
-					throw CExc::CExc(CExc::Code::invalid_iv);
-				} else {
-					ivdata->set(data.BytePtr(), data.size());
-				}
+		// ------- iv
+		if (operation == Operation::Enc) {
+			if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_GETCHECK, 0, 0)) {
+				crypt->options.iv = crypt::IV::random;
+			} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0)) {
+				crypt->options.iv = crypt::IV::keyderivation;
+			} else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
+				crypt->options.iv = crypt::IV::zero;
+			} else {
+				crypt->options.iv = crypt::IV::custom;
+			}
+		}
+
+		//if (current.iv_length > 0 && !(crypt::help::checkProperty(crypt->options.cipher, crypt::BLOCK) && crypt->options.mode == crypt::Mode::ecb)) {
+		//	if (operation == Operation::Dec || crypt->options.iv == crypt::IV::custom) {
+		if (current.iv_length > 0 && (operation == Operation::Dec || crypt->options.iv == crypt::IV::custom)) {
+			crypt::UserData data;
+			if (!checkCustomIV(data, true)) {
+				throw CExc::CExc(CExc::Code::invalid_iv);
+			} else {
+				ivdata->set(data.BytePtr(), data.size());
 			}
 		}
 
@@ -827,18 +834,6 @@ bool DlgCrypt::prepareOptions()
 
 bool DlgCrypt::OnClickOK()
 {
-	// custom hmac-key valid?
-	if (operation == Operation::Enc && !confirm_password && !!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_GETCHECK, 0, 0)
-		&& !!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
-		invalid.hmac_key = !checkHMACKey(crypt->hmac.hash.key, true);
-		if (invalid.hmac_key) {
-			TabCtrl_SetCurSel(::GetDlgItem(_hSelf, IDC_CRYPT_TAB), 4);
-			changeActiveTab(4);
-			InvalidateRect(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), NULL, NULL);
-			::SetFocus(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE));
-			return false;
-		}
-	}
 	// custom iv valid?
 	if (((operation == Operation::Enc && !confirm_password) || operation == Operation::Dec)
 		&& ::IsWindowEnabled(::GetDlgItem(tab.iv, IDC_CRYPT_IV_CUSTOM))
@@ -850,6 +845,18 @@ bool DlgCrypt::OnClickOK()
 			changeActiveTab(3);
 			InvalidateRect(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
 			::SetFocus(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT));
+			return false;
+		}
+	}
+	// custom hmac-key valid?
+	if (operation == Operation::Enc && !confirm_password && !!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_GETCHECK, 0, 0)
+		&& !!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
+		invalid.hmac_key = !checkHMACKey(crypt->hmac.hash.key, true);
+		if (invalid.hmac_key) {
+			TabCtrl_SetCurSel(::GetDlgItem(_hSelf, IDC_CRYPT_TAB), 4);
+			changeActiveTab(4);
+			InvalidateRect(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), NULL, NULL);
+			::SetFocus(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE));
 			return false;
 		}
 	}
@@ -1294,14 +1301,21 @@ void DlgCrypt::updateCipherInfo()
 		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ENC), false);
 		help.iv.setTooltip("No IV needed");
 	} else {
-		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_RANDOM), (operation != Operation::Dec));
-		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_KEY), true);
-		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ZERO), true);
-		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_CUSTOM), true);
-		std::wostringstream s2;
-		s2 << TEXT("custom (") << std::to_wstring(current.iv_length) << TEXT(" Bytes):");
-		::SetDlgItemText(tab.iv, IDC_CRYPT_IV_CUSTOM, s2.str().c_str());
-		onIVSelectionChanged();
+		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_RANDOM), (operation == Operation::Enc));
+		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_KEY), (operation == Operation::Enc));
+		::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ZERO), (operation == Operation::Enc));
+		if (filename != NULL && operation == Operation::Enc) {
+			// nppcrypt-file: no encryption with custom IV
+			::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_CUSTOM), false);
+			::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), false);
+			::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ENC), false);
+		} else {
+			::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_CUSTOM), true);
+			std::wostringstream s2;
+			s2 << TEXT("custom (") << std::to_wstring(current.iv_length) << TEXT(" Bytes):");
+			::SetDlgItemText(tab.iv, IDC_CRYPT_IV_CUSTOM, s2.str().c_str());
+			onIVSelectionChanged();
+		}
 	}
 }
 

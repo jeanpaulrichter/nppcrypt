@@ -96,40 +96,15 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 		if (!crypt::help::checkHashDigest(hmac.hash.algorithm, (unsigned int)hmac.hash.digest_length)) {
 			throw CExc(CExc::Code::invalid_hmac_data);
 		}
-		xml_err = xml_nppcrypt->QueryIntAttribute("auth-key", &hmac.keypreset_id);
+		xml_err = xml_nppcrypt->QueryIntAttribute("hmac-key", &hmac.keypreset_id);
 		if (xml_err != tinyxml2::XMLError::XML_NO_ERROR) {
 			hmac.keypreset_id = -1;
-		}
-		if (hmac.keypreset_id >= 0) {
-			//hmac.hash.key.set(preferences.getKey((size_t)hmac.keypreset_id), 16);
 		}
 		hmac.enable = true;
 		hmac.hash.use_key = true;
 		hmac.hash.encoding = crypt::Encoding::ascii;
 	} else {
 		hmac.enable = false;
-	}
-	tinyxml2::XMLElement* xml_random = xml_nppcrypt->FirstChildElement("random");
-	t_options.key.salt_bytes = 0;
-	if (xml_random) {
-		const char* pSalt = xml_random->Attribute("salt");
-		if (pSalt) {
-			if (strlen(pSalt) > 2 * crypt::Constants::salt_max) {
-				throw CExc(CExc::Code::invalid_salt);
-			}
-			s_init.salt.set(pSalt, strlen(pSalt), crypt::Encoding::base64);
-			t_options.key.salt_bytes = (int)s_init.salt.size();
-			if (t_options.key.salt_bytes < 1 || t_options.key.salt_bytes > crypt::Constants::salt_max) {
-				throw CExc(CExc::Code::invalid_salt);
-			}
-		}
-		const char* pIV = xml_random->Attribute("iv");
-		if (pIV) {
-			if (strlen(pIV) > 1024) {
-				throw CExc(CExc::Code::invalid_iv);
-			}
-			s_init.iv.set(pIV, strlen(pIV), crypt::Encoding::base64);
-		}
 	}
 	tinyxml2::XMLElement* xml_crypt = xml_nppcrypt->FirstChildElement("encryption");
 	if (xml_crypt) {
@@ -245,22 +220,51 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			break;
 		}
 		}
-		t = xml_key->Attribute("generateIV");
-		if (t != NULL && strlen(t) == 4 && strcmp(t, "true") == 0) {
-			t_options.iv = crypt::IV::keyderivation;
-		} else {
-			if (s_init.iv.size() > 0) {
-				t_options.iv = crypt::IV::random;
-			} else {
-				t_options.iv = crypt::IV::custom;
+		t = xml_key->Attribute("salt");
+		t_options.key.salt_bytes = 0;
+		if (t != NULL) {
+			size_t t_len = strlen(t);
+			if (t_len > 2 * crypt::Constants::salt_max) {
+				throw CExc(CExc::Code::invalid_salt);
+			}
+			s_init.salt.set(t, t_len, crypt::Encoding::base64);
+			t_options.key.salt_bytes = s_init.salt.size();
+			if (t_options.key.salt_bytes == 0 || t_options.key.salt_bytes > crypt::Constants::salt_max) {
+				throw CExc(CExc::Code::invalid_salt);
 			}
 		}
 	}
-
-	options.cipher = t_options.cipher;
-	options.iv = t_options.iv;
-	options.key = t_options.key;
-	options.mode = t_options.mode;
+	tinyxml2::XMLElement* xml_iv = xml_nppcrypt->FirstChildElement("iv");
+	if (xml_iv) {
+		const char* pIV = xml_iv->Attribute("value");
+		if (!pIV) {
+			throw CExc(CExc::Code::invalid_iv);
+		}
+		size_t pIV_len = strlen(pIV);
+		if (pIV_len > 2048) {
+			throw CExc(CExc::Code::invalid_iv);
+		}
+		s_init.iv.set(pIV, pIV_len, crypt::Encoding::base64);
+		const char* pMethod = xml_iv->Attribute("method");
+		if (!pMethod) {
+			throw CExc(CExc::Code::invalid_iv);
+		}
+		if (!crypt::help::getIVMode(pMethod, t_options.iv)) {
+			throw CExc(CExc::Code::invalid_iv);
+		}
+	}
+	tinyxml2::XMLElement* xml_tag = xml_nppcrypt->FirstChildElement("tag");
+	if (xml_tag) {
+		const char* pTag = xml_tag->Attribute("value");
+		if (!pTag) {
+			throw CExc(CExc::Code::invalid_tag);
+		}
+		size_t pTag_len = strlen(pTag);
+		if (pTag_len > 2048) {
+			throw CExc(CExc::Code::invalid_tag);
+		}
+		s_init.tag.set(pTag, pTag_len, crypt::Encoding::base64);
+	}
 
 	if (in[offset + 11] == '\r' && in[offset + 12] == '\n') {
 		pEncryptedData = in + offset + 13;
@@ -275,27 +279,34 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 	// ------ check EOLs: (only important in case of nppcrypt files that use this options to reencrypt)
 	for (size_t i = 1; i < encryptedDataLen - 1; i++) {
 		if (pEncryptedData[i] == '\r' && pEncryptedData[i + 1] == '\n')	{
-			options.encoding.linebreaks = true;
-			options.encoding.linelength = (int)i;
-			options.encoding.eol = crypt::EOL::windows;
+			t_options.encoding.linebreaks = true;
+			t_options.encoding.linelength = i;
+			t_options.encoding.eol = crypt::EOL::windows;
 			break;
 		} else if (pEncryptedData[i] == '\n') {
-			options.encoding.linebreaks = true;
-			options.encoding.linelength = (int)i;
-			options.encoding.eol = crypt::EOL::unix;
+			t_options.encoding.linebreaks = true;
+			t_options.encoding.linelength = i;
+			t_options.encoding.eol = crypt::EOL::unix;
 			break;
 		}
 	}
-	if (options.encoding.enc == crypt::Encoding::base16 || options.encoding.enc == crypt::Encoding::base32)	{
+	if (t_options.encoding.enc == crypt::Encoding::base16 || t_options.encoding.enc == crypt::Encoding::base32)	{
 		for (size_t i = 0; i < encryptedDataLen - 1; i++) {
-			if (std::isalpha((int)*pEncryptedData + (int)i)) {
-				options.encoding.uppercase = (std::isupper((int)*pEncryptedData + (int)i) == 0) ? false : true;
+			if (std::isalpha((int)*(pEncryptedData + i))) {
+				t_options.encoding.uppercase = (std::isupper((int)*(pEncryptedData + i)) == 0) ? false : true;
 				break;
 			}
 		}
 	} else {
-		options.encoding.uppercase = false;
+		t_options.encoding.uppercase = false;
 	}
+
+	options.cipher = t_options.cipher;
+	options.mode = t_options.mode;
+	options.key = t_options.key;
+	options.encoding = t_options.encoding;
+	options.iv = t_options.iv;
+
 	return true;
 }
 
@@ -352,7 +363,7 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 		}
 		out << " hmac-hash=\"" << crypt::help::getString(hmac.hash.algorithm) << "\"";
 		if (hmac.keypreset_id >= 0) {
-			out << " auth-key=\"" << hmac.keypreset_id << "\"";
+			out << " hmac-key=\"" << hmac.keypreset_id << "\"";
 		}
 		out << " hmac=\"";
 		hmac_offset = static_cast<size_t>(out.tellp());
@@ -360,28 +371,13 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	}
 	out << ">" << linebreak;
 	body_start = static_cast<size_t>(out.tellp());
+	// <encryption>
 	out << "<encryption cipher=\"" << crypt::help::getString(options.cipher) << "\" key-length=\"" << options.key.length << "\"";
 	if (!crypt::help::checkProperty(options.cipher, crypt::STREAM)) {
 		out << " mode=\"" << crypt::help::getString(options.mode) << "\"";
 	}
-	out << " encoding=\"" << crypt::help::getString(options.encoding.enc) << "\" ";
-	if (s_init.tag.size()) {
-		s_init.tag.get(temp_s, crypt::Encoding::base64);
-		out << "tag=\"" << temp_s << "\" ";
-	}
-	out << "/>" << linebreak;
-	if ((options.iv == crypt::IV::random && s_init.iv.size()>0) || options.key.salt_bytes > 0) {
-		out << "<random ";
-		if ((options.iv == crypt::IV::random || options.iv == crypt::IV::custom) && s_init.iv.size() > 0) {
-			s_init.iv.get(temp_s, crypt::Encoding::base64);
-			out << "iv=\"" << temp_s << "\" ";
-		}
-		if (options.key.salt_bytes > 0) {
-			s_init.salt.get(temp_s, crypt::Encoding::base64);
-			out << "salt=\"" << temp_s << "\" ";
-		}
-		out << "/>" << linebreak;
-	}
+	out << " encoding=\"" << crypt::help::getString(options.encoding.enc) << "\" />" << linebreak;
+	// <key>
 	out << "<key algorithm=\"" << crypt::help::getString(options.key.algorithm);
 	switch (options.key.algorithm)
 	{
@@ -401,11 +397,27 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 		break;
 	}
 	}
-	if (options.iv == crypt::IV::keyderivation) {
-		out << "generateIV=\"true\" />" << linebreak;
-	} else {
-		out << "/>" << linebreak;
+	if (options.key.salt_bytes > 0) {
+		s_init.salt.get(temp_s, crypt::Encoding::base64);
+		out << "salt=\"" << temp_s << "\" ";
 	}
+	out << "/>" << linebreak;
+	//<iv> and <tag>
+	bool add_linebreak = false;
+	if (s_init.iv.size() > 0) {
+		s_init.iv.get(temp_s, crypt::Encoding::base64);
+		out << "<iv value=\"" << temp_s << "\" method=\"" << crypt::help::getString(options.iv) << "\" />";
+		add_linebreak = true;
+	}
+	if (s_init.tag.size() > 0) {
+		s_init.tag.get(temp_s, crypt::Encoding::base64);
+		out << "<tag value=\"" << temp_s << "\" />";
+		add_linebreak = true;
+	}
+	if (add_linebreak) {
+		out << linebreak;
+	}
+
 	body_end = static_cast<size_t>(out.tellp());
 	out << "</nppcrypt>" << linebreak;
 	out << std::scientific;
