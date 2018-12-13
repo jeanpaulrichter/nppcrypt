@@ -19,51 +19,57 @@ GNU General Public License for more details.
 #include "crypt.h"
 #include "mdef.h"
 
-using crypt::byte;
-
 class CryptHeader
 {
 public:
 
 	struct HMAC {
-		HMAC() : enable(false) {};
+		HMAC() : enable(false), keypreset_id(-1) {};
+
 		bool					enable;
 		int						keypreset_id;
 		crypt::Options::Hash	hash;
 	};
 
-						CryptHeader() : version(NPPC_VERSION) {};
+						CryptHeader(HMAC& h) : version(NPPC_VERSION), hmac(h) {};
 	int					getVersion() { return version; };
-	crypt::InitData&	initData() { return s_init; };
+	crypt::InitData&	initData() { return initdata; };
 
 protected:
-	crypt::InitData		s_init;
+
+	struct DataPointer {
+		DataPointer() : start(NULL), length(0) {};
+
+		const crypt::byte*	start;
+		size_t				length;
+	};
+
+
+	crypt::InitData		initdata;
+	HMAC&				hmac;
 	int					version;
-	const byte*			pBody;
-	size_t				bodyLength;
+	DataPointer			body;
 };
 
 class CryptHeaderReader : public CryptHeader
 {
 public:
-								CryptHeaderReader(crypt::Options::Crypt& opt, CryptHeader::HMAC& h) : options(opt), hmac(h), pEncryptedData(NULL), encryptedDataLen(0) {};
-	bool						parse(const byte* in, size_t in_len);	
-	const byte*					encryptedData() { return pEncryptedData; };
-	size_t						encryptedDataLength() { return encryptedDataLen; };
+								CryptHeaderReader(crypt::Options::Crypt& opt, HMAC& hmac) : CryptHeader(hmac), options(opt) {};
+	bool						parse(const crypt::byte* in, size_t in_len);
+	const crypt::byte*			getEncrypted() { return encrypted.start; };
+	size_t						getEncryptedLength() { return encrypted.length; };
 	bool						checkHMAC();
 
 private:
 	crypt::Options::Crypt&		options;
-	CryptHeader::HMAC&			hmac;
 	crypt::UserData				hmac_digest;
-	const unsigned char* 		pEncryptedData;
-	size_t						encryptedDataLen;
+	DataPointer					encrypted;
 };
 
 class CryptHeaderWriter : public CryptHeader
 {
 public:
-							CryptHeaderWriter(const crypt::Options::Crypt& opt, HMAC& hmac_opt, const byte* h_key = NULL, size_t h_len = 0);
+							CryptHeaderWriter(const crypt::Options::Crypt& opt, HMAC& hmac) : CryptHeader(hmac), options(opt) {};
 	void					create(const crypt::byte* data, size_t data_length);
 	const char*				c_str() { return buffer.c_str(); };
 	size_t					size() { return buffer.size(); };
@@ -71,7 +77,6 @@ public:
 private:
 	size_t					base64length(size_t bin_length, bool linebreaks=false, size_t line_length=0, bool windows=false);
 
-	CryptHeader::HMAC&				hmac;
 	const crypt::Options::Crypt&	options;
 	std::string						buffer;
 };

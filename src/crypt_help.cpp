@@ -222,9 +222,34 @@ namespace Strings {
 
 	static const char*	eol[] = { "windows", "unix" };
 
+	static const char*  boolean[] = { "true", "false" };
+
 	static char			help_url_wikipedia[100] = "https://en.wikipedia.org/wiki/";
 	static const int	help_url_wikipedia_len = 30;
 };
+
+int searchStringArray(const char* s, const char** a, size_t a_length)
+{
+	if (!s || !a || !a_length) {
+		return -1;
+	}
+	size_t s_length = std::strlen(s);
+	for (size_t i = 0; i < a_length; i++) {
+		if (s_length != std::strlen(a[i])) {
+			continue;
+		}
+		size_t x = 0;
+		for (x = 0; x < s_length; x++) {
+			if (s[x] != a[i][x]) {
+				break;
+			}
+		}
+		if (x == s_length) {
+			return (int)i;
+		}
+	}
+	return -1;
+}
 
 const char* crypt::help::getString(crypt::Cipher cipher)
 {
@@ -266,176 +291,172 @@ const char* crypt::help::getString(crypt::EOL eol)
 	return Strings::eol[static_cast<int>(eol)];
 }
 
+const char* crypt::help::getString(bool v)
+{
+	return Strings::boolean[v ? 0 : 1];
+}
+
 bool crypt::help::getCipher(const char* s, crypt::Cipher& c)
 {
-	if (!s) {
+	int index = searchStringArray(s, Strings::cipher, (size_t)Cipher::COUNT);
+	if (index >= 0) {
+		c = (Cipher)index;
+		return true;
+	} else {
 		return false;
 	}
-	size_t sl = strlen(s);
-	for (size_t i = 0; i< static_cast<int>(Cipher::COUNT); i++) {
-		if (sl != strlen(Strings::cipher[i])) {
-			continue;
-		}
-		size_t x = 0;
-		for (x = 0; x< sl; x++) {
-			if (s[x] != Strings::cipher[i][x]) {
-				break;
-			}
-		}
-		if (x == sl) {
-			c = (crypt::Cipher)i;
-			return true;
-		}
-	}
-	return false;
 }
 
 bool crypt::help::getCipherMode(const char* s, crypt::Mode& m)
 {
-	if (!s) {
+	int index = searchStringArray(s, Strings::mode, (size_t)Mode::COUNT);
+	if (index >= 0) {
+		m = (Mode)index;
+		return true;
+	} else {
 		return false;
 	}
-	for (size_t i = 0; i< static_cast<int>(Mode::COUNT); i++) {
-		size_t sl = strlen(s), x = 0;
-		if (sl != strlen(Strings::mode[i])) {
-			continue;
-		}
-		for (x = 0; x< sl; x++) {
-			if (s[x] != Strings::mode[i][x]) {
-				break;
-			}
-		}
-		if (x == sl) {
-			m = (crypt::Mode)i;
-			return true;
-		}
-	}
-	return false;
 }
 
 bool crypt::help::getKeyDerivation(const char*s, KeyDerivation& v)
 {
-	if (!s) {
+	int index = searchStringArray(s, Strings::key_algo, (size_t)KeyDerivation::COUNT);
+	if (index >= 0) {
+		v = (KeyDerivation)index;
+		return true;
+	} else {
 		return false;
 	}
-	for (int i = 0; i<static_cast<int>(KeyDerivation::COUNT); i++) {
-		if (strcmp(s, Strings::key_algo[i]) == 0) {
-			v = (crypt::KeyDerivation)i;
-			return true;
-		}
-	}
-	return false;
 }
 
 bool crypt::help::getIVMode(const char* s, crypt::IV& iv)
 {
-	if (!s) {
+	int index = searchStringArray(s, Strings::iv, (size_t)IV::COUNT);
+	if (index >= 0) {
+		iv = (IV)index;
+		return true;
+	} else {
 		return false;
 	}
-	for (int i = 0; i<static_cast<int>(IV::COUNT); i++) {
-		if (strcmp(s, Strings::iv[i]) == 0) {
-			iv = (crypt::IV)i;
-			return true;
-		}
-	}
-	return false;
 }
 
 bool crypt::help::getEncoding(const char* s, crypt::Encoding& e)
 {
-	if (!s) {
+	int index = searchStringArray(s, Strings::encoding, (size_t)Encoding::COUNT);
+	if (index >= 0) {
+		e = (Encoding)index;
+		return true;
+	} else {
 		return false;
 	}
-	for (int i = 0; i<static_cast<int>(Encoding::COUNT); i++) {
-		if (strcmp(s, Strings::encoding[i]) == 0) {
-			e = (crypt::Encoding)i;
-			return true;
-		}
-	}
-	return false;
 }
 
 bool crypt::help::getRandomRestriction(const char* s, UserData::Restriction& r)
 {
-	if (!s) {
+	int index = searchStringArray(s, Strings::random_restriction, (size_t)UserData::Restriction::COUNT);
+	if (index >= 0) {
+		r = (UserData::Restriction)index;
+		return true;
+	} else {
 		return false;
 	}
-	for (int i = 0; i<static_cast<int>(UserData::Restriction::COUNT); i++) {
-		if (strcmp(s, Strings::random_restriction[i]) == 0) {
-			r = (UserData::Restriction)i;
-			return true;
-		}
-	}
-	return false;
 }
 
 bool crypt::help::getEOL(const char* s, crypt::EOL& eol)
 {
-	if (!s) {
+	int index = searchStringArray(s, Strings::eol, (size_t)EOL::COUNT);
+	if (index >= 0) {
+		eol = (EOL)index;
+		return true;
+	} else {
 		return false;
 	}
-	for (int i = 0; i<static_cast<int>(crypt::EOL::COUNT); i++) {
-		if (strcmp(s, Strings::eol[i]) == 0) {
-			eol = (crypt::EOL)i;
-			return true;
-		}
-	}
-	return false;
 }
 
 bool crypt::help::getHash(const char* s, Hash& h)
 {
-	if (!s) {
+	int index = searchStringArray(s, Strings::hash, (size_t)Hash::COUNT);
+	if (index >= 0) {
+		h = (Hash)index;
+		return true;
+	} else {
 		return false;
 	}
-	for (size_t i = 0; i < static_cast<size_t>(Hash::COUNT); i++) {
-		size_t sl = strlen(s);
-		size_t x = 0;
-		if (sl != strlen(Strings::hash[i])) {
-			continue;
-		}
-		for (x = 0; x < sl; x++) {
-			if (s[x] != Strings::hash[i][x]) {
-				break;
+}
+
+bool crypt::help::getUnsigned(const char* s, size_t& i)
+{
+	if (s) {
+		i = (size_t)std::atoi(s);
+		return true;
+	}
+	return false;
+}
+
+bool crypt::help::getInteger(const char* s, int& i, bool log2)
+{
+	if (s) {
+		if (log2) {
+			int temp_int = std::atoi(s);
+			if ((temp_int != 0) && !(temp_int & (temp_int - 1))) {
+				i = static_cast<int>(std::log(temp_int) / std::log(2));
+				return true;
 			}
-		}
-		if (x == sl) {
-			h = (Hash)i;
+		} else {
+			i = std::atoi(s);
+			return true;
+		}		
+	}
+	return false;
+}
+
+bool crypt::help::getBoolean(const char* s, bool& b)
+{
+	if (s) {
+		size_t len = strlen(s);
+		if (len == 4 && s[0] == 't' && s[1] == 'r' && s[2] == 'u' && s[3] == 'e') {
+			b = true;
+			return true;
+		} else if(len == 5 && s[0] == 'f' && s[1] == 'a' && s[2] == 'l' && s[3] == 's' && s[4] == 'e') {
+			b = false;
 			return true;
 		}
 	}
 	return false;
 }
 
-void crypt::help::validateCryptOptions(Options::Crypt options, bool exceptions)
+void crypt::help::validate(Options::Crypt options, bool exceptions)
 {
-	// ---------- cipher mode & keylength
+	// ---------- cipher mode
 	if (!checkProperty(options.cipher, STREAM) && !checkCipherMode(options.cipher, options.mode)) {
-		if (checkCipherMode(options.cipher, Mode::gcm)) {
-			options.mode = Mode::gcm;
-		} else {
-			options.mode = Mode::cbc;
-		}
 		if (exceptions) {
 			throw CExc(CExc::Code::invalid_mode);
+		} else {
+			if (checkCipherMode(options.cipher, Mode::gcm)) {
+				options.mode = Mode::gcm;
+			} else {
+				options.mode = Mode::cbc;
+			}
 		}
 	}
+	// ---------- key-length
 	if (options.key.length > 0 && !checkCipherKeylength(options.cipher, options.key.length)) {
-		options.key.length = 0;
 		if (exceptions) {
 			throw CExc(CExc::Code::invalid_keylength);
+		} else {
+			options.key.length = 0; // default key-length will be chosen
 		}
 	}
-	// ---------- keyderivation
+	// ---------- keyderivation method
 	switch (options.key.algorithm) {
 	case KeyDerivation::pbkdf2:
 	{
 		if (options.key.options[0] < 0 || options.key.options[0] >= (int)crypt::Hash::COUNT || !checkProperty((crypt::Hash)options.key.options[0], HMAC_SUPPORT)) {
-			options.key.options[0] = (int)Constants::pbkdf2_default_hash;
-			options.key.options[1] = Constants::pbkdf2_default_hash_digest;
 			if (exceptions) {
 				throw CExc(CExc::Code::invalid_pbkdf2_hash);
 			}
+			options.key.options[0] = (int)Constants::pbkdf2_default_hash;
+			options.key.options[1] = Constants::pbkdf2_default_hash_digest;
 		}
 		if (options.key.options[1] != 0 && !crypt::help::checkHashDigest((Hash)options.key.options[0], (unsigned int)options.key.options[1])) {
 			options.key.options[1] = 0;
@@ -451,34 +472,38 @@ void crypt::help::validateCryptOptions(Options::Crypt options, bool exceptions)
 		}
 		break;
 	}
-	case crypt::KeyDerivation::bcrypt:
+	case KeyDerivation::bcrypt:
 	{
 		if (options.key.options[0] < crypt::Constants::bcrypt_iter_min || options.key.options[0] > crypt::Constants::bcrypt_iter_max) {
-			options.key.options[0] = crypt::Constants::bcrypt_iter_default;
 			if (exceptions) {
 				throw CExc(CExc::Code::invalid_bcrypt);
+			} else {
+				options.key.options[0] = crypt::Constants::bcrypt_iter_default;
 			}
 		}
 		break;
 	}
-	case crypt::KeyDerivation::scrypt:
+	case KeyDerivation::scrypt:
 	{
 		if (options.key.options[0] < crypt::Constants::scrypt_N_min || options.key.options[0] > crypt::Constants::scrypt_N_max) {
-			options.key.options[0] = crypt::Constants::scrypt_N_default;
 			if (exceptions) {
 				throw CExc(CExc::Code::invalid_scrypt);
+			} else {
+				options.key.options[0] = crypt::Constants::scrypt_N_default;
 			}
 		}
 		if (options.key.options[1] < crypt::Constants::scrypt_r_min || options.key.options[1] > crypt::Constants::scrypt_r_max) {
-			options.key.options[1] = crypt::Constants::scrypt_r_default;
 			if (exceptions) {
 				throw CExc(CExc::Code::invalid_scrypt);
+			} else {
+				options.key.options[1] = crypt::Constants::scrypt_r_default;
 			}
 		}
 		if (options.key.options[2] < crypt::Constants::scrypt_p_min || options.key.options[2] > crypt::Constants::scrypt_p_max) {
-			options.key.options[2] = crypt::Constants::scrypt_p_default;
 			if (exceptions) {
 				throw CExc(CExc::Code::invalid_scrypt);
+			} else {
+				options.key.options[2] = crypt::Constants::scrypt_p_default;
 			}
 		}
 		break;
@@ -486,29 +511,85 @@ void crypt::help::validateCryptOptions(Options::Crypt options, bool exceptions)
 	}
 	// ---------- salt
 	if (options.key.salt_bytes > Constants::salt_max) {
-		options.key.salt_bytes = 16;
 		if (exceptions) {
 			throw CExc(CExc::Code::invalid_salt);
+		} else {
+			options.key.salt_bytes = 16;
 		}
 	}
 	if (options.key.algorithm == KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
-		options.key.salt_bytes = 16;
 		if (exceptions) {
 			throw CExc(CExc::Code::invalid_bcrypt_saltlength);
+		} else {
+			options.key.salt_bytes = 16;
 		}
 	}
-	// ----------- encoding
+	// ----------- encoding: line-length
 	if (options.encoding.linelength > NPPC_MAX_LINE_LENGTH) {
-		options.encoding.linelength = NPPC_MAX_LINE_LENGTH;
 		if (exceptions) {
 			throw CExc(CExc::Code::invalid_linelength);
+		} else {
+			options.encoding.linelength = NPPC_MAX_LINE_LENGTH;
+		}
+	}
+}
+
+void crypt::help::validate(Options::Hash options, bool exceptions)
+{
+	if (!help::checkHashDigest(options.algorithm, (unsigned int)options.digest_length)) {
+		if (exceptions) {
+			throw CExc(CExc::Code::invalid_hash_digestlen);
+		} else {
+			options.digest_length = 0;
+		}
+	}
+	if (options.use_key) {
+		if (!help::checkProperty(options.algorithm, crypt::HMAC_SUPPORT) && !help::checkProperty(options.algorithm, crypt::KEY_SUPPORT)) {
+			if (exceptions) {
+				throw CExc(CExc::Code::hash_without_keysupport);
+			} else {
+				options.algorithm = Hash::sha3;
+			}
+		}
+	} else if (help::checkProperty(options.algorithm, crypt::KEY_REQUIRED)) {
+		if (exceptions) {
+			throw CExc(CExc::Code::hash_requires_key);
+		} else {
+			options.algorithm = Hash::sha3;
+		}
+	}
+}
+
+void crypt::help::validate(Options::Convert options, bool exceptions)
+{
+	if (options.from == options.to) {
+		if (exceptions) {
+			throw CExc(CExc::Code::hash_requires_key);
+		} else {
+			if (options.to == Encoding::ascii) {
+				options.to = Encoding::base16;
+			} else if (options.to == Encoding::base16) {
+				options.to = Encoding::base32;
+			} else if (options.to == Encoding::base32) {
+				options.to = Encoding::base64;
+			} else {
+				options.to = Encoding::ascii;
+			}
+		}
+	}
+	// ----------- line-length
+	if (options.linelength > NPPC_MAX_LINE_LENGTH) {
+		if (exceptions) {
+			throw CExc(CExc::Code::invalid_linelength);
+		} else {
+			options.linelength = NPPC_MAX_LINE_LENGTH;
 		}
 	}
 }
 
 crypt::Mode crypt::help::getModeByIndex(crypt::Cipher cipher, int index)
 {
-	if (index < int(Mode::eax)) {
+	if (index >= 0 && index < int(Mode::eax)) {
 		return Mode(index);
 	} else if (index == int(Mode::eax)) {
 		if ((cipher_properties[int(cipher)] & EAX) == EAX) {

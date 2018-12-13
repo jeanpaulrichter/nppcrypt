@@ -25,7 +25,7 @@ GNU General Public License for more details.
 class CExc: public std::exception
 {
 public:
-	enum class Code : unsigned 
+	enum class Code : unsigned
 	{
 		unexpected = 0,
 		input_null,
@@ -62,7 +62,7 @@ public:
 		invalid_salt,
 		invalid_iv,
 		invalid_iv_mode,
-		invalid_cipher, 
+		invalid_cipher,
 		invalid_mode,
 		invalid_encoding,
 		invalid_eol,
@@ -76,6 +76,9 @@ public:
 		invalid_crypt_action,
 		invalid_keylength,
 		invalid_hashkey,
+		invalid_hash_digestlen,
+		hash_without_keysupport,
+		hash_requires_key,
 		passwords_dont_match,
 		password_missing,
 		preffile_read_fail,

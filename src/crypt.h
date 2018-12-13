@@ -167,7 +167,7 @@ namespace crypt
 			bool			linebreaks;
 			EOL				eol;
 			bool			uppercase;
-			int				linelength;
+			size_t			linelength;
 		};
 	};
 	

@@ -52,7 +52,7 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 			fin.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 			fin.seekg(0, fin.end);
 			size_t fin_size = fin.tellg();
-			if (!fin_size) {
+			if (!fin_size || fin_size > 2048) {
 				throw std::exception();
 			}
 			fin.seekg(0, fin.beg);
@@ -77,177 +77,118 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 		if (!xml_nppcrypt) {
 			throw CExc(CExc::Code::preffile_corrupted);
 		}
+
+		// nppcrypt-files
 		tinyxml2::XMLElement* xml_temp = xml_nppcrypt->FirstChildElement("files");
 		if (xml_temp) {
-			const char* pTemp = xml_temp->Attribute("enabled");
-			if (pTemp) {
-				files.enable = (strcmp(pTemp, "true") == 0) ? true : false;
-			}
-			pTemp = xml_temp->Attribute("askonsave");
-			if (pTemp) {
-				files.askonsave = (strcmp(pTemp, "true") == 0) ? true : false;
-			}
-			pTemp = xml_temp->Attribute("extension");
-			if (pTemp) {
+			crypt::help::getBoolean(xml_temp->Attribute("enabled"), files.enable);
+			crypt::help::getBoolean(xml_temp->Attribute("askonsave"), files.askonsave);
+			const char* pExt = xml_temp->Attribute("extension");
+			if (pExt && strlen(pExt) <= NPPC_FILE_EXT_MAXLENGTH) {
 				try {
-					helper::Windows::utf8_to_wchar(pTemp, -1, files.extension);
+					helper::Windows::utf8_to_wchar(pExt, -1, files.extension);
 				} catch(...) {
-					files.extension = TEXT("nppcrypt");
-				}
-				if (files.extension.size() > NPPC_FILE_EXT_MAXLENGTH) {
-					files.extension = files.extension.substr(0, NPPC_FILE_EXT_MAXLENGTH);
+					files.extension = TEXT(NPPC_DEF_FILE_EXT);
 				}
 			}
 		}
+
+		// crypt_basic
 		xml_temp = xml_nppcrypt->FirstChildElement("crypt_basic");
 		if (xml_temp) {
-			const char* pTemp = xml_temp->Attribute("cipher");
-			crypt::help::getCipher(pTemp, current.crypt.options.cipher);
-			pTemp = xml_temp->Attribute("mode");
-			crypt::help::getCipherMode(pTemp, current.crypt.options.mode);
-			pTemp = xml_temp->Attribute("iv");
-			crypt::help::getIVMode(pTemp, current.crypt.options.iv);
+			crypt::help::getCipher(xml_temp->Attribute("cipher"), current.crypt.options.cipher);
+			crypt::help::getUnsigned(xml_temp->Attribute("key-length"), current.crypt.options.key.length);
+			crypt::help::getCipherMode(xml_temp->Attribute("mode"), current.crypt.options.mode);
+			crypt::help::getIVMode(xml_temp->Attribute("iv"), current.crypt.options.iv);			
 		}
+
+		// crypt_encoding
 		xml_temp = xml_nppcrypt->FirstChildElement("crypt_encoding");
 		if (xml_temp) {
-			const char* pTemp = xml_temp->Attribute("enc");
-			crypt::help::getEncoding(pTemp, current.crypt.options.encoding.enc);
-			pTemp = xml_temp->Attribute("eol");
-			crypt::help::getEOL(pTemp, current.crypt.options.encoding.eol);
-			pTemp = xml_temp->Attribute("linebreaks");
-			if (pTemp) {
-				current.crypt.options.encoding.linebreaks = (strcmp(pTemp, "true") == 0) ? true : false;
-			}
-			pTemp = xml_temp->Attribute("linelength");
-			if (pTemp) {
-				current.crypt.options.encoding.linelength = (size_t)std::atoi(pTemp);
-			}
-			pTemp = xml_temp->Attribute("uppercase");
-			if (pTemp) {
-				current.crypt.options.encoding.uppercase = (strcmp(pTemp, "true") == 0) ? true : false;
-			}
+			crypt::help::getEncoding(xml_temp->Attribute("enc"), current.crypt.options.encoding.enc);
+			crypt::help::getEOL(xml_temp->Attribute("eol"), current.crypt.options.encoding.eol);
+			crypt::help::getBoolean(xml_temp->Attribute("linebreaks"), current.crypt.options.encoding.linebreaks);
+			crypt::help::getUnsigned(xml_temp->Attribute("linelength"), current.crypt.options.encoding.linelength);
+			crypt::help::getBoolean(xml_temp->Attribute("uppercase"), current.crypt.options.encoding.uppercase);
 		}
+
+		// crypt_key
 		xml_temp = xml_nppcrypt->FirstChildElement("crypt_key");
 		if (xml_temp) {
-			const char* pTemp = xml_temp->Attribute("saltbytes");
-			if (pTemp) {
-				current.crypt.options.key.salt_bytes = std::atoi(pTemp);
-			}
-			pTemp = xml_temp->Attribute("algorithm");
-			if (crypt::help::getKeyDerivation(pTemp, current.crypt.options.key.algorithm)) {
+			crypt::help::getUnsigned(xml_temp->Attribute("saltbytes"), current.crypt.options.key.salt_bytes);
+			if (crypt::help::getKeyDerivation(xml_temp->Attribute("algorithm"), current.crypt.options.key.algorithm)) {
 				switch (current.crypt.options.key.algorithm) {
 				case crypt::KeyDerivation::pbkdf2:
 				{
-					pTemp = xml_temp->Attribute("hash");
 					crypt::Hash thash;
-					if (crypt::help::getHash(pTemp, thash)) {
+					if (crypt::help::getHash(xml_temp->Attribute("hash"), thash)) {
 						current.crypt.options.key.options[0] = static_cast<int>(thash);
 					}
-					pTemp = xml_temp->Attribute("iterations");
-					if (pTemp) {
-						current.crypt.options.key.options[1] = std::atoi(pTemp);
-					}
+					crypt::help::getInteger(xml_temp->Attribute("digest-length"), current.crypt.options.key.options[1]);
+					crypt::help::getInteger(xml_temp->Attribute("iterations"), current.crypt.options.key.options[2]);
 					break;
 				}
 				case crypt::KeyDerivation::bcrypt:
 				{
-					pTemp = xml_temp->Attribute("iterations");
-					if (pTemp) {
-						int temp_int = std::atoi(pTemp);
-						if ((temp_int != 0) && !(temp_int & (temp_int - 1))) {
-							current.crypt.options.key.options[0] = static_cast<int>(std::log(temp_int) / std::log(2));
-						}
-					}
+					crypt::help::getInteger(xml_temp->Attribute("iterations"), current.crypt.options.key.options[0], true);
 					break;
 				}
 				case crypt::KeyDerivation::scrypt:
 				{
-					pTemp = xml_temp->Attribute("N");
-					if (pTemp) {
-						int temp_int = std::atoi(pTemp);
-						if ((temp_int != 0) && !(temp_int & (temp_int - 1))) {
-							current.crypt.options.key.options[0] = static_cast<int>(std::log(temp_int) / std::log(2));
-						}
-					}
-					pTemp = xml_temp->Attribute("r");
-					if (pTemp) {
-						current.crypt.options.key.options[1] = std::atoi(pTemp);
-					}
-					pTemp = xml_temp->Attribute("p");
-					if (pTemp) {
-						current.crypt.options.key.options[2] = std::atoi(pTemp);
-					}
+					crypt::help::getInteger(xml_temp->Attribute("N"), current.crypt.options.key.options[0], true);
+					crypt::help::getInteger(xml_temp->Attribute("r"), current.crypt.options.key.options[1]);
+					crypt::help::getInteger(xml_temp->Attribute("p"), current.crypt.options.key.options[2]);
 					break;
 				}
 				}
 			}
 		}
+
+		// crypt_hmac
 		xml_temp = xml_nppcrypt->FirstChildElement("crypt_hmac");
 		if (xml_temp) {
-			const char* pTemp = xml_temp->Attribute("enabled");
-			if (pTemp) {
-				current.crypt.hmac.enable = (strcmp(pTemp, "true") == 0) ? true : false;
-			}
-			pTemp = xml_temp->Attribute("hash");
-			crypt::help::getHash(pTemp, current.crypt.hmac.hash.algorithm);
-			pTemp = xml_temp->Attribute("keypreset_id");
-			if (pTemp) {
-				current.crypt.hmac.keypreset_id = std::atoi(pTemp);
-			}
+			crypt::help::getBoolean(xml_temp->Attribute("enabled"), current.crypt.hmac.enable);
+			crypt::help::getHash(xml_temp->Attribute("hash"), current.crypt.hmac.hash.algorithm);
+			crypt::help::getUnsigned(xml_temp->Attribute("digest-length"), current.crypt.hmac.hash.digest_length);
+			crypt::help::getInteger(xml_temp->Attribute("keypreset-id"), current.crypt.hmac.keypreset_id);
 		}
+
+		// hash
 		xml_temp = xml_nppcrypt->FirstChildElement("hash");
 		if (xml_temp) {
-			const char* pTemp = xml_temp->Attribute("algorithm");
-			crypt::help::getHash(pTemp, current.hash.algorithm);
-			pTemp = xml_temp->Attribute("encoding");
-			crypt::help::getEncoding(pTemp, current.hash.encoding);
-			pTemp = xml_temp->Attribute("usekey");
-			if (pTemp) {
-				current.hash.use_key = (strcmp(pTemp, "true") == 0) ? true : false;
-			}
-			//pTemp = xml_temp->Attribute("keypreset_id");
-			//if (pTemp) {
-			//	current.hash.keypreset_id = std::atoi(pTemp);
-			//}
+			crypt::help::getHash(xml_temp->Attribute("algorithm"), current.hash.algorithm);
+			crypt::help::getUnsigned(xml_temp->Attribute("digest-length"), current.hash.digest_length);
+			crypt::help::getEncoding(xml_temp->Attribute("encoding"), current.hash.encoding);
+			crypt::help::getBoolean(xml_temp->Attribute("usekey"), current.hash.use_key);
 		}
+
+		// random
 		xml_temp = xml_nppcrypt->FirstChildElement("random");
 		if (xml_temp) {
-			const char* pTemp = xml_temp->Attribute("restriction");
-			crypt::help::getRandomRestriction(pTemp, current.random.restriction);
-			pTemp = xml_temp->Attribute("encoding");
-			crypt::help::getEncoding(pTemp, current.random.encoding);
-			pTemp = xml_temp->Attribute("length");
-			if (pTemp) {
-				current.random.length = std::atoi(pTemp);
-			}
+			crypt::help::getRandomRestriction(xml_temp->Attribute("restriction"), current.random.restriction);
+			crypt::help::getEncoding(xml_temp->Attribute("encoding"), current.random.encoding);
+			crypt::help::getUnsigned(xml_temp->Attribute("length"), current.random.length);
 		}
+
+		// convert
 		xml_temp = xml_nppcrypt->FirstChildElement("convert");
 		if (xml_temp) {
-			const char* pTemp = xml_temp->Attribute("source_enc");
-			crypt::help::getEncoding(pTemp, current.convert.from);
-			pTemp = xml_temp->Attribute("target_enc");
-			crypt::help::getEncoding(pTemp, current.convert.to);
-			pTemp = xml_temp->Attribute("eol");
-			crypt::help::getEOL(pTemp, current.convert.eol);
-			pTemp = xml_temp->Attribute("linebreaks");
-			if (pTemp) {
-				current.convert.linebreaks = (strcmp(pTemp, "true") == 0) ? true : false;
-			}
-			pTemp = xml_temp->Attribute("linelength");
-			if (pTemp) {
-				current.convert.linelength = std::atoi(pTemp);
-			}
-			pTemp = xml_temp->Attribute("uppercase");
-			if (pTemp) {
-				current.convert.uppercase = (strcmp(pTemp, "true") == 0) ? true : false;
-			}
+			crypt::help::getEncoding(xml_temp->Attribute("source-enc"), current.convert.from);
+			crypt::help::getEncoding(xml_temp->Attribute("target-enc"), current.convert.to);
+			crypt::help::getEOL(xml_temp->Attribute("eol"), current.convert.eol);
+			crypt::help::getBoolean(xml_temp->Attribute("linebreaks"), current.convert.linebreaks);
+			crypt::help::getUnsigned(xml_temp->Attribute("linelength"), current.convert.linelength);
+			crypt::help::getBoolean(xml_temp->Attribute("uppercase"), current.convert.uppercase);
 		}
+
+		// key_presets
 		xml_temp = xml_nppcrypt->FirstChildElement("key_presets");
 		if (xml_temp) {
 			for (tinyxml2::XMLElement* child = xml_temp->FirstChildElement("key"); child != NULL; child = child->NextSiblingElement("key"))	{
 				const char* pLabel = child->Attribute("label");
 				const char* pValue = child->Attribute("value");
-				if (pLabel && strlen(pLabel) > 0 && pValue && strlen(pValue) == 24) {
+				size_t label_length = strlen(pLabel);
+				if (pLabel && label_length > 0 && label_length <= 30 && pValue && strlen(pValue) == 24) {
 					KeyPreset		temp_key;
 					std::wstring	temp_str;
 					try {
@@ -266,11 +207,23 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 				}
 			}
 		}
+
+		/* validate */
+		if (current.crypt.hmac.keypreset_id < -1 || current.crypt.hmac.keypreset_id >= (int)keys.size()) {
+			current.crypt.hmac.keypreset_id = 0;
+		}
+		if (current.random.length > crypt::Constants::rand_char_max) {
+			current.random.length = 32;
+		}
+		crypt::help::validate(current.crypt.options, false);
+		crypt::help::validate(current.crypt.hmac.hash, false);
+		crypt::help::validate(current.hash, false);
+		crypt::help::validate(current.convert, false);
+
 		file_loaded = true;
 	} catch(...) {
-		// do not annoy user with msgbox at startup
+		// LOG???
 	}
-	validate(current);
 }
 
 void CPreferences::save(CurrentOptions& current)
@@ -281,170 +234,91 @@ void CPreferences::save(CurrentOptions& current)
 			throw std::exception();
 		}
 		fout.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+		using namespace crypt;
 
-		static const char	eol[2] = { '\r', '\n' };
-		static const char*	bool_str[2] = { "false", "true" };
-		std::string			temp_str;
+		char			EOL[3] = { '\r', '\n', 0 };
+		std::string		temp_str;
+
 		fout << std::fixed;
-		fout << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << eol << "<nppcrypt_preferences version=\"" << NPPC_VERSION << "\">" << eol;
+		fout << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << EOL << "<nppcrypt_preferences version=\"" << NPPC_VERSION << "\">" << EOL;
+
+		// files
 		try {
 			helper::Windows::wchar_to_utf8(files.extension.c_str(), (int)files.extension.size(), temp_str);
 		} catch (...) {
-			temp_str = "nppcrypt";
+			temp_str = NPPC_DEF_FILE_EXT;
 		}
-		fout << "<files enabled=\"" << bool_str[files.enable] << "\" askonsave=\"" << bool_str[files.askonsave] << "\" extension=\"" << temp_str << "\" />" << eol;
-		fout << "<crypt_basic cipher=\"" << crypt::help::getString(current.crypt.options.cipher) << "\" mode=\"" << crypt::help::getString(current.crypt.options.mode) << "\" iv=\"" << crypt::help::getString(current.crypt.options.iv) << "\" />" << eol;
-		fout << "<crypt_encoding enc=\"" << crypt::help::getString(current.crypt.options.encoding.enc) << "\" eol=\"" << crypt::help::getString(current.crypt.options.encoding.eol) << "\" linebreaks=\"" << bool_str[current.crypt.options.encoding.linebreaks];
-		fout << "\" linelength=\"" << current.crypt.options.encoding.linelength << "\" uppercase=\"" << bool_str[current.crypt.options.encoding.uppercase] << "\" />" << eol;
-		fout << "<crypt_key saltbytes=\"" << current.crypt.options.key.salt_bytes << "\" algorithm=\"" << crypt::help::getString(current.crypt.options.key.algorithm);
+		fout << "<files enabled=\"" << help::getString(files.enable) << "\" askonsave=\"" << help::getString(files.askonsave) << "\" extension=\"" << temp_str << "\" />" << EOL;
+
+		// crypt_basic
+		fout << "<crypt_basic cipher=\"" << help::getString(current.crypt.options.cipher) << "\" key-length=\"" << current.crypt.options.key.length;
+		fout << "\" mode = \"" << help::getString(current.crypt.options.mode) << "\" iv=\"" << help::getString(current.crypt.options.iv) << "\" />" << EOL;
+		
+		// crypt_encoding
+		fout << "<crypt_encoding enc=\"" << help::getString(current.crypt.options.encoding.enc) << "\" eol=\"" << help::getString(current.crypt.options.encoding.eol);
+		fout << "\" linebreaks=\"" << help::getString(current.crypt.options.encoding.linebreaks) << "\" line-length=\"" << current.crypt.options.encoding.linelength;
+		fout << "\" uppercase=\"" << help::getString(current.crypt.options.encoding.uppercase) << "\" />" << EOL;
+
+		// crypt_key
+		fout << "<crypt_key saltbytes=\"" << current.crypt.options.key.salt_bytes << "\" algorithm=\"" << help::getString(current.crypt.options.key.algorithm);
 		switch (current.crypt.options.key.algorithm)
 		{
-		case crypt::KeyDerivation::pbkdf2:
+		case KeyDerivation::pbkdf2:
 		{
-			fout << "\" hash=\"" << crypt::help::getString((crypt::Hash)current.crypt.options.key.options[0]) << "\" iterations=\"" << current.crypt.options.key.options[1];
+			fout << "\" hash=\"" << crypt::help::getString((crypt::Hash)current.crypt.options.key.options[0]) << "\" digest-length=\"" << current.crypt.options.key.options[1] << "\" iterations=\"" << current.crypt.options.key.options[2];
 			break;
 		}
-		case crypt::KeyDerivation::bcrypt:
+		case KeyDerivation::bcrypt:
 		{
 			fout << "\" iterations=\"" << static_cast<size_t>(std::pow(2, current.crypt.options.key.options[0]));
 			break;
 		}
-		case crypt::KeyDerivation::scrypt:
+		case KeyDerivation::scrypt:
 		{
 			fout << "\" N=\"" << static_cast<size_t>(std::pow(2, current.crypt.options.key.options[0])) << "\" r=\"" << current.crypt.options.key.options[1] << "\" p=\"" << current.crypt.options.key.options[2];
 			break;
 		}
 		}
-		fout << "\" />" << eol;
-		fout << "<crypt_hmac enabled=\"" << bool_str[current.crypt.hmac.enable] << "\" hash=\"" << crypt::help::getString(current.crypt.hmac.hash.algorithm) << "\" keypreset_id=\"" << current.crypt.hmac.keypreset_id << "\" />" << eol;
-		fout << "<hash algorithm=\"" << crypt::help::getString(current.hash.algorithm) << "\" encoding=\"" << crypt::help::getString(current.hash.encoding) << "\" usekey=\"" << bool_str[current.hash.use_key] << "\" keypreset_id=\"" << 0 << "\" />" << eol;
-		fout << "<random restriction=\"" << crypt::help::getString(current.random.restriction) << "\" encoding =\"" << crypt::help::getString(current.random.encoding) << "\" length=\"" << current.random.length << "\" />" << eol;
-		fout << "<convert source_enc=\"" << crypt::help::getString(current.convert.from) << "\" target_enc=\"" << crypt::help::getString(current.convert.to) << "\" eol=\"" << crypt::help::getString(current.convert.eol) << "\" linelength=\"" << current.convert.linelength;
-		fout << "\" linebreaks=\"" << bool_str[current.convert.linebreaks] << "\" uppercase=\"" << bool_str[current.convert.uppercase] << "\" />" << eol;
-		fout << "<key_presets>" << eol;
+		fout << "\" />" << EOL;
+
+		// crypt_hmac
+		fout << "<crypt_hmac enabled=\"" << help::getString(current.crypt.hmac.enable) << "\" hash=\"" << help::getString(current.crypt.hmac.hash.algorithm);
+		fout << "\" digest-length=\"" << current.crypt.hmac.hash.digest_length << "\" keypreset-id=\"" << current.crypt.hmac.keypreset_id << "\" />" << EOL;
+
+		// hash
+		fout << "<hash algorithm=\"" << help::getString(current.hash.algorithm) << "\" encoding=\"" << help::getString(current.hash.encoding) << "\" usekey=\"" << help::getString(current.hash.use_key) << "\" />" << EOL;
+
+		// random
+		fout << "<random restriction=\"" << help::getString(current.random.restriction) << "\" encoding =\"" << help::getString(current.random.encoding) << "\" length=\"" << current.random.length << "\" />" << EOL;
+
+		// convert
+		fout << "<convert source-enc=\"" << help::getString(current.convert.from) << "\" target-enc=\"" << help::getString(current.convert.to);
+		fout << "\" eol=\"" << help::getString(current.convert.eol) << "\" linelength=\"" << current.convert.linelength;
+		fout << "\" linebreaks=\"" << help::getString(current.convert.linebreaks) << "\" uppercase=\"" << help::getString(current.convert.uppercase) << "\" />" << EOL;
+
+		// key_presets
+		fout << "<key_presets>" << EOL;
 		for (size_t i = 1; i < keys.size(); i++) {
 			try {
 				helper::Windows::wchar_to_utf8(keys[i].label, -1, temp_str);
 			} catch (...) {
-				temp_str = "?";
+				temp_str = "???";
 			}
 			fout << "<key label=\"" << temp_str.c_str() << "\" value=\"";
 			temp_str.clear();
 			CryptoPP::ArraySource(keys[i].data, 16, true, new CryptoPP::Base64Encoder(new CryptoPP::StringSink(temp_str), false));
-			fout << temp_str.c_str() << "\" />" << eol;
+			fout << temp_str.c_str() << "\" />" << EOL;
 		}
-		fout << "</key_presets>" << eol << "</nppcrypt_preferences>";
+		fout << "</key_presets>" << EOL;
+		
+		fout << "</nppcrypt_preferences>";
 
 		fout.close();
 	} catch (...) {
 		if (fout.is_open()) {
 			fout.close();
 		}
-		// no annoying msgboxes at shutdown, log?
-	}
-}
-
-void CPreferences::validate(CurrentOptions& current)
-{
-	if (int(current.crypt.options.cipher) < 0 || int(current.crypt.options.cipher) >= int(crypt::Cipher::COUNT)) {
-		current.crypt.options.cipher = crypt::Cipher::rijndael;
-	}
-	if (int(current.crypt.options.mode) < 0 || int(current.crypt.options.mode) >= int(crypt::Mode::COUNT) || !crypt::help::checkCipherMode(current.crypt.options.cipher, current.crypt.options.mode)) {
-		current.crypt.options.mode = crypt::Mode::cbc;
-	}
-	if (int(current.crypt.options.iv) < 0 || int(current.crypt.options.iv) >= int(crypt::IV::COUNT)) {
-		current.crypt.options.iv = crypt::IV::random;
-	}
-	if (int(current.crypt.options.encoding.enc) < 0 || int(current.crypt.options.encoding.enc) >= int(crypt::Encoding::COUNT)) {
-		current.crypt.options.encoding.enc = crypt::Encoding::base64;
-	}
-	if (int(current.crypt.options.encoding.eol) < 0 || int(current.crypt.options.encoding.enc) >= int(crypt::EOL::COUNT)) {
-		current.crypt.options.encoding.eol = crypt::EOL::windows;
-	}
-	if (current.crypt.options.encoding.linelength < 1 || current.crypt.options.encoding.linelength > NPPC_MAX_LINE_LENGTH) {
-		current.crypt.options.encoding.linelength = 64;
-	}
-	if (int(current.crypt.options.key.algorithm) < 0 || int(current.crypt.options.key.algorithm) >= int(crypt::KeyDerivation::COUNT)) {
-		current.crypt.options.key.algorithm = crypt::KeyDerivation::scrypt;
-	}
-	if (current.crypt.options.key.salt_bytes < 0 || current.crypt.options.key.salt_bytes > crypt::Constants::salt_max) {
-		current.crypt.options.key.salt_bytes = 16;
-	}
-	switch (current.crypt.options.key.algorithm)
-	{
-	case crypt::KeyDerivation::pbkdf2:
-	{
-		if (current.crypt.options.key.options[0] < 0 || current.crypt.options.key.options[0] >= (int)crypt::Hash::COUNT 
-			|| !crypt::help::checkProperty((crypt::Hash)current.crypt.options.key.options[0], crypt::HMAC_SUPPORT)) {
-			current.crypt.options.key.options[0] = (int)crypt::Constants::pbkdf2_default_hash;
-		}
-		if (current.crypt.options.key.options[1] < crypt::Constants::pbkdf2_iter_min || current.crypt.options.key.options[1] > crypt::Constants::pbkdf2_iter_max) {
-			current.crypt.options.key.options[1] = crypt::Constants::pbkdf2_iter_default;
-		}
-		current.crypt.options.key.options[2] = 0;
-		break;
-	}
-	case crypt::KeyDerivation::bcrypt:
-	{
-		if (current.crypt.options.key.options[0] < crypt::Constants::bcrypt_iter_min || current.crypt.options.key.options[0] > crypt::Constants::bcrypt_iter_max) {
-			current.crypt.options.key.options[0]= crypt::Constants::bcrypt_iter_default;
-		}
-		current.crypt.options.key.options[1] = 0;
-		current.crypt.options.key.options[2] = 0;
-		break;
-	}
-	case crypt::KeyDerivation::scrypt:
-	{
-		if (current.crypt.options.key.options[0] < crypt::Constants::scrypt_N_min || current.crypt.options.key.options[0] > crypt::Constants::scrypt_N_max) {
-			current.crypt.options.key.options[0]= crypt::Constants::scrypt_N_default;
-		}
-		if (current.crypt.options.key.options[1] < crypt::Constants::scrypt_r_min || current.crypt.options.key.options[1] > crypt::Constants::scrypt_r_max) {
-			current.crypt.options.key.options[1] = crypt::Constants::scrypt_r_default;
-		}
-		if (current.crypt.options.key.options[2] < crypt::Constants::scrypt_p_min || current.crypt.options.key.options[2] > crypt::Constants::scrypt_p_max) {
-			current.crypt.options.key.options[2] = crypt::Constants::scrypt_p_default;
-		}
-		break;
-	}
-	}
-	if (int(current.crypt.hmac.hash.algorithm) < 0 || int(current.crypt.hmac.hash.algorithm) >= int(crypt::Hash::COUNT) 
-		|| !crypt::help::checkProperty(current.crypt.hmac.hash.algorithm, crypt::HMAC_SUPPORT)) {
-		current.crypt.hmac.hash.algorithm = crypt::Hash::tiger;
-	}
-	if (current.crypt.hmac.keypreset_id < -1 || current.crypt.hmac.keypreset_id >= (int)keys.size()) {
-		current.crypt.hmac.keypreset_id = 0;
-	}
-
-	if (int(current.convert.from) < 0 || int(current.convert.from) >= int(crypt::Encoding::COUNT)) {
-		current.convert.from = crypt::Encoding::ascii;
-	}
-	if (int(current.convert.to) < 0 || int(current.convert.to) >= int(crypt::Encoding::COUNT)) {
-		current.convert.to = crypt::Encoding::base64;
-	}
-	if (int(current.convert.eol) < 0 || int(current.convert.eol) >= int(crypt::EOL::COUNT)) {
-		current.convert.eol = crypt::EOL::windows;
-	}
-	if (current.convert.linelength < 1 || current.convert.linelength > NPPC_MAX_LINE_LENGTH) {
-		current.convert.linelength = 64;
-	}
-	if (int(current.hash.algorithm) < 0 || int(current.hash.algorithm) >= int(crypt::Hash::COUNT)) {
-		current.hash.algorithm = crypt::Hash::tiger;
-	}
-	if (int(current.hash.encoding) < 0 || int(current.hash.encoding) >= int(crypt::Encoding::COUNT)) {
-		current.hash.encoding = crypt::Encoding::base16;
-	}
-	//if (current.hash.keypreset_id < -1 || current.hash.keypreset_id >= (int)keys.size()) {
-	//	current.hash.keypreset_id = 0;
-	//}
-
-	if (int(current.random.restriction) < 0 || int(current.random.restriction) >= int(crypt::UserData::Restriction::COUNT)) {
-		current.random.restriction = crypt::UserData::Restriction::alphanum;
-	}
-	if (int(current.random.encoding) < 0 || int(current.random.encoding) >= int(crypt::Encoding::COUNT)) {
-		current.random.encoding = crypt::Encoding::base16;
-	}
-	if (current.random.length > crypt::Constants::rand_char_max) {
-		current.random.length = 32;
+		// LOG??
 	}
 }
 

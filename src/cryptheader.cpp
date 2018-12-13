@@ -17,25 +17,26 @@ GNU General Public License for more details.
 #include "tinyxml2/tinyxml2.h"
 #include "cryptheader.h"
 #include "exception.h"
-//#include "preferences.h"
 #include "crypt_help.h"
 
-inline bool cmpchars(const char* s1, const char* s2, int len)
+inline bool cmpchars(const char* s1, const char* s2, size_t len)
 {
-	for (int i = 0; i < len; i++) {
-		if (s1[i] != s2[i])
+	for (size_t i = 0; i < len; i++) {
+		if (s1[i] != s2[i]) {
 			return false;
+		}
 	}
 	return true;
 }
 
-bool CryptHeaderReader::parse(const byte* in, size_t in_len)
+bool CryptHeaderReader::parse(const crypt::byte* in, size_t in_len)
 {
 	if (in == NULL || in_len == 0) {
 		return false;
 	}
-	pEncryptedData = in;
-	encryptedDataLen = in_len;
+	encrypted.start = in;
+	encrypted.length = in_len;
+
 	if (in_len < 9)	{
 		return false;
 	}
@@ -44,26 +45,29 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 	}
 
 	size_t					offset = 10;
-	size_t					body_start;
+	size_t					offset_body;
 	tinyxml2::XMLError		xml_err;
 	tinyxml2::XMLDocument	xml_doc;
 	crypt::Options::Crypt	t_options;
 
 	// find header body start:
-	while (offset < in_len - 11 && in[offset] != '\n') {
+	while (offset < in_len - 12 && in[offset] != '>') {
 		offset++;
 	}
-	body_start = offset + 1;
-	pBody = in + body_start;
+	if (offset >= in_len - 12) {
+		throw CExc(CExc::Code::invalid_header);
+	}
+	offset_body = offset + 1;
+	body.start = in + offset_body;
 
 	// find header end:
 	while (offset < in_len - 11 && !cmpchars((const char*)in + offset, "</nppcrypt>", 11)) {
 		offset++;
 	}
-	if (offset > in_len - 12) {
+	if (offset >= in_len - 11) {
 		throw CExc(CExc::Code::invalid_header);
 	}
-	bodyLength = offset - body_start;
+	body.length = offset - offset_body;
 
 	// ------ parse header:
 	xml_err = xml_doc.Parse((const char*)in, offset + 11);
@@ -135,12 +139,6 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 		t = xml_crypt->Attribute("encoding");
 		if (!crypt::help::getEncoding(t, t_options.encoding.enc)) {
 			throw CExc(CExc::Code::invalid_encoding);
-		}
-		if ((t = xml_crypt->Attribute("tag")) != NULL) {
-			if (strlen(t) != 24) {
-				throw CExc(CExc::Code::invalid_tag);
-			}
-			s_init.tag.set(t, 24, crypt::Encoding::base64);
 		}
 	}
 	tinyxml2::XMLElement* xml_key = xml_nppcrypt->FirstChildElement("key");
@@ -227,8 +225,8 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 			if (t_len > 2 * crypt::Constants::salt_max) {
 				throw CExc(CExc::Code::invalid_salt);
 			}
-			s_init.salt.set(t, t_len, crypt::Encoding::base64);
-			t_options.key.salt_bytes = s_init.salt.size();
+			initdata.salt.set(t, t_len, crypt::Encoding::base64);
+			t_options.key.salt_bytes = initdata.salt.size();
 			if (t_options.key.salt_bytes == 0 || t_options.key.salt_bytes > crypt::Constants::salt_max) {
 				throw CExc(CExc::Code::invalid_salt);
 			}
@@ -240,11 +238,11 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 		if (!pIV) {
 			throw CExc(CExc::Code::invalid_iv);
 		}
-		size_t pIV_len = strlen(pIV);
-		if (pIV_len > 2048) {
+		size_t iv_len = strlen(pIV);
+		if (iv_len > 2048) {
 			throw CExc(CExc::Code::invalid_iv);
 		}
-		s_init.iv.set(pIV, pIV_len, crypt::Encoding::base64);
+		initdata.iv.set(pIV, iv_len, crypt::Encoding::base64);
 		const char* pMethod = xml_iv->Attribute("method");
 		if (!pMethod) {
 			throw CExc(CExc::Code::invalid_iv);
@@ -259,41 +257,42 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 		if (!pTag) {
 			throw CExc(CExc::Code::invalid_tag);
 		}
-		size_t pTag_len = strlen(pTag);
-		if (pTag_len > 2048) {
+		size_t tag_len = strlen(pTag);
+		if (tag_len > 2048) {
 			throw CExc(CExc::Code::invalid_tag);
 		}
-		s_init.tag.set(pTag, pTag_len, crypt::Encoding::base64);
+		initdata.tag.set(pTag, tag_len, crypt::Encoding::base64);
 	}
 
 	if (in[offset + 11] == '\r' && in[offset + 12] == '\n') {
-		pEncryptedData = in + offset + 13;
-		encryptedDataLen = in_len - offset - 13;
+		encrypted.start = in + offset + 13;
+		encrypted.length = in_len - offset - 13;
 	} else if (in[offset + 11] == '\n')	{
-		pEncryptedData = in + offset + 12;
-		encryptedDataLen = in_len - offset - 12;
+		encrypted.start = in + offset + 12;
+		encrypted.length = in_len - offset - 12;
 	} else {
-		pEncryptedData = in + offset + 11;
-		encryptedDataLen = in_len - offset - 11;
+		encrypted.start = in + offset + 11;
+		encrypted.length = in_len - offset - 11;
 	}
-	// ------ check EOLs: (only important in case of nppcrypt files that use this options to reencrypt)
-	for (size_t i = 1; i < encryptedDataLen - 1; i++) {
-		if (pEncryptedData[i] == '\r' && pEncryptedData[i + 1] == '\n')	{
+	// check EOLs: (only important for nppcrypt files that use this options to reencrypt)
+	for (size_t i = 1; i < encrypted.length - 1; i++) {
+		if (encrypted.start[i] == '\r' && encrypted.start[i + 1] == '\n')	{
 			t_options.encoding.linebreaks = true;
 			t_options.encoding.linelength = i;
 			t_options.encoding.eol = crypt::EOL::windows;
 			break;
-		} else if (pEncryptedData[i] == '\n') {
+		} else if (encrypted.start[i] == '\n') {
 			t_options.encoding.linebreaks = true;
 			t_options.encoding.linelength = i;
 			t_options.encoding.eol = crypt::EOL::unix;
 			break;
 		}
 	}
+	// check if uppercase or lowercase
 	if (t_options.encoding.enc == crypt::Encoding::base16 || t_options.encoding.enc == crypt::Encoding::base32)	{
-		for (size_t i = 0; i < encryptedDataLen - 1; i++) {
-			if (std::isalpha((int)*(pEncryptedData + i))) {
-				t_options.encoding.uppercase = (std::isupper((int)*(pEncryptedData + i)) == 0) ? false : true;
+		for (size_t i = 0; i < encrypted.length - 1; i++) {
+			if (std::isalpha((int)*(encrypted.start + i))) {
+				t_options.encoding.uppercase = (std::isupper((int)*(encrypted.start + i)) == 0) ? false : true;
 				break;
 			}
 		}
@@ -313,38 +312,32 @@ bool CryptHeaderReader::parse(const byte* in, size_t in_len)
 bool CryptHeaderReader::checkHMAC()
 {
 	if (hmac.enable) {
-		std::basic_string<byte> buf;
-		crypt::hash(hmac.hash, buf, { { pBody, bodyLength },{ pEncryptedData,encryptedDataLen } });
+		std::basic_string<crypt::byte> buf;
+		crypt::hash(hmac.hash, buf, { { body.start, body.length },{ encrypted.start, encrypted.length } });
 		if (buf.size() != hmac_digest.size()) {
 			return false;
 		}
-		const byte* pDigest = hmac_digest.BytePtr();
-		for (size_t i = 0; i < hmac.hash.digest_length; i++) {
+		const crypt::byte* pDigest = hmac_digest.BytePtr();
+		for (size_t i = 0; i < buf.size(); i++) {
 			if (buf[i] != *(pDigest + i)) {
 				return false;
 			}
 		}
 		return true;
-	}
-	else {
+	} else {
 		return false;
 	}
 }
 
 // ====================================================================================================================================================================
 
-CryptHeaderWriter::CryptHeaderWriter(const crypt::Options::Crypt& opt, HMAC& hmac_opt, const byte* h_key, size_t h_len) : options(opt), hmac(hmac_opt)
+void CryptHeaderWriter::create(const crypt::byte* data, size_t data_length)
 {
-}
-
-
-void CryptHeaderWriter::create(const byte* data, size_t data_length)
-{
-	std::ostringstream	out;
-	size_t				body_start;
-	size_t				body_end;
-	size_t				hmac_offset;
-	crypt::secure_string temp_s;
+	std::ostringstream		out;
+	size_t					body_start;
+	size_t					body_end;
+	size_t					hmac_offset;
+	crypt::secure_string	temp_s;
 
 	static const char win[] = { '\r', '\n', 0 };
 	const char* linebreak;
@@ -369,8 +362,9 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 		hmac_offset = static_cast<size_t>(out.tellp());
 		out << std::string(base64length(hmac_length), ' ') << "\"";
 	}
-	out << ">" << linebreak;
-	body_start = static_cast<size_t>(out.tellp());
+	out << ">";
+	body_start = static_cast<size_t>(out.tellp()); 
+	out << linebreak;	
 	// <encryption>
 	out << "<encryption cipher=\"" << crypt::help::getString(options.cipher) << "\" key-length=\"" << options.key.length << "\"";
 	if (!crypt::help::checkProperty(options.cipher, crypt::STREAM)) {
@@ -398,19 +392,19 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	}
 	}
 	if (options.key.salt_bytes > 0) {
-		s_init.salt.get(temp_s, crypt::Encoding::base64);
+		initdata.salt.get(temp_s, crypt::Encoding::base64);
 		out << "salt=\"" << temp_s << "\" ";
 	}
 	out << "/>" << linebreak;
 	//<iv> and <tag>
 	bool add_linebreak = false;
-	if (s_init.iv.size() > 0) {
-		s_init.iv.get(temp_s, crypt::Encoding::base64);
+	if (initdata.iv.size() > 0) {
+		initdata.iv.get(temp_s, crypt::Encoding::base64);
 		out << "<iv value=\"" << temp_s << "\" method=\"" << crypt::help::getString(options.iv) << "\" />";
 		add_linebreak = true;
 	}
-	if (s_init.tag.size() > 0) {
-		s_init.tag.get(temp_s, crypt::Encoding::base64);
+	if (initdata.tag.size() > 0) {
+		initdata.tag.get(temp_s, crypt::Encoding::base64);
 		out << "<tag value=\"" << temp_s << "\" />";
 		add_linebreak = true;
 	}
@@ -423,14 +417,14 @@ void CryptHeaderWriter::create(const byte* data, size_t data_length)
 	out << std::scientific;
 
 	buffer.assign(out.str());
-	pBody = (const byte*)&buffer[body_start];
-	bodyLength = body_end - body_start;
+	body.start = (const crypt::byte*)&buffer[body_start];
+	body.length = body_end - body_start;
 
 	if (hmac.enable && hmac_offset > 0) {
 		// create hmac hash and insert it into header
-		std::basic_string<byte> buf;
+		std::basic_string<crypt::byte> buf;
 		hmac.hash.encoding = crypt::Encoding::base64;
-		crypt::hash(hmac.hash, buf, { { pBody, bodyLength },{ data, data_length } });
+		crypt::hash(hmac.hash, buf, { { body.start, body.length }, { data, data_length } });
 		std::string tstring(buf.begin(), buf.end());
 		buffer.replace(hmac_offset, tstring.size(), tstring);
 	}

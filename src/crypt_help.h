@@ -33,6 +33,7 @@ namespace crypt
 		static const char*	getString(Hash h);
 		static const char*	getString(UserData::Restriction r);
 		static const char*	getString(EOL eol);
+		static const char*  getString(bool v);
 
 		static bool			getCipher(const char* s, Cipher& c);
 		static bool			getCipherMode(const char* s, Mode& m);
@@ -42,6 +43,9 @@ namespace crypt
 		static bool			getHash(const char* s, Hash& h);
 		static bool			getRandomRestriction(const char* s, UserData::Restriction& r);
 		static bool			getEOL(const char* s, EOL& eol);
+		static bool			getUnsigned(const char* s, size_t& i);
+		static bool			getInteger(const char* s, int& i, bool log2 = false);
+		static bool			getBoolean(const char* s, bool& b);
 
 		static bool			checkCipherMode(Cipher cipher, Mode mode);
 		static bool			checkProperty(Cipher cipher, int filter);
@@ -49,7 +53,9 @@ namespace crypt
 		static bool			checkHashDigest(Hash h, unsigned int digest);
 		static bool			checkCipherKeylength(Cipher cipher, size_t keylength);
 
-		static void			validateCryptOptions(Options::Crypt options, bool exceptions = true);
+		static void			validate(Options::Crypt options, bool exceptions = true);
+		static void			validate(Options::Hash options, bool exceptions = true);
+		static void			validate(Options::Convert options, bool exceptions = true);
 
 		static Mode			getModeByIndex(Cipher cipher, int index);
 		static int			getModeIndex(Cipher cipher, Mode mode);

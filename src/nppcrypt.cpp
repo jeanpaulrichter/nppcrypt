@@ -204,7 +204,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 				if (dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &crypt, &header.initData().iv, &filename)) {
 					std::basic_string<byte> buffer;
-					crypt::decrypt(header.encryptedData(), header.encryptedDataLength(), buffer, crypt.options, header.initData());
+					crypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, crypt.options, header.initData());
 
 					::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
 					::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
@@ -426,7 +426,7 @@ void DecryptDlg()
 			}
 
 			std::basic_string<byte>	buffer;
-			decrypt(header.encryptedData(), header.encryptedDataLength(), buffer, current.crypt.options, s_init);
+			decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, current.crypt.options, s_init);
 			helper::Scintilla::replaceSelection(buffer);
 
 			current.crypt.options.password.clear();

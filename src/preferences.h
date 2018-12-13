@@ -53,7 +53,7 @@ public:
 		byte			data[16];
 	};
 
-	struct
+	struct NppCryptFiles
 	{
 		bool			enable;
 		bool			askonsave;
@@ -76,8 +76,6 @@ public:
 private:
 	CPreferences(CPreferences const&);
 	CPreferences& operator=(CPreferences const&);
-
-	void validate(CurrentOptions& current);
 
 	std::vector<KeyPreset>	keys;
 	std::wstring			filepath;
