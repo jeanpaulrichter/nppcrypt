@@ -167,7 +167,7 @@ bool CryptHeaderReader::parse(const crypt::byte* in, size_t in_len)
 			if (!crypt::help::getInteger(xml_key->Attribute("r"), t_options.key.options[1])) {
 				throwInvalid(invalid_scrypt);
 			}
-			if (!crypt::help::getInteger(xml_key->Attribute("p"), t_options.key.options[1])) {
+			if (!crypt::help::getInteger(xml_key->Attribute("p"), t_options.key.options[2])) {
 				throwInvalid(invalid_scrypt);
 			}
 			break;

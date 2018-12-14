@@ -215,14 +215,12 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
 				}
 			}
-		} catch(ExcError& exc) {
-			helper::Windows::error(nppData._nppHandle, exc.what());
-		} catch (ExcInvalid& exc) {
-			helper::Windows::error(nppData._nppHandle, exc.what());
 		} catch (ExcInfo& exc) {
 			if (exc.getID() != ExcInfo::ID::file_empty) {
 				helper::Windows::error(nppData._nppHandle, exc.what());
 			}
+		} catch(std::exception& exc) {
+			helper::Windows::error(nppData._nppHandle, exc.what());
 		} catch(...) {
 			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 		}
@@ -314,14 +312,12 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					::SendMessage(nppData._nppHandle, NPPM_SAVECURRENTFILE, 0, 0);
 				}
 			}
-		} catch (ExcError& exc) {
-			helper::Windows::error(nppData._nppHandle, exc.what());
-		} catch (ExcInvalid& exc) {
-			helper::Windows::error(nppData._nppHandle, exc.what());
 		} catch (ExcInfo& exc) {
 			if (exc.getID() != ExcInfo::ID::file_empty) {
 				helper::Windows::error(nppData._nppHandle, exc.what());
 			}
+		} catch(std::exception& exc) {
+			helper::Windows::error(nppData._nppHandle, exc.what());
 		} catch(...) {
 			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 		}
@@ -371,13 +367,7 @@ void EncryptDlg()
 
 			current.crypt.options.password.clear();
 		}
-	} catch (ExcError& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (ExcInvalid& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (ExcInfo& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (crypt::Exception& exc) {
+	} catch (std::exception& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
@@ -449,13 +439,7 @@ void DecryptDlg()
 
 			current.crypt.options.password.clear();
 		}
-	} catch (ExcError& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (ExcInvalid& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (ExcInfo& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (crypt::Exception& exc) {
+	} catch (std::exception& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch(...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
@@ -466,11 +450,7 @@ void HashDlg()
 {
 	try	{
 		dlg_hash.doDialog();
-	} catch (ExcError& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (ExcInvalid& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (ExcInfo& exc) {
+	} catch (std::exception& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
@@ -481,11 +461,7 @@ void RandomDlg()
 {
 	try	{
 		dlg_random.doDialog();
-	} catch (ExcError& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (ExcInvalid& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (ExcInfo& exc) {
+	} catch (std::exception& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown exception!"), TEXT("Error"), MB_OK);
@@ -498,11 +474,7 @@ void ConvertDlg()
 		if (helper::Scintilla::getSelectionLength()) {
 			dlg_convert.doDialog();
 		}
-	} catch (ExcError& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (ExcInvalid& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (ExcInfo& exc) {
+	} catch (std::exception& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
