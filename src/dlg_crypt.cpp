@@ -781,12 +781,10 @@ bool DlgCrypt::prepareOptions()
 			}
 		}
 
-		//if (current.iv_length > 0 && !(crypt::help::checkProperty(crypt->options.cipher, crypt::BLOCK) && crypt->options.mode == crypt::Mode::ecb)) {
-		//	if (operation == Operation::Dec || crypt->options.iv == crypt::IV::custom) {
 		if (current.iv_length > 0 && (operation == Operation::Dec || crypt->options.iv == crypt::IV::custom)) {
 			crypt::UserData data;
 			if (!checkCustomIV(data, true)) {
-				throw CExc::CExc(CExc::Code::invalid_iv);
+				throwInvalid(invalid_iv);
 			} else {
 				ivdata->set(data.BytePtr(), data.size());
 			}
@@ -808,7 +806,7 @@ bool DlgCrypt::prepareOptions()
 					invalid.hmac_key = !checkHMACKey(crypt->hmac.hash.key, true);
 					if (invalid.hmac_key) {
 						InvalidateRect(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), NULL, NULL);
-						throw CExc::CExc(CExc::Code::hmac_key_missing);
+						throwError(unexpected);
 					}
 				}
 			}
@@ -825,7 +823,7 @@ bool DlgCrypt::prepareOptions()
 		setText(IDC_CRYPT_PASSWORD, current.password, tab.basic);
 		current.password.clear();
 	}
-	catch (CExc& exc) {
+	catch (std::exception& exc) {
 		helper::Windows::error(_hSelf, exc.what());
 		return false;
 	}

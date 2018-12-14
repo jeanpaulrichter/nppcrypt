@@ -35,7 +35,7 @@ HWND helper::Scintilla::getCurrent()
 	} else if (which == 1) {
 		return nppData._scintillaSecondHandle;
 	} else {
-		throw CExc(CExc::Code::unexpected);
+		throwError(no_scintilla_handle);
 	}
 }
 
@@ -124,7 +124,7 @@ void helper::Buffer::getPath(uptr_t bufferid, std::wstring& path, std::wstring& 
 {
 	int path_length = (int)::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, bufferid, NULL);
 	if (path_length <= 0) {
-		throw CExc(CExc::Code::unexpected);
+		throwError(no_file_path);
 	}
 	path.resize(path_length + 1);
 	::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, bufferid, (LPARAM)&path[0]);
@@ -191,11 +191,11 @@ void helper::Windows::wchar_to_utf8(const wchar_t* i, int i_len, std::string& o)
 	}
 	int bytelen = WideCharToMultiByte(CP_UTF8, 0, i, i_len, NULL, 0, NULL, false);
 	if (bytelen < 1) {
-		throw CExc(CExc::Code::utf8conversion);
+		throwError(utf8conversion);
 	}
 	o.resize((size_t)bytelen);
 	if (!WideCharToMultiByte(CP_UTF8, 0, i, i_len, &o[0], bytelen, NULL, false)) {
-		throw CExc(CExc::Code::utf8conversion);
+		throwError(utf8conversion);
 	}
 	if (o.size() > 0 && i_len == -1) {
 		o.pop_back();
@@ -209,11 +209,11 @@ void helper::Windows::wchar_to_utf8(const wchar_t* i, int i_len, crypt::secure_s
 	}
 	int bytelen = WideCharToMultiByte(CP_UTF8, 0, i, i_len, NULL, 0, NULL, false);
 	if (bytelen < 1) {
-		throw CExc(CExc::Code::utf8conversion);
+		throwError(utf8conversion);
 	}
 	o.resize((size_t)bytelen);
 	if (!WideCharToMultiByte(CP_UTF8, 0, i, i_len, &o[0], bytelen, NULL, false)) {
-		throw CExc(CExc::Code::utf8conversion);
+		throwError(utf8conversion);
 	}
 	if (o.size() > 0 && i_len == -1) {
 		o.pop_back();
@@ -227,11 +227,11 @@ void helper::Windows::utf8_to_wchar(const char* i, int i_len, std::wstring& o)
 	}
 	int charlen = ::MultiByteToWideChar(CP_UTF8, 0, i, i_len, NULL, 0);
 	if (charlen < 1) {
-		throw CExc(CExc::Code::utf8conversion);
+		throwError(wchar_conversion);
 	}
 	o.resize((size_t)charlen);
 	if (!MultiByteToWideChar(CP_UTF8, 0, i, i_len, &o[0], charlen)) {
-		throw CExc(CExc::Code::utf8conversion);
+		throwError(wchar_conversion);
 	}
 	if (o.size() > 0 && i_len == -1) {
 		o.pop_back();
@@ -245,11 +245,11 @@ void helper::Windows::utf8_to_wchar(const char* i, int i_len, crypt::secure_wstr
 	}
 	int charlen = ::MultiByteToWideChar(CP_UTF8, 0, i, i_len, NULL, 0);
 	if (charlen < 1) {
-		throw CExc(CExc::Code::utf8conversion);
+		throwError(wchar_conversion);
 	}
 	o.resize((size_t)charlen);
 	if (!MultiByteToWideChar(CP_UTF8, 0, i, i_len, &o[0], charlen)) {
-		throw CExc(CExc::Code::utf8conversion);
+		throwError(wchar_conversion);
 	}
 	if (o.size() > 0 && i_len == -1) {
 		o.pop_back();

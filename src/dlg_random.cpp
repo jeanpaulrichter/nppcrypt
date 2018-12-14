@@ -121,7 +121,7 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
 					}
 					EndDialog(_hSelf, IDC_OK);
 					return TRUE;
-				} catch (CExc& exc) {
+				} catch (std::exception& exc) {
 					helper::Windows::error(_hSelf, exc.what());
 				} catch (...) {
 					::MessageBox(_hSelf, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);

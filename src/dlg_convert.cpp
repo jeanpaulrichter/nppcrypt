@@ -87,7 +87,7 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 						helper::Windows::copyToClipboard(buffer);
 					}
 					EndDialog(_hSelf, IDC_OK);
-				} catch (CExc& exc) {
+				} catch (std::exception& exc) {
 					helper::Windows::error(_hSelf, exc.what());
 				} catch (...) {
 					::MessageBox(_hSelf, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);

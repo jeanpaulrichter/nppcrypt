@@ -14,7 +14,6 @@ GNU General Public License for more details.
 */
 
 #include "crypt.h"
-#include "exception.h"
 
 #include "bcrypt/crypt_blowfish.h"
 #include "keccak/KeccakHash.h"
@@ -104,6 +103,17 @@ namespace Strings
 {
 	static const std::string eol[3] = { "\r\n", "\n", "\r" };
 }
+
+crypt::ExceptionError::ExceptionError(const std::string &m, const char* func, int ln) noexcept : line(ln)
+{
+	std::ostringstream o;
+	o << "[" << func << ":" << line << "] " << m;
+	msg.assign(o.str());
+}
+
+#define throwInfo(arg) throw crypt::ExceptionInfo(arg);
+#define throwInvalid(arg) throw crypt::ExceptionArguments(arg);
+#define throwError(arg) throw crypt::ExceptionError(arg, __func__, __LINE__);
 
 using namespace crypt;
 
@@ -1076,7 +1086,7 @@ namespace intern
 		{
 			std::unique_ptr<PasswordBasedKeyDerivationFunction> pbkdf2(getKeyDerivation(Hash(opt.options[0]), opt.options[1]));
 			if (!pbkdf2) {
-				throw CExc(CExc::Code::invalid_pbkdf2_hash);
+				throwError("Failed to create PBKDF object.");
 			}
 			pbkdf2->DeriveKey(&key[0], key.size(), password.BytePtr(), password.size(),	MakeParameters(Name::Salt(), ConstByteArrayParameter(salt.BytePtr(), salt.size()))("Iterations", opt.options[2]));
 			break;
@@ -1087,14 +1097,14 @@ namespace intern
 			char settings[32];
 
 			if (_crypt_gensalt_blowfish_rn("$2a$", (unsigned long)opt.options[0], (const char*)salt.BytePtr(), 16, settings, 32) == NULL) {
-				throw CExc(CExc::Code::bcrypt_failed);
+				throwError("bcrypt: failed to create settings string.");
 			}
 			memset(output, 0, sizeof(output));
 			// _crypt_blowfish_rn needs 0-terminated password...
 			std::string temp(password.size() + 1, 0);
 			memcpy(&temp[0], password.BytePtr(), password.size());
 			if (_crypt_blowfish_rn(temp.c_str(), settings, output, 64) == NULL) {
-				throw CExc(CExc::Code::bcrypt_failed);
+				throwError("bcrypt failed.");
 			}
 			byte hashdata[23];
 			ArraySource ss((const byte*)output + 29, 31, true, new Base64Decoder(new ArraySink(hashdata, 23)));
@@ -1110,7 +1120,7 @@ namespace intern
 		case KeyDerivation::scrypt:
 		{
 			if (crypto_scrypt(password.BytePtr(), password.size(), salt.BytePtr(), salt.size(), ipow(2, opt.options[0]), opt.options[1], opt.options[2], &key[0], key.size()) != 0) {
-				throw CExc(CExc::Code::scrypt_failed);
+				throwError("scrypt failed.");
 			}
 			break;
 		}
@@ -1644,7 +1654,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	using namespace CryptoPP;
 
 	if (!in || !in_len) {
-		throw CExc(CExc::Code::input_null);
+		throwInvalid("encrypt: invalid input.");
 	}
 	
 	SecByteBlock		tKey;
@@ -1658,7 +1668,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	// --------------------------- prepare salt vector:
 	if (options.key.salt_bytes > 0)	{
 		if (options.key.algorithm == KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
-			throw CExc(CExc::Code::invalid_bcrypt_saltlength);
+			throwInvalid("encrypt: bcrypt needs 16 byte salt!");
 		}
 		init.salt.random(options.key.salt_bytes);
 		ptSalt = init.salt.BytePtr();
@@ -1684,7 +1694,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			break;
 		case IV::custom:
 			if (iv_len != init.iv.size()) {
-				throw CExc(CExc::Code::invalid_iv);
+				throwInvalid("encrypt: invalid custom IV length.");
 			}
 			ptVec = init.iv.BytePtr();
 			break;
@@ -1701,7 +1711,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		if (block_size && (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax)) {
 			std::unique_ptr<AuthenticatedSymmetricCipher> penc(intern::getAuthenticatedCipher(options.cipher, options.mode, true));
 			if (!penc) {
-				throw CExc(CExc::Code::invalid_mode);
+				throwError("encrypt: Failed to create AuthenticatedSymmetricCipher.");
 			}
 			int tag_size;
 			switch (options.mode)
@@ -1768,7 +1778,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		} else {
 			std::unique_ptr<SymmetricCipher> pEnc(intern::getSymmetricCipher(options.cipher, options.mode, true));
 			if (!pEnc) {
-				throw CExc(CExc::Code::invalid_mode);
+				throwError("encrypt: Failed to create SymmetricCipher.");
 			}
 			if (iv_len == 0) {
 				pEnc->SetKey(tKey.data(), key_len);
@@ -1810,26 +1820,18 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			}
 		}
 	} catch (CryptoPP::Exception& exc) {
-		switch (exc.GetErrorType()) {
-		case CryptoPP::Exception::NOT_IMPLEMENTED: throw CExc(CExc::Code::cryptopp_not_implemented); break;
-		case CryptoPP::Exception::INVALID_ARGUMENT: throw CExc(CExc::Code::cryptopp_invalid_argument); break;
-		case CryptoPP::Exception::CANNOT_FLUSH: throw CExc(CExc::Code::cryptopp_cannot_flush); break;
-		case CryptoPP::Exception::DATA_INTEGRITY_CHECK_FAILED: throw CExc(CExc::Code::cryptopp_bad_integrity); break;
-		case CryptoPP::Exception::INVALID_DATA_FORMAT: throw CExc(CExc::Code::cryptopp_invalid_data); break;
-		case CryptoPP::Exception::IO_ERROR: throw CExc(CExc::Code::cryptopp_io_error); break;
-		default: throw CExc(CExc::Code::cryptopp_other); break;
-		}
-	} catch(CExc& exc) {
+		throwError(exc.GetWhat());
+	} catch (crypt::Exception& exc) {
 		throw exc;
 	} catch (...) {
-		throw CExc(CExc::Code::unexpected);
+		throwError("encrypt: unexpected error.");
 	}
  }
 
 void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init)
 {
 	if (!in || !in_len) {
-		throw CExc(CExc::Code::input_null);
+		throwInvalid("decrypt: invalid input.");
 	}
 
 	using namespace crypt;
@@ -1845,14 +1847,8 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 
 	// --------------------------- prepare salt vector:
 	if (options.key.salt_bytes > 0)	{
-		if (options.key.algorithm == crypt::KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
-			throw CExc(CExc::Code::invalid_bcrypt_saltlength);
-		}
-		if (!init.salt.size()) {
-			throw CExc(CExc::Code::salt_missing);
-		}
-		if (init.salt.size() != (size_t)options.key.salt_bytes) {
-			throw CExc(CExc::Code::invalid_salt);
+		if (options.key.algorithm == crypt::KeyDerivation::bcrypt && (options.key.salt_bytes != 16 || init.salt.size() != 16)) {
+			throwInvalid("decrypt: bcrypt needs 16 byte salt!");
 		}
 		ptSalt = init.salt.BytePtr();
 	}
@@ -1861,10 +1857,10 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	tKey.resize(key_len);
 	if (iv_len > 0) {
 		if (!init.iv.size()) {
-			throw CExc(CExc::Code::iv_missing);
+			throwInvalid("decrypt: missing IV.");
 		}
 		if (init.iv.size() != iv_len) {
-			throw CExc(CExc::Code::invalid_iv);
+			throwInvalid("decrypt: invalid IV length.")
 		}
 		ptVec = init.iv.BytePtr();
 	}
@@ -1927,7 +1923,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			df.ChannelMessageEnd( DEFAULT_CHANNEL );
 
 			if (!df.GetLastResult()) {
-				throw CExc(CExc::Code::authentication_failed);
+				throwInfo("decrypt: authentification failed.");
 			}
 
 			df.SetRetrievalChannel("");
@@ -1940,7 +1936,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		} else {
 			std::unique_ptr<SymmetricCipher> pEnc(intern::getSymmetricCipher(options.cipher, options.mode, false));
 			if (!pEnc) {
-				throw CExc(CExc::Code::invalid_mode);
+				throwError("decrypt: failed to create SymmetricCipher.");
 			}
 			if (iv_len == 0) {
 				pEnc->SetKey(tKey.data(), key_len);
@@ -1985,19 +1981,15 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			}
 		}
 	} catch (CryptoPP::Exception& exc) {
-		switch (exc.GetErrorType()) {
-		case CryptoPP::Exception::NOT_IMPLEMENTED: throw CExc(CExc::Code::cryptopp_not_implemented); break;
-		case CryptoPP::Exception::INVALID_ARGUMENT: throw CExc(CExc::Code::cryptopp_invalid_argument); break;
-		case CryptoPP::Exception::CANNOT_FLUSH: throw CExc(CExc::Code::cryptopp_cannot_flush); break;
-		case CryptoPP::Exception::DATA_INTEGRITY_CHECK_FAILED: throw CExc(CExc::Code::cryptopp_bad_integrity); break;
-		case CryptoPP::Exception::INVALID_DATA_FORMAT: throw CExc(CExc::Code::cryptopp_invalid_data); break;
-		case CryptoPP::Exception::IO_ERROR: throw CExc(CExc::Code::cryptopp_io_error); break;
-		default: throw CExc(CExc::Code::cryptopp_other); break;
+		if (exc.GetErrorType() == CryptoPP::Exception::DATA_INTEGRITY_CHECK_FAILED) {
+			throwInfo("decrypt: authentification failed.");
+		} else {
+			throwError(exc.GetWhat());
 		}
-	} catch (CExc& exc) {
+	} catch (crypt::Exception& exc) {
 		throw exc;
 	} catch (...) {
-		throw CExc(CExc::Code::unexpected);
+		throwError("decrypt: unexpected error.");
 	}
 }
 
@@ -2009,16 +2001,16 @@ void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, std::i
 
 		size_t keylength;
 		if (!getHashInfo(options.algorithm, options.digest_length, keylength)) {
-			throw CExc(CExc::Code::invalid_hash);
+			throwInvalid("hash: invalid algorithm.");
 		}
 		if (keylength != 0 && options.use_key && options.key.size() != keylength) {
-			throw CExc(CExc::Code::invalid_keylength);
+			throwInvalid("hash: invalid key-length.");
 		}
 
 		SecByteBlock digest;
 		std::unique_ptr<HashTransformation> phash(intern::getHashTransformation(options));
 		if (!phash) {
-			throw CExc(CExc::Code::invalid_hash);
+			throwError("hash: failed to create HashTransformation.");
 		}
 		digest.resize(phash->DigestSize());
 		for (const std::pair<const byte*, size_t>& i : in) {
@@ -2050,10 +2042,8 @@ void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, std::i
 			break;
 		}
 		}
-	} catch (CExc& exc) {
-		throw exc;
 	} catch (...) {
-		throw CExc(CExc::Code::unexpected);
+		throwError("hash: unexpected error.");
 	}
 }
 
@@ -2066,7 +2056,7 @@ void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, const 
 		SecByteBlock digest;
 		std::unique_ptr<HashTransformation> phash(intern::getHashTransformation(options));
 		if (!phash) {
-			throw CExc(CExc::Code::invalid_hash);
+			throwError("hash: failed to create HashTransformation.");
 		}
 		digest.resize(phash->DigestSize());
 
@@ -2096,12 +2086,8 @@ void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, const 
 			break;
 		}
 		}
-	}
-	catch (CExc& exc) {
-		throw exc;
-	}
-	catch (...) {
-		throw CExc(CExc::Code::unexpected);
+	} catch (...) {
+		throwError("hash: unexpected error.");
 	}
 }
 
@@ -2109,16 +2095,16 @@ void crypt::shake128(const byte* in, size_t in_len, byte* out, size_t out_len)
 {
 	Keccak_HashInstance keccak_inst;
 	if (Keccak_HashInitialize_SHAKE128(&keccak_inst) != 0) {
-		throw CExc(CExc::Code::keccak_shake_failed);
+		throwError("shake128: init failed.");
 	}
 	if (Keccak_HashUpdate(&keccak_inst, in, in_len * 8) != 0) {
-		throw CExc(CExc::Code::keccak_shake_failed);
+		throwError("shake128: update failed.");
 	}
 	if (Keccak_HashFinal(&keccak_inst, out) != 0) {
-		throw CExc(CExc::Code::keccak_shake_failed);
+		throwError("shake128: final failed.");
 	}
 	if (Keccak_HashSqueeze(&keccak_inst, out, out_len * 8) != 0) {
-		throw CExc(CExc::Code::keccak_shake_failed);
+		throwError("shake128: squeeze failed.");
 	}
 }
 
@@ -2128,7 +2114,7 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	using namespace crypt;
 
 	std::string s_seperator = (options.eol == crypt::EOL::windows) ? "\r\n" : "\n";
-	int groupsize = options.linebreaks ? options.linelength : 0;
+	int groupsize = options.linebreaks ? (int)options.linelength : 0;
 
 	switch (options.from)
 	{
@@ -2148,7 +2134,7 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, options.linelength, CryptoPP::EOL(options.eol)));
+			StringSource(in, in_len, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (int)options.linelength, CryptoPP::EOL(options.eol)));
 			break;
 		}
 		}
@@ -2170,7 +2156,7 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new HexDecoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, options.linelength, CryptoPP::EOL(options.eol))));
+			StringSource(in, in_len, true, new HexDecoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (int)options.linelength, CryptoPP::EOL(options.eol))));
 			break;
 		}
 		}
@@ -2192,7 +2178,7 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new Base32Decoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, options.linelength, CryptoPP::EOL(options.eol))));
+			StringSource(in, in_len, true, new Base32Decoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (int)options.linelength, CryptoPP::EOL(options.eol))));
 			break;
 		}
 		}

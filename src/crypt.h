@@ -81,6 +81,38 @@ namespace crypt
 		const int eax_tag_size =		16;				/* eax tag size in bytes */
 	};
 
+	class Exception : public std::exception
+	{
+	public:
+		Exception() noexcept {};
+		Exception(const std::string &m) noexcept : msg(m) {};
+		const char *what() const noexcept {
+			return msg.c_str();
+		};
+	protected:
+		std::string msg;
+	};
+
+	class ExceptionError : public Exception
+	{
+	public:
+		ExceptionError(const std::string &m, const char* func, int ln) noexcept;
+	private:
+		int	line;
+	};
+
+	class ExceptionArguments : public Exception
+	{
+	public:
+		ExceptionArguments(const std::string &m) noexcept : Exception(m) {};
+	};
+
+	class ExceptionInfo : public Exception
+	{
+	public:
+		ExceptionInfo(const std::string &m) noexcept : Exception(m) {};
+	};
+
 	class UserData
 	{
 	public:

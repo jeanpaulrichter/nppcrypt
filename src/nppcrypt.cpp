@@ -167,18 +167,18 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 				int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
 				if (data_length <= 0) {
-					throw CExc(CExc::Code::input_null);
+					throwInfo(file_empty);
 				}
 				byte* pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER, 0, 0);
 				if (!pData) {
-					throw CExc(CExc::Code::unexpected);
+					throwError(no_scintilla_pointer);
 				}
 
 				CryptInfo				crypt;
 				CryptHeaderReader		header(crypt.options, crypt.hmac);
 
 				if (!header.parse(pData, data_length)) {
-					throw CExc(CExc::Code::header_not_found);
+					throwInvalid(no_header);
 				}
 
 				if(crypt.hmac.enable) {
@@ -188,15 +188,15 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						}
 						crypt.hmac.hash.key.set(dlg_auth.getInput());
 						if (!header.checkHMAC()) {
-							throw CExc(CExc::Code::hmac_auth_failed);
+							throwInfo(hmac_auth_failed);
 						}
 					} else {
 						if (crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
-							throw CExc(CExc::Code::invalid_presetkey);
+							throwInvalid(invalid_keypreset_id);
 						} else {
 							crypt.hmac.hash.key.set(preferences.getKey(crypt.hmac.keypreset_id), 16);
 							if (!header.checkHMAC()) {
-								throw CExc(CExc::Code::hmac_auth_failed);
+								throwInfo(hmac_auth_failed);
 							}
 						}
 					}
@@ -215,8 +215,14 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
 				}
 			}
-		} catch(CExc& exc) {
+		} catch(ExcError& exc) {
 			helper::Windows::error(nppData._nppHandle, exc.what());
+		} catch (ExcInvalid& exc) {
+			helper::Windows::error(nppData._nppHandle, exc.what());
+		} catch (ExcInfo& exc) {
+			if (exc.getID() != ExcInfo::ID::file_empty) {
+				helper::Windows::error(nppData._nppHandle, exc.what());
+			}
 		} catch(...) {
 			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 		}
@@ -253,12 +259,12 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 					int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
 					if (data_length <= 0) {
-						throw CExc(CExc::Code::input_null);
+						throwInfo(file_empty);
 					}
 
 					byte* pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
 					if (!pData) {
-						throw CExc(CExc::Code::unexpected);
+						throwError(no_scintilla_pointer);
 					}
 
 					CryptHeaderWriter		header(crypt.options, crypt.hmac);
@@ -308,8 +314,14 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					::SendMessage(nppData._nppHandle, NPPM_SAVECURRENTFILE, 0, 0);
 				}
 			}
-		} catch(CExc& exc) {
+		} catch (ExcError& exc) {
 			helper::Windows::error(nppData._nppHandle, exc.what());
+		} catch (ExcInvalid& exc) {
+			helper::Windows::error(nppData._nppHandle, exc.what());
+		} catch (ExcInfo& exc) {
+			if (exc.getID() != ExcInfo::ID::file_empty) {
+				helper::Windows::error(nppData._nppHandle, exc.what());
+			}
 		} catch(...) {
 			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
 		}
@@ -359,7 +371,13 @@ void EncryptDlg()
 
 			current.crypt.options.password.clear();
 		}
-	} catch (CExc& exc) {
+	} catch (ExcError& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (ExcInvalid& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (ExcInfo& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (crypt::Exception& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
@@ -389,15 +407,15 @@ void DecryptDlg()
 					}
 					current.crypt.hmac.hash.key.set(dlg_auth.getInput());
 					if (!header.checkHMAC()) {
-						throw CExc(CExc::Code::hmac_auth_failed);
+						throwInfo(hmac_auth_failed);
 					}
 				} else {
 					if (current.crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
-						throw CExc(CExc::Code::invalid_presetkey);
+						throwInvalid(invalid_keypreset_id);
 					} else {
 						current.crypt.hmac.hash.key.set(preferences.getKey(current.crypt.hmac.keypreset_id), 16);
 						if (!header.checkHMAC()) {
-							throw CExc(CExc::Code::hmac_auth_failed);
+							throwInfo(hmac_auth_failed);
 						}
 					}
 				}
@@ -431,7 +449,13 @@ void DecryptDlg()
 
 			current.crypt.options.password.clear();
 		}
-	} catch(CExc& exc) {
+	} catch (ExcError& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (ExcInvalid& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (ExcInfo& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (crypt::Exception& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch(...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
@@ -442,7 +466,11 @@ void HashDlg()
 {
 	try	{
 		dlg_hash.doDialog();
-	} catch (CExc& exc) {
+	} catch (ExcError& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (ExcInvalid& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (ExcInfo& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
@@ -453,7 +481,11 @@ void RandomDlg()
 {
 	try	{
 		dlg_random.doDialog();
-	} catch (CExc& exc) {
+	} catch (ExcError& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (ExcInvalid& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (ExcInfo& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown exception!"), TEXT("Error"), MB_OK);
@@ -466,7 +498,11 @@ void ConvertDlg()
 		if (helper::Scintilla::getSelectionLength()) {
 			dlg_convert.doDialog();
 		}
-	} catch (CExc& exc) {
+	} catch (ExcError& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (ExcInvalid& exc) {
+		helper::Windows::error(nppData._nppHandle, exc.what());
+	} catch (ExcInfo& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
 	} catch (...) {
 		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);

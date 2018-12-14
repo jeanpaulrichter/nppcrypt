@@ -55,7 +55,7 @@ bool CryptHeaderReader::parse(const crypt::byte* in, size_t in_len)
 		offset++;
 	}
 	if (offset >= in_len - 12) {
-		throw CExc(CExc::Code::invalid_header);
+		throwInvalid(invalid_header);
 	}
 	offset_body = offset + 1;
 	body.start = in + offset_body;
@@ -65,41 +65,41 @@ bool CryptHeaderReader::parse(const crypt::byte* in, size_t in_len)
 		offset++;
 	}
 	if (offset >= in_len - 11) {
-		throw CExc(CExc::Code::invalid_header);
+		throwInvalid(invalid_header);
 	}
 	body.length = offset - offset_body;
 
-	// ------ parse header:
+	// parse header:
 	xml_err = xml_doc.Parse((const char*)in, offset + 11);
 	if (xml_err != tinyxml2::XMLError::XML_NO_ERROR) {
-		throw CExc(CExc::Code::invalid_header);
+		throwInvalid(invalid_header);
 	}
 	tinyxml2::XMLElement* xml_nppcrypt = xml_doc.FirstChildElement();
 	if (!xml_nppcrypt) {
-		throw CExc(CExc::Code::invalid_header);
+		throwInvalid(invalid_header);
 	}
+
+	// version:
 	xml_err = xml_nppcrypt->QueryIntAttribute("version", &version);
 	if (xml_err != tinyxml2::XMLError::XML_NO_ERROR) {
-		throw CExc(CExc::Code::invalid_header_version);
+		throwInvalid(invalid_header_version);
 	}
 	if (version != NPPC_VERSION) {
-		throw CExc(CExc::Code::bad_version);
+		throwInfo(bad_header_version);
 	}
+
+	// hmac:
 	const char* pHMAC = xml_nppcrypt->Attribute("hmac");
 	if (pHMAC) {
 		size_t hmac_length = strlen(pHMAC);
 		if (hmac_length > 512) {
-			throw CExc(CExc::Code::invalid_hmac_data);
+			throwInvalid(invalid_hmac_data);
 		}
 		hmac_digest.set(pHMAC, hmac_length, crypt::Encoding::base64);
-		const char* pHMAC_hash = xml_nppcrypt->Attribute("hmac-hash");
-		if (!crypt::help::getHash(pHMAC_hash, hmac.hash.algorithm) || !crypt::help::checkProperty(hmac.hash.algorithm, crypt::HMAC_SUPPORT)) {
-			throw CExc(CExc::Code::invalid_hmac_hash);
+		if (!crypt::help::getHash(xml_nppcrypt->Attribute("hmac-hash"), hmac.hash.algorithm)) {
+			throwInvalid(invalid_hmac_hash);
 		}
 		hmac.hash.digest_length = hmac_digest.size();
-		if (!crypt::help::checkHashDigest(hmac.hash.algorithm, (unsigned int)hmac.hash.digest_length)) {
-			throw CExc(CExc::Code::invalid_hmac_data);
-		}
 		xml_err = xml_nppcrypt->QueryIntAttribute("hmac-key", &hmac.keypreset_id);
 		if (xml_err != tinyxml2::XMLError::XML_NO_ERROR) {
 			hmac.keypreset_id = -1;
@@ -110,160 +110,114 @@ bool CryptHeaderReader::parse(const crypt::byte* in, size_t in_len)
 	} else {
 		hmac.enable = false;
 	}
+
+	// encryption:
 	tinyxml2::XMLElement* xml_crypt = xml_nppcrypt->FirstChildElement("encryption");
 	if (xml_crypt) {
-		const char* t = xml_crypt->Attribute("cipher");
-		if (!crypt::help::getCipher(t, t_options.cipher)) {
-			throw CExc(CExc::Code::invalid_cipher);
+		if (!crypt::help::getCipher(xml_crypt->Attribute("cipher"), t_options.cipher)) {
+			throwInvalid(invalid_cipher);
 		}
-		if (!(t = xml_crypt->Attribute("key-length"))) {
-			throw CExc(CExc::Code::keylength_missing);
+		if (!crypt::help::getUnsigned(xml_crypt->Attribute("key-length"), t_options.key.length)) {
+			throwInvalid(keylength_missing);
 		}
-		t_options.key.length = (size_t)std::atoi(t);
-		if (!crypt::help::checkCipherKeylength(t_options.cipher, t_options.key.length)) {
-			throw CExc(CExc::Code::invalid_keylength);
+		if (!crypt::help::getCipherMode(xml_crypt->Attribute("mode"), t_options.mode) &&
+			!crypt::help::checkProperty(t_options.cipher, crypt::STREAM)) {
+			throwInvalid(invalid_mode);
 		}
-		t = xml_crypt->Attribute("mode");
-		if (t) {
-			if (!crypt::help::getCipherMode(t, t_options.mode)) {
-				throw CExc(CExc::Code::invalid_mode);
-			}
-			if (!crypt::help::checkCipherMode(t_options.cipher, t_options.mode)) {
-				throw CExc(CExc::Code::invalid_mode);
-			}
-		} else {
-			if (!crypt::help::checkProperty(t_options.cipher, crypt::STREAM)) {
-				throw CExc(CExc::Code::cipher_mode_missing);
-			}
-		}
-		t = xml_crypt->Attribute("encoding");
-		if (!crypt::help::getEncoding(t, t_options.encoding.enc)) {
-			throw CExc(CExc::Code::invalid_encoding);
+		if (!crypt::help::getEncoding(xml_crypt->Attribute("encoding"), t_options.encoding.enc)) {
+			throwInvalid(invalid_encoding);
 		}
 	}
+
+	// key
 	tinyxml2::XMLElement* xml_key = xml_nppcrypt->FirstChildElement("key");
 	if (xml_key) {
-		const char* t = xml_key->Attribute("algorithm");
-		if (!crypt::help::getKeyDerivation(t, t_options.key.algorithm)) {
-			throw CExc(CExc::Code::invalid_keyderivation);
+		if (!crypt::help::getKeyDerivation(xml_key->Attribute("algorithm"), t_options.key.algorithm)) {
+			throwInvalid(invalid_keyderivation);
 		}
 		switch (t_options.key.algorithm)
 		{
 		case crypt::KeyDerivation::pbkdf2:
 		{
-			t = xml_key->Attribute("hash");
 			crypt::Hash thash;
-			if (!crypt::help::getHash(t, thash) || !crypt::help::checkProperty(thash, crypt::HMAC_SUPPORT)) {
-				throw CExc(CExc::Code::invalid_pbkdf2);
+			if (!crypt::help::getHash(xml_key->Attribute("hash"), thash)) {
+				throwInvalid(invalid_pbkdf2);
 			}
 			t_options.key.options[0] = static_cast<int>(thash);
-			if (!(t = xml_key->Attribute("digest-length"))) {
-				throw CExc(CExc::Code::invalid_pbkdf2);
+			if (!crypt::help::getInteger(xml_key->Attribute("digest-length"), t_options.key.options[1])) {
+				throwInvalid(invalid_pbkdf2);
 			}
-			t_options.key.options[1] = std::atoi(t);
-			if (!crypt::help::checkHashDigest(thash, (unsigned int)t_options.key.options[1])) {
-				throw CExc(CExc::Code::invalid_pbkdf2);
-			}
-			if (!(t = xml_key->Attribute("iterations"))) {
-				throw CExc(CExc::Code::invalid_pbkdf2);
-			}
-			t_options.key.options[2] = std::atoi(t);
-			if (t_options.key.options[2] < crypt::Constants::pbkdf2_iter_min || t_options.key.options[2] > crypt::Constants::pbkdf2_iter_max) {
-				throw CExc(CExc::Code::invalid_pbkdf2);
+			if (!crypt::help::getInteger(xml_key->Attribute("iterations"), t_options.key.options[2])) {
+				throwInvalid(invalid_pbkdf2);
 			}
 			break;
 		}
 		case crypt::KeyDerivation::bcrypt:
 		{
-			if (!(t = xml_key->Attribute("iterations"))) {
-				throw CExc(CExc::Code::invalid_bcrypt);
-			}
-			t_options.key.options[0] = std::atoi(t);
-			if (!((t_options.key.options[0] != 0) && !(t_options.key.options[0] & (t_options.key.options[0] - 1)))) {
-				throw CExc(CExc::Code::invalid_bcrypt);
-			}
-			t_options.key.options[0] = static_cast<int>(std::log(t_options.key.options[0]) / std::log(2));
-			if (t_options.key.options[0] < crypt::Constants::bcrypt_iter_min || t_options.key.options[0] > crypt::Constants::bcrypt_iter_max) {
-				throw CExc(CExc::Code::invalid_bcrypt);
+			if (!crypt::help::getInteger(xml_key->Attribute("iterations"), t_options.key.options[0], true)) {
+				throwInvalid(invalid_bcrypt);
 			}
 			break;
 		}
 		case crypt::KeyDerivation::scrypt:
 		{
-			if (!(t = xml_key->Attribute("N"))) {
-				throw CExc(CExc::Code::invalid_scrypt);
+			if (!crypt::help::getInteger(xml_key->Attribute("N"), t_options.key.options[0], true)) {
+				throwInvalid(invalid_scrypt);
 			}
-			t_options.key.options[0] = std::atoi(t);
-			if (!((t_options.key.options[0] != 0) && !(t_options.key.options[0] & (t_options.key.options[0] - 1)))) {
-				throw CExc(CExc::Code::invalid_scrypt);
+			if (!crypt::help::getInteger(xml_key->Attribute("r"), t_options.key.options[1])) {
+				throwInvalid(invalid_scrypt);
 			}
-			t_options.key.options[0] = static_cast<int>(std::log(t_options.key.options[0]) / std::log(2));
-			if (t_options.key.options[0] < crypt::Constants::scrypt_N_min || t_options.key.options[0] > crypt::Constants::scrypt_N_max) {
-				throw CExc(CExc::Code::invalid_scrypt);
-			}
-			if (!(t = xml_key->Attribute("r"))) {
-				throw CExc(CExc::Code::invalid_scrypt);
-			}
-			t_options.key.options[1] = std::atoi(t);
-			if (t_options.key.options[1] < crypt::Constants::scrypt_r_min || t_options.key.options[1] > crypt::Constants::scrypt_r_max) {
-				throw CExc(CExc::Code::invalid_scrypt);
-			}
-			if (!(t = xml_key->Attribute("p"))) {
-				throw CExc(CExc::Code::invalid_scrypt);
-			}
-			t_options.key.options[2] = std::atoi(t);
-			if (t_options.key.options[2] < crypt::Constants::scrypt_p_min || t_options.key.options[2] > crypt::Constants::scrypt_p_max) {
-				throw CExc(CExc::Code::invalid_scrypt);
+			if (!crypt::help::getInteger(xml_key->Attribute("p"), t_options.key.options[1])) {
+				throwInvalid(invalid_scrypt);
 			}
 			break;
 		}
 		}
-		t = xml_key->Attribute("salt");
-		t_options.key.salt_bytes = 0;
-		if (t != NULL) {
-			size_t t_len = strlen(t);
+		const char* pSalt = xml_key->Attribute("salt");
+		if (pSalt) {
+			size_t t_len = strlen(pSalt);
 			if (t_len > 2 * crypt::Constants::salt_max) {
-				throw CExc(CExc::Code::invalid_salt);
+				throwInvalid(invalid_salt);
 			}
-			initdata.salt.set(t, t_len, crypt::Encoding::base64);
+			initdata.salt.set(pSalt, t_len, crypt::Encoding::base64);
 			t_options.key.salt_bytes = initdata.salt.size();
-			if (t_options.key.salt_bytes == 0 || t_options.key.salt_bytes > crypt::Constants::salt_max) {
-				throw CExc(CExc::Code::invalid_salt);
-			}
+		} else {
+			t_options.key.salt_bytes = 0;
 		}
 	}
+
+	// IV:
 	tinyxml2::XMLElement* xml_iv = xml_nppcrypt->FirstChildElement("iv");
 	if (xml_iv) {
 		const char* pIV = xml_iv->Attribute("value");
 		if (!pIV) {
-			throw CExc(CExc::Code::invalid_iv);
+			throwInvalid(invalid_iv);
 		}
 		size_t iv_len = strlen(pIV);
 		if (iv_len > 2048) {
-			throw CExc(CExc::Code::invalid_iv);
+			throwInvalid(invalid_iv);
 		}
 		initdata.iv.set(pIV, iv_len, crypt::Encoding::base64);
-		const char* pMethod = xml_iv->Attribute("method");
-		if (!pMethod) {
-			throw CExc(CExc::Code::invalid_iv);
-		}
-		if (!crypt::help::getIVMode(pMethod, t_options.iv)) {
-			throw CExc(CExc::Code::invalid_iv);
+		if (!crypt::help::getIVMode(xml_iv->Attribute("method"), t_options.iv)) {
+			throwInvalid(invalid_iv);
 		}
 	}
+
+	// Tag:
 	tinyxml2::XMLElement* xml_tag = xml_nppcrypt->FirstChildElement("tag");
 	if (xml_tag) {
 		const char* pTag = xml_tag->Attribute("value");
 		if (!pTag) {
-			throw CExc(CExc::Code::invalid_tag);
+			throwInvalid(invalid_tag);
 		}
 		size_t tag_len = strlen(pTag);
 		if (tag_len > 2048) {
-			throw CExc(CExc::Code::invalid_tag);
+			throwInvalid(invalid_tag);
 		}
 		initdata.tag.set(pTag, tag_len, crypt::Encoding::base64);
 	}
 
+	// setup encrypted data pointer
 	if (in[offset + 11] == '\r' && in[offset + 12] == '\n') {
 		encrypted.start = in + offset + 13;
 		encrypted.length = in_len - offset - 13;
@@ -274,7 +228,8 @@ bool CryptHeaderReader::parse(const crypt::byte* in, size_t in_len)
 		encrypted.start = in + offset + 11;
 		encrypted.length = in_len - offset - 11;
 	}
-	// check EOLs: (only important for nppcrypt files that use this options to reencrypt)
+
+	// check EOLs:
 	for (size_t i = 1; i < encrypted.length - 1; i++) {
 		if (encrypted.start[i] == '\r' && encrypted.start[i + 1] == '\n')	{
 			t_options.encoding.linebreaks = true;
@@ -298,6 +253,12 @@ bool CryptHeaderReader::parse(const crypt::byte* in, size_t in_len)
 		}
 	} else {
 		t_options.encoding.uppercase = false;
+	}
+
+	// validate options
+	crypt::help::validate(t_options);
+	if (hmac.enable) {
+		crypt::help::validate(hmac.hash);
 	}
 
 	options.cipher = t_options.cipher;
@@ -352,7 +313,7 @@ void CryptHeaderWriter::create(const crypt::byte* data, size_t data_length)
 		size_t hmac_length = hmac.hash.digest_length;
 		size_t key_length;
 		if (!crypt::getHashInfo(hmac.hash.algorithm, hmac_length, key_length)) {
-			throw CExc(CExc::Code::invalid_hmac_hash);
+			throwInvalid(invalid_hmac_hash);
 		}
 		out << " hmac-hash=\"" << crypt::help::getString(hmac.hash.algorithm) << "\"";
 		if (hmac.keypreset_id >= 0) {

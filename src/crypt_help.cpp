@@ -386,7 +386,7 @@ bool crypt::help::getHash(const char* s, Hash& h)
 
 bool crypt::help::getUnsigned(const char* s, size_t& i)
 {
-	if (s) {
+	if (s && strlen(s) <= 10) {
 		i = (size_t)std::atoi(s);
 		return true;
 	}
@@ -395,7 +395,7 @@ bool crypt::help::getUnsigned(const char* s, size_t& i)
 
 bool crypt::help::getInteger(const char* s, int& i, bool log2)
 {
-	if (s) {
+	if (s && strlen(s) <= 10) {
 		if (log2) {
 			int temp_int = std::atoi(s);
 			if ((temp_int != 0) && !(temp_int & (temp_int - 1))) {
@@ -430,7 +430,7 @@ void crypt::help::validate(Options::Crypt options, bool exceptions)
 	// ---------- cipher mode
 	if (!checkProperty(options.cipher, STREAM) && !checkCipherMode(options.cipher, options.mode)) {
 		if (exceptions) {
-			throw CExc(CExc::Code::invalid_mode);
+			throwInvalid(invalid_mode);
 		} else {
 			if (checkCipherMode(options.cipher, Mode::gcm)) {
 				options.mode = Mode::gcm;
@@ -442,7 +442,7 @@ void crypt::help::validate(Options::Crypt options, bool exceptions)
 	// ---------- key-length
 	if (options.key.length > 0 && !checkCipherKeylength(options.cipher, options.key.length)) {
 		if (exceptions) {
-			throw CExc(CExc::Code::invalid_keylength);
+			throwInvalid(invalid_keylength);
 		} else {
 			options.key.length = 0; // default key-length will be chosen
 		}
@@ -453,21 +453,24 @@ void crypt::help::validate(Options::Crypt options, bool exceptions)
 	{
 		if (options.key.options[0] < 0 || options.key.options[0] >= (int)crypt::Hash::COUNT || !checkProperty((crypt::Hash)options.key.options[0], HMAC_SUPPORT)) {
 			if (exceptions) {
-				throw CExc(CExc::Code::invalid_pbkdf2_hash);
+				throwInvalid(invalid_pbkdf2);
+			} else {
+				options.key.options[0] = (int)Constants::pbkdf2_default_hash;
+				options.key.options[1] = Constants::pbkdf2_default_hash_digest;
 			}
-			options.key.options[0] = (int)Constants::pbkdf2_default_hash;
-			options.key.options[1] = Constants::pbkdf2_default_hash_digest;
 		}
 		if (options.key.options[1] != 0 && !crypt::help::checkHashDigest((Hash)options.key.options[0], (unsigned int)options.key.options[1])) {
-			options.key.options[1] = 0;
 			if (exceptions) {
-				throw CExc(CExc::Code::invalid_pbkdf2_hash);
+				throwInvalid(invalid_pbkdf2);
+			} else {
+				options.key.options[1] = 0;
 			}
 		}
 		if (options.key.options[2] < crypt::Constants::pbkdf2_iter_min || options.key.options[2] > crypt::Constants::pbkdf2_iter_max) {
-			options.key.options[2] = crypt::Constants::pbkdf2_iter_default;
 			if (exceptions) {
-				throw CExc(CExc::Code::invalid_pbkdf2);
+				throwInvalid(invalid_pbkdf2);
+			} else {
+				options.key.options[2] = crypt::Constants::pbkdf2_iter_default;
 			}
 		}
 		break;
@@ -476,7 +479,7 @@ void crypt::help::validate(Options::Crypt options, bool exceptions)
 	{
 		if (options.key.options[0] < crypt::Constants::bcrypt_iter_min || options.key.options[0] > crypt::Constants::bcrypt_iter_max) {
 			if (exceptions) {
-				throw CExc(CExc::Code::invalid_bcrypt);
+				throwInvalid(invalid_bcrypt);
 			} else {
 				options.key.options[0] = crypt::Constants::bcrypt_iter_default;
 			}
@@ -487,21 +490,21 @@ void crypt::help::validate(Options::Crypt options, bool exceptions)
 	{
 		if (options.key.options[0] < crypt::Constants::scrypt_N_min || options.key.options[0] > crypt::Constants::scrypt_N_max) {
 			if (exceptions) {
-				throw CExc(CExc::Code::invalid_scrypt);
+				throwInvalid(invalid_scrypt);
 			} else {
 				options.key.options[0] = crypt::Constants::scrypt_N_default;
 			}
 		}
 		if (options.key.options[1] < crypt::Constants::scrypt_r_min || options.key.options[1] > crypt::Constants::scrypt_r_max) {
 			if (exceptions) {
-				throw CExc(CExc::Code::invalid_scrypt);
+				throwInvalid(invalid_scrypt);
 			} else {
 				options.key.options[1] = crypt::Constants::scrypt_r_default;
 			}
 		}
 		if (options.key.options[2] < crypt::Constants::scrypt_p_min || options.key.options[2] > crypt::Constants::scrypt_p_max) {
 			if (exceptions) {
-				throw CExc(CExc::Code::invalid_scrypt);
+				throwInvalid(invalid_scrypt);
 			} else {
 				options.key.options[2] = crypt::Constants::scrypt_p_default;
 			}
@@ -512,14 +515,14 @@ void crypt::help::validate(Options::Crypt options, bool exceptions)
 	// ---------- salt
 	if (options.key.salt_bytes > Constants::salt_max) {
 		if (exceptions) {
-			throw CExc(CExc::Code::invalid_salt);
+			throwInvalid(invalid_saltlength);
 		} else {
 			options.key.salt_bytes = 16;
 		}
 	}
 	if (options.key.algorithm == KeyDerivation::bcrypt && options.key.salt_bytes != 16) {
 		if (exceptions) {
-			throw CExc(CExc::Code::invalid_bcrypt_saltlength);
+			throwInvalid(invalid_bcrypt_saltlength);
 		} else {
 			options.key.salt_bytes = 16;
 		}
@@ -527,7 +530,7 @@ void crypt::help::validate(Options::Crypt options, bool exceptions)
 	// ----------- encoding: line-length
 	if (options.encoding.linelength > NPPC_MAX_LINE_LENGTH) {
 		if (exceptions) {
-			throw CExc(CExc::Code::invalid_linelength);
+			throwInvalid(invalid_linelength);
 		} else {
 			options.encoding.linelength = NPPC_MAX_LINE_LENGTH;
 		}
@@ -538,7 +541,7 @@ void crypt::help::validate(Options::Hash options, bool exceptions)
 {
 	if (!help::checkHashDigest(options.algorithm, (unsigned int)options.digest_length)) {
 		if (exceptions) {
-			throw CExc(CExc::Code::invalid_hash_digestlen);
+			throwInvalid(invalid_hash_digestlen);
 		} else {
 			options.digest_length = 0;
 		}
@@ -546,14 +549,14 @@ void crypt::help::validate(Options::Hash options, bool exceptions)
 	if (options.use_key) {
 		if (!help::checkProperty(options.algorithm, crypt::HMAC_SUPPORT) && !help::checkProperty(options.algorithm, crypt::KEY_SUPPORT)) {
 			if (exceptions) {
-				throw CExc(CExc::Code::hash_without_keysupport);
+				throwInvalid(hash_without_keysupport);
 			} else {
 				options.algorithm = Hash::sha3;
 			}
 		}
 	} else if (help::checkProperty(options.algorithm, crypt::KEY_REQUIRED)) {
 		if (exceptions) {
-			throw CExc(CExc::Code::hash_requires_key);
+			throwInvalid(hash_requires_key);
 		} else {
 			options.algorithm = Hash::sha3;
 		}
@@ -564,7 +567,7 @@ void crypt::help::validate(Options::Convert options, bool exceptions)
 {
 	if (options.from == options.to) {
 		if (exceptions) {
-			throw CExc(CExc::Code::hash_requires_key);
+			throwInvalid(convert_target);
 		} else {
 			if (options.to == Encoding::ascii) {
 				options.to = Encoding::base16;
@@ -580,7 +583,7 @@ void crypt::help::validate(Options::Convert options, bool exceptions)
 	// ----------- line-length
 	if (options.linelength > NPPC_MAX_LINE_LENGTH) {
 		if (exceptions) {
-			throw CExc(CExc::Code::invalid_linelength);
+			throwInvalid(invalid_linelength);
 		} else {
 			options.linelength = NPPC_MAX_LINE_LENGTH;
 		}

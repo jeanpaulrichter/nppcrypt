@@ -63,7 +63,7 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 			if (fin.is_open()) {
 				fin.close();
 			}
-			throw CExc(CExc::Code::preffile_read_fail);
+			throwError(preffile_read);
 		}
 	
 		tinyxml2::XMLError		xml_err;
@@ -71,11 +71,11 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 
 		xml_err = xml_doc.Parse(buffer.c_str(), buffer.size());
 		if (xml_err != tinyxml2::XMLError::XML_NO_ERROR) {
-			throw CExc(CExc::Code::preffile_corrupted);
+			throwError(preffile_parse);
 		}
 		tinyxml2::XMLElement* xml_nppcrypt = xml_doc.FirstChildElement();
 		if (!xml_nppcrypt) {
-			throw CExc(CExc::Code::preffile_corrupted);
+			throwError(preffile_parse);
 		}
 
 		// nppcrypt-files

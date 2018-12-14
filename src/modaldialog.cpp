@@ -18,7 +18,7 @@ GNU General Public License for more details.
 #include <stdio.h>
 #include "modaldialog.h"
 #include "help.h"
-#include "exception.h"
+//#include "exception.h"
 
 void ModalDialog::init(HINSTANCE hInst, HWND parent, int dialogID, INT_PTR returnID)
 {
@@ -87,7 +87,7 @@ void ModalDialog::getText(int id, crypt::secure_string& str, HWND hwnd)
 			temp.resize((size_t)length + 1);
 			::GetDlgItemText(hwnd, id, &temp[0], length + 1);
 			helper::Windows::wchar_to_utf8(temp.c_str(), length, str);
-		} catch (CExc& exc) {
+		} catch (std::exception& exc) {
 			helper::Windows::error(_hSelf, exc.what());
 		}
 	}
@@ -105,7 +105,7 @@ void ModalDialog::setText(int id, const crypt::secure_string& str, HWND hwnd)
 			crypt::secure_wstring temp;
 			helper::Windows::utf8_to_wchar(str.c_str(), (int)str.size(), temp);
 			::SetDlgItemText(hwnd, id, temp.c_str());
-		} catch (CExc& exc) {
+		} catch (std::exception& exc) {
 			helper::Windows::error(_hSelf, exc.what());
 		}
 	}
