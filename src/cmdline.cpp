@@ -329,20 +329,20 @@ namespace help
 namespace check
 {
 	/* -p --password , default encoding: utf8 */
-	void password(crypt::Options::Crypt& options)
+	void password(crypt::UserData& password)
 	{
 		if (opt.password->count()) {
-			help::setUserData(args.password.c_str(), args.password.size(), options.password, crypt::Encoding::ascii);
+			help::setUserData(args.password.c_str(), args.password.size(), password, crypt::Encoding::ascii);
 			for (size_t i = 0; i < args.password.size(); i++) {
 				args.password[i] = 0;
 			}
 		}
-		if (!options.password.size()) {
+		if (!password.size()) {
 			if (*opt.nointeraction) {
-				throw CExc(CExc::Code::password_missing);
+				throw std::exception("password missing");
 			}
-			if (!help::getUserInput("enter password", options.password, crypt::Encoding::ascii, 3, true, false)) {
-				throw CExc(CExc::Code::password_missing);
+			if (!help::getUserInput("enter password", password, crypt::Encoding::ascii, 3, true, false)) {
+				throw std::exception("password missing");
 			}
 		}
 	}
@@ -355,13 +355,13 @@ namespace check
 			help::splitArgument(args.cipher, pos, ':');
 
 			if (!crypt::help::getCipher(args.cipher.c_str(), options.cipher)) {
-				throw CExc(CExc::Code::invalid_cipher);
+				throwInvalid(invalid_cipher);
 			}
 			if (pos.size() > 1) {
 				options.key.length = std::atoi(&args.cipher[pos[1]]) / 8;
 				if (pos.size() > 2) {
 					if (!crypt::help::getCipherMode(&args.cipher[pos[2]], options.mode)) {
-						throw CExc(CExc::Code::invalid_mode);
+						throwInvalid(invalid_mode);
 					}
 				} else {
 					if (!crypt::help::checkProperty(options.cipher, crypt::STREAM)) {
@@ -383,11 +383,11 @@ namespace check
 			std::vector<size_t> pos;
 			help::splitArgument(args.encoding, pos, ':');
 			if (!crypt::help::getEncoding(args.encoding.c_str(), options.encoding.enc)) {
-				throw CExc(CExc::Code::invalid_encoding);
+				throwInvalid(invalid_encoding);
 			}
 			if (pos.size() > 1) {
 				if (!crypt::help::getEOL(&args.encoding[pos[1]], options.encoding.eol)) {
-					throw CExc(CExc::Code::invalid_eol);
+					throw std::exception("invalid eol");
 				}
 				if (pos.size() > 2) {
 					options.encoding.linelength = std::atoi(&args.encoding[pos[2]]);
@@ -398,7 +398,7 @@ namespace check
 						} else if (strcmp(&args.encoding[pos[3]], "false") == 0) {
 							options.encoding.uppercase = false;
 						} else {
-							throw CExc(CExc::Code::invalid_uppercase);
+							throw std::exception("invalid uppercase");
 						}
 					}
 				}
@@ -417,7 +417,7 @@ namespace check
 			std::vector<size_t> pos;
 			help::splitArgument(args.keyderivation, pos, ':');
 			if (!crypt::help::getKeyDerivation(args.keyderivation.c_str(), options.key.algorithm)) {
-				throw CExc(CExc::Code::invalid_keyderivation);
+				throwInvalid(invalid_keyderivation);
 			}
 			switch (options.key.algorithm) {
 			case crypt::KeyDerivation::pbkdf2:
@@ -425,7 +425,7 @@ namespace check
 				if (pos.size() > 1) {
 					crypt::Hash thash;
 					if (!crypt::help::getHash(&args.keyderivation[pos[1]], thash)) {
-						throw CExc(CExc::Code::invalid_pbkdf2_hash);
+						throwInvalid(invalid_pbkdf2);
 					}
 					options.key.options[0] = static_cast<int>(thash);
 					if (pos.size() > 2) {
@@ -487,12 +487,12 @@ namespace check
 			help::splitArgument(args.hmac, pos, ':');
 
 			if (!crypt::help::getHash(args.hmac.c_str(), hmac.hash.algorithm) || !crypt::help::checkProperty(hmac.hash.algorithm, crypt::HMAC_SUPPORT)) {
-				throw CExc(CExc::Code::invalid_hmac_hash);
+				throwInvalid(invalid_hmac_hash);
 			}
 			if (pos.size() > 1) {
 				hmac.hash.digest_length = (size_t)std::atoi(&args.hmac[pos[1]]) / 8;
 				if (!crypt::help::checkHashDigest(hmac.hash.algorithm, hmac.hash.digest_length)) {
-					throw CExc(CExc::Code::invalid_hmac_hash);
+					throwInvalid(invalid_hmac_hash);
 				}
 			}
 			hmac.enable = true;
@@ -504,10 +504,10 @@ namespace check
 			}
 			if (!hmac.hash.key.size()) {
 				if (*opt.nointeraction) {
-					throw CExc(CExc::Code::hmac_key_missing);
+					throw std::exception("hmac key missing.");
 				}
 				if (!help::getUserInput("enter HMAC key", hmac.hash.key, crypt::Encoding::ascii, 2, true, false)) {
-					throw CExc(CExc::Code::hmac_key_missing);
+					throw std::exception("hmac key missing.");
 				}
 			}
 		}
@@ -521,10 +521,10 @@ namespace check
 		}
 		if (!crypt::help::checkProperty(options.cipher, crypt::STREAM) && (options.mode == crypt::Mode::ccm || options.mode == crypt::Mode::gcm || options.mode == crypt::Mode::eax) && !tag.size()) {
 			if (*opt.nointeraction) {
-				throw CExc(CExc::Code::invalid_tag);
+				throwInvalid(invalid_tag);
 			}
 			if (!help::getUserInput("please specify tag", tag, crypt::Encoding::base64, 2, false, true)) {
-				throw CExc(CExc::Code::invalid_tag);
+				throwInvalid(invalid_tag);
 			}
 		}
 	}
@@ -545,16 +545,16 @@ namespace check
 			} else {
 				options.iv = crypt::IV::custom;
 				if (!help::setUserData(args.iv.c_str(), args.iv.size(), iv, crypt::Encoding::base64)) {
-					throw CExc(CExc::Code::iv_missing);
+					throw std::exception("IV missing.");
 				}
 			}
 		}
 		if (decryption && (options.iv != crypt::IV::zero && options.iv != crypt::IV::keyderivation) && !iv.size()) {
 			if (*opt.nointeraction) {
-				throw CExc(CExc::Code::iv_missing);
+				throw std::exception("IV missing.");
 			}
 			if (!help::getUserInput("IV data missing. please specify", iv, crypt::Encoding::base64, 2, false, true)) {
-				throw CExc(CExc::Code::iv_missing);
+				throw std::exception("IV missing.");
 			}
 		}
 	}
@@ -568,10 +568,10 @@ namespace check
 		}
 		if (options.key.salt_bytes > 0 && !salt.size()) {
 			if (*opt.nointeraction) {
-				throw CExc(CExc::Code::salt_missing);
+				throw std::exception("Salt missing.");
 			}
 			if (!help::getUserInput("salt data missing. please specify", salt, crypt::Encoding::base64, 2, false, true)) {
-				throw CExc(CExc::Code::salt_missing);
+				throw std::exception("Salt missing.");
 			}
 		}
 	}
@@ -590,7 +590,7 @@ namespace check
 		if (opt.output->count()) {
 			std::fstream f(args.output, std::ios::out | std::ios::binary);
 			if (!f.is_open()) {
-				throw CExc(CExc::Code::outputfile_write_fail);
+				throw std::exception("failed to write output-file.");
 			}
 			f.close();
 		}
@@ -603,12 +603,12 @@ namespace check
 		help::splitArgument(args.hash, pos, ':');
 
 		if (!crypt::help::getHash(args.hash.c_str(), options.algorithm)) {
-			throw CExc(CExc::Code::invalid_hash);
+			throw std::exception("invalid hash");
 		}
 		if (pos.size() > 1) {
 			options.digest_length = std::atoi(&args.hash[pos[1]]) / 8;
 			if (!crypt::help::checkHashDigest(options.algorithm, options.digest_length)) {
-				throw CExc(CExc::Code::invalid_hash);
+				throw std::exception("invalid hash");
 			}
 		} else {
 			options.digest_length = 0;
@@ -617,10 +617,10 @@ namespace check
 		if (opt.hash_key->count()) {
 			if (!help::setUserData(args.hash_key.c_str(), args.hash_key.size(), options.key, crypt::Encoding::ascii)) {
 				if (*opt.nointeraction) {
-					throw CExc(CExc::Code::invalid_hashkey);
+					throw std::exception("invalid hash-key.");
 				}
 				if (!help::getUserInput("enter key", options.key, crypt::Encoding::ascii, 2, true, false)) {
-					throw CExc(CExc::Code::invalid_hashkey);
+					throw std::exception("invalid hash-key.");
 				}
 			}
 			options.use_key = true;
@@ -641,7 +641,7 @@ namespace check
 		}
 
 		if (crypt::help::checkProperty(options.algorithm, crypt::KEY_REQUIRED) && !options.use_key) {
-			throw CExc(CExc::Code::key_required);
+			throw std::exception("key required");
 		}
 	}
 }
@@ -707,7 +707,7 @@ namespace print
 
 void hash(const std::string& filename)
 {
-	std::basic_string<byte>		buffer;
+	std::basic_string<crypt::byte>		buffer;
 	std::vector<std::string>	digests;
 	crypt::Options::Hash		options;
 	std::ostringstream			out;
@@ -716,7 +716,7 @@ void hash(const std::string& filename)
 	static const size_t			thashes_digests[5] = { 4, 16, 20, 32, 32 };
 
 	if (opt.encoding->count() && !crypt::help::getEncoding(args.encoding.c_str(), options.encoding)) {
-		throw CExc(CExc::Code::invalid_encoding);
+		throwInvalid(invalid_encoding);
 	}
 
 	if (opt.hash->count()) {
@@ -736,8 +736,8 @@ void hash(const std::string& filename)
 	if (opt.output->count()) {
 		std::string temp = out.str();
 		FileWriter fout(args.output);
-		if (!fout.write((const byte*)temp.c_str(), temp.size())) {
-			throw CExc(CExc::Code::outputfile_write_fail);
+		if (!fout.write((const crypt::byte*)temp.c_str(), temp.size())) {
+			throw std::exception("failed to write output-file.");
 		}
 	} else {
 		std::cout << out.str();
@@ -767,14 +767,14 @@ void hash(const std::string& filename)
 	}
 }
 
-void hash(const byte* input, size_t input_length)
+void hash(const crypt::byte* input, size_t input_length)
 {
-	std::basic_string<byte>		buffer;
+	std::basic_string<crypt::byte>		buffer;
 	crypt::Options::Hash		options;
 	std::ostringstream			out;
 
 	if (opt.encoding->count() && !crypt::help::getEncoding(args.encoding.c_str(), options.encoding)) {
-		throw CExc(CExc::Code::invalid_encoding);
+		throwInvalid(invalid_encoding);
 	}
 
 	if (opt.hash->count()) {
@@ -782,38 +782,39 @@ void hash(const byte* input, size_t input_length)
 		crypt::hash(options, buffer, { { input, input_length } });
 		out << crypt::help::getString(options.algorithm) << "-" << options.digest_length * 8 << ": " << (const char*)buffer.c_str() << std::endl;
 	} else {
-		throw CExc(CExc::Code::invalid_hash);
+		throw std::exception("invalid hash.");
 	}
 	
 	if (opt.output->count()) {
 		std::string temp = out.str();
 		FileWriter fout(args.output);
-		if (!fout.write((const byte*)temp.c_str(), temp.size())) {
-			throw CExc(CExc::Code::outputfile_write_fail);
+		if (!fout.write((const crypt::byte*)temp.c_str(), temp.size())) {
+			throw std::exception("failed to write output-file.");
 		}
 	} else {
 		std::cout << out.str();
 	}
 }
 
-void decrypt(const byte* input, size_t input_length, File::BOM bom)
+void decrypt(const crypt::byte* input, size_t input_length, File::BOM bom)
 {
-	std::basic_string<byte>	outputData;
+	std::basic_string<crypt::byte>	outputData;
 	crypt::Options::Crypt	options;
+	crypt::UserData			password;
 	CryptHeader::HMAC		hmac;
-	CryptHeaderReader		header(options, hmac);
-	crypt::InitData&		init(header.initData());
+	CryptHeaderReader		header(hmac);
+	crypt::InitData			init;
 
 	if (bom != File::BOM::utf8 && bom != File::BOM::none) {
-		throw CExc(CExc::Code::only_utf8_decrypt);
+		throw std::exception("only decryption of utf8 file possible.");
 	}
 
 	bool verbose = !*opt.silent;
 	bool write_to_file = (opt.output->count() > 0);
 	bool user_interaction = !*opt.nointeraction;
-	bool got_header = header.parse(input, input_length);
+	bool got_header = header.parse(options, init, input, input_length);
 
-	check::password(options);
+	check::password(password);
 	check::cipher(options);
 	check::keyderivation(options);
 	check::tag(options, init.tag);
@@ -822,7 +823,7 @@ void decrypt(const byte* input, size_t input_length, File::BOM bom)
 	check::outputfile();
 	check::hmac(hmac);
 
-	crypt::help::validateCryptOptions(options);
+	crypt::help::validate(options);
 
 	if (verbose) {
 		print::outputfile();
@@ -835,36 +836,37 @@ void decrypt(const byte* input, size_t input_length, File::BOM bom)
 			if (hmac.keypreset_id >= 0) {
 				std::cout << "hmac authentication skipped (presets not available)." << std::endl;
 			} else if (!header.checkHMAC()) {
-				throw CExc(CExc::Code::hmac_auth_failed);
+				throw std::exception("HMAC authentication failed.");
 			}
 		}
-		crypt::decrypt(header.encryptedData(), header.encryptedDataLength(), outputData, options, init);
+		crypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), outputData, options, password, init);
 	} else {
-		crypt::decrypt(input, input_length, outputData, options, init);
+		crypt::decrypt(input, input_length, outputData, options, password, init);
 	}
 	if (opt.output->count()) {
 		FileWriter fout(args.output, bom);
 		if (!fout.write(outputData.c_str(), outputData.size())) {
-			throw CExc(CExc::Code::outputfile_write_fail);
+			throw std::exception("failed to write output file.");
 		}
 	} else {
 		std::cout << outputData.c_str() << std::endl;
 	}
 }
 
-void encrypt(const byte* input, size_t input_length)
+void encrypt(const crypt::byte* input, size_t input_length)
 {
-	std::basic_string<byte>	outputData;
+	std::basic_string<crypt::byte>	outputData;
 	crypt::Options::Crypt	options;
+	crypt::UserData			password;
 	CryptHeader::HMAC		hmac;
-	CryptHeaderWriter		header(options, hmac);
-	crypt::InitData&		init(header.initData());
+	CryptHeaderWriter		header(hmac);
+	crypt::InitData			init;
 
 	bool verbose = !*opt.silent;
 	bool create_header = !*opt.noheader;
 	bool write_to_file = (opt.output->count() > 0);
 
-	check::password(options);
+	check::password(password);
 	check::cipher(options);
 	check::iv(options, init.iv, false);
 	check::keyderivation(options);
@@ -873,22 +875,22 @@ void encrypt(const byte* input, size_t input_length)
 	check::hmac(hmac);
 	check::outputfile();
 
-	crypt::help::validateCryptOptions(options);
+	crypt::help::validate(options);
 
 	if (verbose) {
 		print::outputfile();
 		print::options(options);
 	}
 	
-	crypt::encrypt(input, input_length, outputData, options, header.initData());
+	crypt::encrypt(input, input_length, outputData, options, password, init);
 
 	if (create_header) {
-		header.create(outputData.c_str(), outputData.size());
+		header.create(options, init, outputData.c_str(), outputData.size());
 	}
 	if (write_to_file) {
 		FileWriter fout(args.output);
 		if (!fout.write(outputData.c_str(), outputData.size(), header.c_str(), header.size())) {
-			throw CExc(CExc::Code::outputfile_write_fail);
+			throw std::exception("failed to write output file.");
 		}
 		if (verbose || !create_header) {
 			print::initdata(options, init);
@@ -945,11 +947,11 @@ int main(int argc, char** argv)
 			} else if (args.action.compare("enc") == 0) {
 				action = Action::encrypt;
 			} else {
-				throw CExc(CExc::Code::invalid_crypt_action);
+				throw std::exception("invalid action");
 			}
 		}
 		
-		std::basic_string<byte>	inputData;
+		std::basic_string<crypt::byte>	inputData;
 		File::BOM bom = File::BOM::none;
 
 		if (File::exists(args.input)) {
@@ -957,7 +959,7 @@ int main(int argc, char** argv)
 				FileReader fin(args.input);
 				bom = fin.getBOM();
 				if (!fin.getData(inputData)) {
-					throw CExc(CExc::Code::inputfile_read_fail);
+					throw std::exception("failed to read file");
 				}
 			}
 			if (!*opt.silent) {
@@ -994,8 +996,6 @@ int main(int argc, char** argv)
 
 	} catch (const CLI::Error &e) {
 		return app.exit(e);
-	} catch (CExc& e) {
-		std::cerr << "error: " << e.what() << std::endl;
 	} catch (std::exception& e)	{
 		std::cerr << "error:" << e.what() << std::endl;
 	} catch (...) {
