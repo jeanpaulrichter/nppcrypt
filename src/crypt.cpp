@@ -1650,7 +1650,7 @@ bool crypt::getHashInfo(Hash h, size_t& length, size_t& keylength)
 	return true;
 }
 
-void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init)
+void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const UserData& password, InitData& init)
 {
 	using namespace CryptoPP;
 
@@ -1702,7 +1702,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 	}
 	// --------------------------- calculate key
-	intern::calcKey(tKey, options.password, init.salt, options.key);
+	intern::calcKey(tKey, password, init.salt, options.key);
 
 	if (options.iv == IV::keyderivation) {
 		init.iv.set(ptVec, iv_len);
@@ -1829,7 +1829,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	}
  }
 
-void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init)
+void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const UserData& password, InitData& init)
 {
 	if (!in || !in_len) {
 		throwInvalid("decrypt: invalid input.");
@@ -1867,7 +1867,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	}
 
 	// --------------------------- calculate key:
-	intern::calcKey(tKey, options.password, init.salt, options.key);
+	intern::calcKey(tKey, password, init.salt, options.key);
 
 	try	{
 		if (block_size && (options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax)) {

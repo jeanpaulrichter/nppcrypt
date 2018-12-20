@@ -29,6 +29,7 @@ GNU General Public License for more details.
 #define IDD_AUTH                        111
 #define IDD_CONVERT                     112
 #define IDD_INITDATA                    113
+#define IDD_CRYPT_EASYMODE				114
 
 #define IDC_STATIC                      -1
 #define IDC_OK                          998
@@ -45,8 +46,8 @@ GNU General Public License for more details.
 #define IDC_CRYPT_CIPHER_TYPE           1002
 #define IDC_CRYPT_CIPHER_INFO           1003
 #define IDC_CRYPT_MODE                  1004
-#define IDC_CRYPT_PASSWORD_STATIC       1005
-#define IDC_CRYPT_PASSWORD              1006
+#define IDC_CRYPT_PW_ADVANCED_CAPTION   1005
+#define IDC_CRYPT_PASSWORD_ADVANCED     1006
 #define IDC_CRYPT_PASSWORD_ENC          1007
 #define IDC_CRYPT_PASSWORD_SHOW			1008
 #define IDC_CRYPT_ENC_ASCII             1009
@@ -110,6 +111,10 @@ GNU General Public License for more details.
 #define IDC_CRYPT_PBKDF2_STATIC1		1068
 #define IDC_CRYPT_PBKDF2_STATIC3		1070
 #define IDC_CRYPT_AUTH_HASH_LENGTH		1071
+#define IDC_CRYPT_MODUS					1072
+#define IDC_CRYPT_PASSWORD_EASY			1073
+#define IDC_CRYPT_PW_EASY_CAPTION		1074
+#define IDC_CRYPT_HELP_EASY				1075
 
 #define IDC_HASH_ALGO                   1000
 #define IDC_HASH_ENC_ASCII              1001

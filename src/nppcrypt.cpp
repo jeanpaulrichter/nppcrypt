@@ -24,6 +24,7 @@ GNU General Public License for more details.
 #include "exception.h"
 #include "preferences.h"
 #include "crypt.h"
+#include "crypt_help.h"
 #include "dlg_crypt.h"
 #include "dlg_hash.h"
 #include "dlg_random.h"
@@ -175,9 +176,10 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 				}
 
 				CryptInfo				crypt;
-				CryptHeaderReader		header(crypt.options, crypt.hmac);
+				crypt::InitData			initdata;
+				CryptHeaderReader		header(crypt.hmac);
 
-				if (!header.parse(pData, data_length)) {
+				if (!header.parse(crypt.options, initdata, pData, data_length)) {
 					throwInvalid(no_header);
 				}
 
@@ -202,9 +204,9 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 					}
 				}
 
-				if (dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &crypt, &header.initData().iv, &filename)) {
+				if (dlg_crypt.decryptDialog(&crypt, &initdata.iv, &filename)) {
 					std::basic_string<byte> buffer;
-					crypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, crypt.options, header.initData());
+					crypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, crypt.options, crypt.password, initdata);
 
 					::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
 					::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
@@ -265,7 +267,8 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 						throwError(no_scintilla_pointer);
 					}
 
-					CryptHeaderWriter		header(crypt.options, crypt.hmac);
+					crypt::InitData			initdata;
+					CryptHeaderWriter		header(crypt.hmac);
 					std::basic_string<byte>	buffer;
 					bool					autoencrypt = false;
 
@@ -284,17 +287,17 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 							autoencrypt = true;
 						}
 						if(autoencrypt)	{
-							crypt::encrypt(pData, data_length, buffer, crypt.options, header.initData());
-							header.create(&buffer[0], buffer.size());
+							crypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
+							header.create(crypt.options, initdata, &buffer[0], buffer.size());
 						}
 					}						
 					if(!autoencrypt) {
 						int encoding = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
 						bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
 
-						if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &crypt, &header.initData().iv, &filename)) {
-							crypt::encrypt(pData, data_length, buffer, crypt.options, header.initData());
-							header.create(&buffer[0], buffer.size());
+						if(dlg_crypt.encryptDialog(&crypt, &initdata.iv, &filename)) {
+							crypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
+							header.create(crypt.options, initdata, &buffer[0], buffer.size());
 							if(fiter == crypt_files.end()) {
 								crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
 							}
@@ -347,13 +350,16 @@ void EncryptDlg()
 		if (!helper::Scintilla::getSelection(&pData, &data_length, &sel_start)) {
 			return;
 		}
-		CryptHeaderWriter			header(current.crypt.options, current.crypt.hmac);
 
-		if(dlg_crypt.doDialog(DlgCrypt::Operation::Enc, &current.crypt, &header.initData().iv)) {			
+		crypt::InitData				initdata;
+
+		if(dlg_crypt.encryptDialog(&current.crypt, &initdata.iv)) {
+
 			std::basic_string<byte>		buffer;
+			crypt::encrypt(pData, data_length, buffer, current.crypt.options, current.crypt.password, initdata);
 
-			crypt::encrypt(pData, data_length, buffer, current.crypt.options, header.initData());
-			header.create(&buffer[0], buffer.size());
+			CryptHeaderWriter header(current.crypt.hmac);
+			header.create(current.crypt.options, initdata, &buffer[0], buffer.size());
 
 			HWND hCurScintilla = helper::Scintilla::getCurrent();
 			::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
@@ -362,10 +368,10 @@ void EncryptDlg()
 			::SendMessage(hCurScintilla, SCI_SETSEL, sel_start + header.size(), sel_start + header.size());
 			::SendMessage(hCurScintilla, SCI_TARGETFROMSELECTION, 0, 0);
 			::SendMessage(hCurScintilla, SCI_REPLACETARGET, buffer.size(), (LPARAM)&buffer[0]);	
-			::SendMessage(hCurScintilla, SCI_SETSEL, sel_start, sel_start + header.size() +buffer.size());
+			::SendMessage(hCurScintilla, SCI_SETSEL, sel_start, sel_start + header.size() + buffer.size());
 			::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
 
-			current.crypt.options.password.clear();
+			current.crypt.password.clear();
 		}
 	} catch (std::exception& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());
@@ -386,10 +392,12 @@ void DecryptDlg()
 			return;
 		}
 
-		CryptHeaderReader	header(current.crypt.options, current.crypt.hmac);		
+		crypt::InitData		initdata;
+		CryptHeaderReader	header(current.crypt.hmac);		
 
 		/* parse header and check hmac if present */
-		if (header.parse(pData, data_length)) {
+		bool header_found = header.parse(current.crypt.options, initdata, pData, data_length);
+		if (header_found) {
 			if (current.crypt.hmac.enable) {
 				if (current.crypt.hmac.keypreset_id < 0) {
 					if (!dlg_auth.doDialog()) {
@@ -412,32 +420,31 @@ void DecryptDlg()
 			}
 		}
 
-		if(dlg_crypt.doDialog(DlgCrypt::Operation::Dec, &current.crypt, &header.initData().iv)) {
-			crypt::InitData& s_init = header.initData();
+		if(dlg_crypt.decryptDialog(&current.crypt, &initdata.iv, NULL, !header_found)) {
 
 			/* check if salt or tag data is mising */
-			size_t need_salt_len = (current.crypt.options.key.salt_bytes > 0 && s_init.salt.size() != current.crypt.options.key.salt_bytes) ? current.crypt.options.key.salt_bytes : 0;
+			size_t need_salt_len = (current.crypt.options.key.salt_bytes > 0 && initdata.salt.size() != current.crypt.options.key.salt_bytes) ? current.crypt.options.key.salt_bytes : 0;
 			size_t need_tag_len = 0;
-			if (current.crypt.options.mode == crypt::Mode::gcm && s_init.tag.size() != crypt::Constants::gcm_tag_size) {
-				need_tag_len = crypt::Constants::gcm_tag_size;
-			}
-			if (current.crypt.options.mode == crypt::Mode::ccm && s_init.tag.size() != crypt::Constants::ccm_tag_size) {
-				need_tag_len = crypt::Constants::gcm_tag_size;
-			}
-			if (current.crypt.options.mode == crypt::Mode::eax && s_init.tag.size() != crypt::Constants::eax_tag_size) {
-				need_tag_len = crypt::Constants::gcm_tag_size;
+			if (crypt::help::checkProperty(current.crypt.options.cipher, crypt::BLOCK)) {
+				if (current.crypt.options.mode == crypt::Mode::gcm && initdata.tag.size() != crypt::Constants::gcm_tag_size) {
+					need_tag_len = crypt::Constants::gcm_tag_size;
+				} else if (current.crypt.options.mode == crypt::Mode::ccm && initdata.tag.size() != crypt::Constants::ccm_tag_size) {
+					need_tag_len = crypt::Constants::ccm_tag_size;
+				} else if (current.crypt.options.mode == crypt::Mode::eax && initdata.tag.size() != crypt::Constants::eax_tag_size) {
+					need_tag_len = crypt::Constants::eax_tag_size;
+				}
 			}
 			if (need_salt_len > 0 || need_tag_len > 0) {
-				if (!dlg_initdata.doDialog(&s_init, need_salt_len, need_tag_len)) {
+				if (!dlg_initdata.doDialog(&initdata, need_salt_len, need_tag_len)) {
 					return;
 				}
 			}
 
 			std::basic_string<byte>	buffer;
-			decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, current.crypt.options, s_init);
+			decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, current.crypt.options, current.crypt.password, initdata);
 			helper::Scintilla::replaceSelection(buffer);
 
-			current.crypt.options.password.clear();
+			current.crypt.password.clear();
 		}
 	} catch (std::exception& exc) {
 		helper::Windows::error(nppData._nppHandle, exc.what());

@@ -34,7 +34,7 @@ INT_PTR CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 		::SetDlgItemText(_hSelf, IDC_PREF_FILES_EXT, preferences.files.extension.c_str());
 
 		::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_VALUE, EM_LIMITTEXT, 24, 0);
-		::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LABEL, EM_LIMITTEXT, 30, 0);
+		::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LABEL, EM_LIMITTEXT, NPPC_MAX_PRESET_LABELLENGTH, 0);
 		for (size_t i = 0; i < preferences.getKeyNum(); i++) {
 			::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LIST, LB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
 		}

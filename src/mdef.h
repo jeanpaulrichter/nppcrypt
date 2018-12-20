@@ -38,6 +38,7 @@ GNU General Public License for more details.
 
 #define		NPPC_HMAC_MAX_KEYS			20
 #define		NPPC_MAX_HMAC_KEYLENGTH		512
+#define		NPPC_MAX_PRESET_LABELLENGTH	30
 
 #define		NPPC_MAX_LINE_LENGTH		9999
 #define		NPPC_PASSWORD_MAXLENGTH		1024

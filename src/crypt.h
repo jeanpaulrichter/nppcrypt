@@ -155,7 +155,6 @@ namespace crypt
 			crypt::Cipher			cipher;
 			crypt::Mode				mode;
 			crypt::IV				iv;
-			crypt::UserData			password;
 
 			struct Key
 			{
@@ -169,7 +168,7 @@ namespace crypt
 
 			struct Encoding
  			{				
-				Encoding() : enc(crypt::Encoding::base64), linelength(64), linebreaks(true), eol(EOL::windows), uppercase(true) {};
+				Encoding() : enc(crypt::Encoding::base64), linelength(128), linebreaks(true), eol(EOL::windows), uppercase(true) {};
 				crypt::Encoding		enc;
 				size_t				linelength;
 				bool				linebreaks;
@@ -210,10 +209,10 @@ namespace crypt
 	bool	getHashInfo(Hash h, size_t& length, size_t& keylength);
 
 	/* -- encrypt -- */
-	void	encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init);
+	void	encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const UserData& password, InitData& init);
 
 	/* -- decrypt -- */
-	void	decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, InitData& init);
+	void	decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const UserData& password, InitData& init);
 
 	/* -- hash data -- */
 	void	hash(Options::Hash& options, std::basic_string<byte>& buffer, std::initializer_list<std::pair<const byte*, size_t>> in);

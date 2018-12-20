@@ -22,10 +22,16 @@ GNU General Public License for more details.
 #include "mdef.h"
 #include "cryptheader.h"
 #include "help.h"
+#include "tinyxml2/tinyxml2.h"
 
 struct CryptInfo {
+	enum class Modus : unsigned { easy, advanced };
+	CryptInfo() : modus(Modus::easy) {};
+
 	crypt::Options::Crypt	options;
+	crypt::UserData			password;
 	CryptHeader::HMAC		hmac;
+	Modus					modus;
 };
 
 struct RandomOptions
@@ -49,7 +55,7 @@ class CPreferences
 public:
 	struct KeyPreset
 	{
-		TCHAR			label[31];
+		TCHAR			label[NPPC_MAX_PRESET_LABELLENGTH + 1];
 		byte			data[16];
 	};
 
@@ -73,13 +79,19 @@ public:
 	const TCHAR*			getKeyLabel(size_t i) const;
 	const unsigned char*	getKey(size_t i) const;
 
+	const crypt::Options::Crypt& getDefaultEncryption() { return default_crypt; };
+
 private:
 	CPreferences(CPreferences const&);
 	CPreferences& operator=(CPreferences const&);
 
+	void					writeCryptOptions(std::ofstream& f, const crypt::Options::Crypt& opt, const std::string& indent, const std::string& eol);
+	void					parseCryptOptions(tinyxml2::XMLElement* parent, crypt::Options::Crypt& opt);
+
 	std::vector<KeyPreset>	keys;
 	std::wstring			filepath;
 	bool					file_loaded;
+	crypt::Options::Crypt	default_crypt;
 };
 
 extern CPreferences&		preferences;

@@ -33,7 +33,6 @@ public:
 
 						CryptHeader(HMAC& h) : version(NPPC_VERSION), hmac(h) {};
 	int					getVersion() { return version; };
-	crypt::InitData&	initData() { return initdata; };
 
 protected:
 
@@ -44,8 +43,6 @@ protected:
 		size_t				length;
 	};
 
-
-	crypt::InitData		initdata;
 	HMAC&				hmac;
 	int					version;
 	DataPointer			body;
@@ -54,14 +51,13 @@ protected:
 class CryptHeaderReader : public CryptHeader
 {
 public:
-								CryptHeaderReader(crypt::Options::Crypt& opt, HMAC& hmac) : CryptHeader(hmac), options(opt) {};
-	bool						parse(const crypt::byte* in, size_t in_len);
+								CryptHeaderReader(HMAC& hmac) : CryptHeader(hmac) {};
+	bool						parse(crypt::Options::Crypt& options, crypt::InitData& initdata, const crypt::byte* in, size_t in_len);
 	const crypt::byte*			getEncrypted() { return encrypted.start; };
 	size_t						getEncryptedLength() { return encrypted.length; };
 	bool						checkHMAC();
 
 private:
-	crypt::Options::Crypt&		options;
 	crypt::UserData				hmac_digest;
 	DataPointer					encrypted;
 };
@@ -69,15 +65,14 @@ private:
 class CryptHeaderWriter : public CryptHeader
 {
 public:
-							CryptHeaderWriter(const crypt::Options::Crypt& opt, HMAC& hmac) : CryptHeader(hmac), options(opt) {};
-	void					create(const crypt::byte* data, size_t data_length);
+							CryptHeaderWriter(HMAC& hmac) : CryptHeader(hmac) {};
+	void					create(const crypt::Options::Crypt& options, const crypt::InitData& initdata, const crypt::byte* data, size_t data_length);
 	const char*				c_str() { return buffer.c_str(); };
 	size_t					size() { return buffer.size(); };
 
 private:
 	size_t					base64length(size_t bin_length, bool linebreaks=false, size_t line_length=0, bool windows=false);
 
-	const crypt::Options::Crypt&	options;
 	std::string						buffer;
 };
 

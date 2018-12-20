@@ -33,59 +33,54 @@ GNU General Public License for more details.
 class DlgCrypt : public ModalDialog
 {
 public:
-	enum class Operation { Enc, Dec };
-
 		 DlgCrypt();
     void destroy();
-	bool doDialog(Operation operation, CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename = NULL);
+	bool encryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename = NULL);
+	bool decryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename = NULL, bool disable_easymode = false);
 
 private:
-	/**** messagehandler ****/
+	enum class Operation { Encryption, Decryption };
+
+	/* global message callback */
 	INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	/**** creates tab windows and sets up controls according to CryptInfo* crypt ****/	
+	bool setup(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename);
 	void setupDialog();
-	/**** change the selected tab window (0 - 4) ****/
 	void changeActiveTab(int id);
-	/**** update CryptInfo* crypt and crypt::UserData* ivdata ****/
-	bool prepareOptions();
-	/**** user clicked OK Button ****/
-	bool OnClickOK();
+	void setModus(CryptInfo::Modus modus);
 
-	/**** make sure values entered into editboxes with spincontrol are valid ****/
+	bool prepareOptionsAdvanced();
+	bool prepareOptionsEasy();
+	bool OnClickOKAdvanced();
+	bool OnClickOKEasy();
+
+	/* methods to validate user-input: */
 	void checkSpinControlValue(int ctrlID);
-	/**** check password (strict = emty password not allowed) ****/
 	bool checkPassword(crypt::secure_string& s, bool strict);
-	/**** check custom IV ****/
 	bool checkCustomIV(crypt::UserData& data, bool reencode);
-	/**** check custom hmac key ****/
 	bool checkHMACKey(crypt::UserData& data, bool reencode);
 	
-
-	/**** enable/disable controls based on currently selected encoding ****/
+	/* methods to change controls based on current selection */
 	void updateEncodingControls(crypt::Encoding enc);
-	/**** update Hashlength Combobox */
 	void updateHashDigestControl(crypt::Hash h, HWND hwnd, int ctrlID);
-	/**** enable/disable controls based on currently selected keyderivation method ****/
 	void updateKeyDerivationControls();
-	/**** update controls on cipher change ****/
 	void updateCipherControls();
-
 	void updateHMACKeyControls();
-
 	void updateCipherInfo();
-	void onIVSelectionChanged();
+	void updateIVControls();	
 	
 	Operation				operation;
 	const std::wstring*		filename;
 	CryptInfo*				crypt;
 	crypt::UserData*		ivdata;
 	bool					confirm_password;
+	bool					no_easymode;
 
-	struct CurSelection
+	struct CurStatus
 	{
-		CurSelection() : tab(-1), iv_length(0) {};
+		CurStatus() : tab(-1), iv_length(0), key_length(0) {};
 
+		CryptInfo::Modus		modus;
 		crypt::Cipher			cipher;
 		crypt::Mode				mode;
 		crypt::KeyDerivation	key_derivation;
@@ -105,9 +100,15 @@ private:
 		HBRUSH	brush;
 	} invalid;
 
+	struct MainDialogs
+	{
+		HWND tab;
+		HWND easy;
+	} dialogs;
+
 	struct TabDialogs
 	{
-		TabDialogs() : basic(NULL), encoding(NULL), key(NULL), iv(NULL), auth(NULL) {};
+		TabDialogs() : basic(NULL), encoding(NULL), key(NULL), iv(NULL), auth(NULL){};
 
 		HWND basic;
 		HWND encoding;
@@ -125,6 +126,7 @@ private:
 		HelpCtrl keyalgorithm;
 		HelpCtrl iv;
 		HelpCtrl auth;
+		HelpCtrl easymode;
 	} help;
 };
 

@@ -29,7 +29,7 @@ inline bool cmpchars(const char* s1, const char* s2, size_t len)
 	return true;
 }
 
-bool CryptHeaderReader::parse(const crypt::byte* in, size_t in_len)
+bool CryptHeaderReader::parse(crypt::Options::Crypt& options, crypt::InitData& initdata, const crypt::byte* in, size_t in_len)
 {
 	if (in == NULL || in_len == 0) {
 		return false;
@@ -292,13 +292,17 @@ bool CryptHeaderReader::checkHMAC()
 
 // ====================================================================================================================================================================
 
-void CryptHeaderWriter::create(const crypt::byte* data, size_t data_length)
+void CryptHeaderWriter::create(const crypt::Options::Crypt& options, const crypt::InitData& initdata, const crypt::byte* data, size_t data_length)
 {
 	std::ostringstream		out;
 	size_t					body_start;
 	size_t					body_end;
 	size_t					hmac_offset;
 	crypt::secure_string	temp_s;
+
+	if (!data || !data_length) {
+		throwError(header_write_failed);
+	}
 
 	static const char win[] = { '\r', '\n', 0 };
 	const char* linebreak;

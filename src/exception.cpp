@@ -32,7 +32,8 @@ const char* ExcError::messages[] = {
 	"conversion to utf8 failed.", 
 	"conversion to wchar failed.", 
 	"failed to read preferences-files.", 
-	"failed to parse preferences-file."
+	"failed to parse preferences-file.",
+	"failed to create header."
 };
 
 const char* ExcInvalid::messages[] = { 
