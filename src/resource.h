@@ -115,6 +115,8 @@ GNU General Public License for more details.
 #define IDC_CRYPT_PASSWORD_EASY			1073
 #define IDC_CRYPT_PW_EASY_CAPTION		1074
 #define IDC_CRYPT_HELP_EASY				1075
+#define IDC_CRYPT_AUTH_IVSALT			1076
+#define IDC_CRYPT_HELP_AUTH_IVSALT		1077
 
 #define IDC_HASH_ALGO                   1000
 #define IDC_HASH_ENC_ASCII              1001

@@ -336,7 +336,7 @@ void CPreferences::writeCryptOptions(std::ofstream& f, const crypt::Options::Cry
 {
 	using namespace crypt;
 
-	f << indent << "<basic cipher=\"" << help::getString(opt.cipher) << "\" key-length=\"" << opt.key.length << "\" mode=\"" << help::getString(opt.mode) << "\" iv=\"" << help::getString(opt.iv) << "\" />" << eol;
+	f << indent << "<basic cipher=\"" << help::getString(opt.cipher) << "\" key-length=\"" << opt.key.length << "\" mode=\"" << help::getString(opt.mode) << "\" aad=\"" << help::getString(opt.aad) << "\" iv=\"" << help::getString(opt.iv) << "\" />" << eol;
 	f << indent << "<encoding enc=\"" << help::getString(opt.encoding.enc) << "\" eol=\"" << help::getString(opt.encoding.eol) << "\" linebreaks=\"" << help::getString(opt.encoding.linebreaks) << "\" line-length=\"" << opt.encoding.linelength << "\" uppercase=\"" << help::getString(opt.encoding.uppercase) << "\" />" << eol;
 	f << indent << "<key saltbytes=\"" << opt.key.salt_bytes << "\" algorithm=\"" << help::getString(opt.key.algorithm);
 	switch (opt.key.algorithm)
@@ -367,6 +367,7 @@ void CPreferences::parseCryptOptions(tinyxml2::XMLElement* parent, crypt::Option
 		crypt::help::getCipher(xml_temp->Attribute("cipher"), opt.cipher);
 		crypt::help::getUnsigned(xml_temp->Attribute("key-length"), opt.key.length);
 		crypt::help::getCipherMode(xml_temp->Attribute("mode"), opt.mode);
+		crypt::help::getBoolean(xml_temp->Attribute("aad"), opt.aad);
 		crypt::help::getIVMode(xml_temp->Attribute("iv"), opt.iv);
 	}
 	xml_temp = parent->FirstChildElement("encoding");

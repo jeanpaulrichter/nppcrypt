@@ -1760,9 +1760,11 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 				ef.Attach(new StringSinkTemplate<std::basic_string<byte>>(temp));
 			}
 
-			ef.ChannelPut( AAD_CHANNEL, init.salt.BytePtr(), init.salt.size());
-			ef.ChannelPut( AAD_CHANNEL, init.iv.BytePtr(), init.iv.size());
-			ef.ChannelMessageEnd( AAD_CHANNEL );
+			if (options.aad) {
+				ef.ChannelPut(AAD_CHANNEL, init.salt.BytePtr(), init.salt.size());
+				ef.ChannelPut(AAD_CHANNEL, init.iv.BytePtr(), init.iv.size());
+				ef.ChannelMessageEnd(AAD_CHANNEL);
+			}
 			ef.ChannelPut(DEFAULT_CHANNEL, in, in_len);
 			ef.ChannelMessageEnd( DEFAULT_CHANNEL );
 
@@ -1809,7 +1811,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 				StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc, new StringSinkTemplate<std::basic_string<byte>>(buffer)));
 				break;
 			}
-			case Encoding::base16: case Encoding::base32:
+			case Encoding::base16: case Encoding::base32: case Encoding::base64:
 			{
 				int linelength = options.encoding.linebreaks ? (int)options.encoding.linelength : 0;
 				const std::string& s_eol = Strings::eol[(int)options.encoding.eol];
@@ -1925,10 +1927,12 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 
 			secure_string temp2;
 			df.ChannelPut( DEFAULT_CHANNEL, init.tag.BytePtr(), init.tag.size());
-			df.ChannelPut( AAD_CHANNEL, init.salt.BytePtr(), init.salt.size());
-			df.ChannelPut( AAD_CHANNEL, init.iv.BytePtr(), init.iv.size());
+			if (options.aad) {
+				df.ChannelPut(AAD_CHANNEL, init.salt.BytePtr(), init.salt.size());
+				df.ChannelPut(AAD_CHANNEL, init.iv.BytePtr(), init.iv.size());
+				df.ChannelMessageEnd(AAD_CHANNEL);
+			}
 			df.ChannelPut( DEFAULT_CHANNEL, pEncrypted, Encrypted_size);
-			df.ChannelMessageEnd( AAD_CHANNEL );
 			df.ChannelMessageEnd( DEFAULT_CHANNEL );
 
 			if (!df.GetLastResult()) {

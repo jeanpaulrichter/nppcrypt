@@ -121,6 +121,7 @@ private:
 	{
 		HelpCtrl cipher;
 		HelpCtrl mode;
+		HelpCtrl auth_ivsalt;
 		HelpCtrl encoding;
 		HelpCtrl salt;
 		HelpCtrl keyalgorithm;

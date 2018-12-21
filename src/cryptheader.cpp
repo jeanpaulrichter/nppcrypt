@@ -120,9 +120,14 @@ bool CryptHeaderReader::parse(crypt::Options::Crypt& options, crypt::InitData& i
 		if (!crypt::help::getUnsigned(xml_crypt->Attribute("key-length"), t_options.key.length)) {
 			throwInvalid(keylength_missing);
 		}
-		if (!crypt::help::getCipherMode(xml_crypt->Attribute("mode"), t_options.mode) &&
-			!crypt::help::checkProperty(t_options.cipher, crypt::STREAM)) {
-			throwInvalid(invalid_mode);
+		if (crypt::help::checkProperty(t_options.cipher, crypt::BLOCK)) {
+			if (!crypt::help::getCipherMode(xml_crypt->Attribute("mode"), t_options.mode)) {
+				throwInvalid(invalid_mode);
+			}
+			if ((t_options.mode == crypt::Mode::gcm || t_options.mode == crypt::Mode::ccm || t_options.mode == crypt::Mode::eax) &&
+				!crypt::help::getBoolean(xml_crypt->Attribute("aad"), t_options.aad)) {
+				throwInvalid(invalid_aad_flag);
+			}
 		}
 		if (!crypt::help::getEncoding(xml_crypt->Attribute("encoding"), t_options.encoding.enc)) {
 			throwInvalid(invalid_encoding);
@@ -261,6 +266,7 @@ bool CryptHeaderReader::parse(crypt::Options::Crypt& options, crypt::InitData& i
 		crypt::help::validate(hmac.hash);
 	}
 
+	options.aad = t_options.aad;
 	options.cipher = t_options.cipher;
 	options.mode = t_options.mode;
 	options.key = t_options.key;
@@ -334,6 +340,9 @@ void CryptHeaderWriter::create(const crypt::Options::Crypt& options, const crypt
 	out << "<encryption cipher=\"" << crypt::help::getString(options.cipher) << "\" key-length=\"" << options.key.length << "\"";
 	if (!crypt::help::checkProperty(options.cipher, crypt::STREAM)) {
 		out << " mode=\"" << crypt::help::getString(options.mode) << "\"";
+		if (options.mode == crypt::Mode::gcm || options.mode == crypt::Mode::ccm || options.mode == crypt::Mode::eax) {
+			out << " aad=\"" << crypt::help::getString(options.aad) << "\"";
+		}
 	}
 	out << " encoding=\"" << crypt::help::getString(options.encoding.enc) << "\" />" << linebreak;
 	// <key>

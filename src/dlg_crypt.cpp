@@ -155,6 +155,11 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
 				}
 				break;
 			}
+			case IDC_CRYPT_AUTH_IVSALT:
+			{
+				PostMessage(tab.basic, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(tab.basic, IDC_CRYPT_PASSWORD_ADVANCED), TRUE);
+				break;
+			}
 			case IDC_CRYPT_ENC_ASCII:
 			{
 				updateEncodingControls(crypt::Encoding::ascii);
@@ -475,6 +480,11 @@ void DlgCrypt::setupDialog()
 
 	help.cipher.setup(_hInst, tab.basic, ::GetDlgItem(tab.basic, IDC_CRYPT_HELP_CIPHER));
 	help.mode.setup(_hInst, tab.basic, ::GetDlgItem(tab.basic, IDC_CRYPT_HELP_MODE));
+	help.auth_ivsalt.setup(_hInst, tab.basic, ::GetDlgItem(tab.basic, IDC_CRYPT_HELP_AUTH_IVSALT));
+	help.auth_ivsalt.setTooltip("authenticate IV & salt");
+	help.auth_ivsalt.setURL(NPPC_CRYPT_AUTH_IVSALT_URL);
+
+	::SendDlgItemMessage(tab.basic, IDC_CRYPT_AUTH_IVSALT, BM_SETCHECK, crypt->options.aad, 0);
 	
 	// ------- Password
 	::SendDlgItemMessage(dialogs.easy, IDC_CRYPT_PASSWORD_EASY, EM_LIMITTEXT, NPPC_PASSWORD_MAXLENGTH, 0);
@@ -809,6 +819,11 @@ bool DlgCrypt::prepareOptionsAdvanced()
 		crypt->options.key.length = crypt::help::getCipherKeylengthByIndex(crypt->options.cipher, cipher_keylength);
 		int t_mode = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0);
 		crypt->options.mode = (t_mode >= 0) ? crypt::help::getModeByIndex(crypt->options.cipher, t_mode) : crypt::Mode::cbc;
+
+		if ((crypt->options.mode == crypt::Mode::gcm || crypt->options.mode == crypt::Mode::ccm || crypt->options.mode == crypt::Mode::eax) &&
+			crypt::help::checkProperty(crypt->options.cipher, crypt::BLOCK)) {
+			crypt->options.aad = !!::SendDlgItemMessage(tab.basic, IDC_CRYPT_AUTH_IVSALT, BM_GETCHECK, 0, 0);
+		}
 
 		// ------- encoding
 		if (::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_ASCII, BM_GETCHECK, 0, 0)) {
@@ -1458,6 +1473,16 @@ void DlgCrypt::updateCipherInfo()
 	help.mode.setURL(crypt::help::getHelpURL(current.mode));
 	help.mode.setTooltip(crypt::help::getInfo(current.mode));
 	help.mode.setWarning((current.mode == crypt::Mode::ecb));
+
+	// update auth Salt/IV control
+	if ((current.mode == crypt::Mode::gcm || current.mode == crypt::Mode::ccm || current.mode == crypt::Mode::eax) &&
+		crypt::help::checkProperty(current.cipher, crypt::BLOCK)) {
+		help.auth_ivsalt.display(true);
+		::ShowWindow(::GetDlgItem(tab.basic, IDC_CRYPT_AUTH_IVSALT), SW_SHOW);
+	} else {
+		help.auth_ivsalt.display(false);
+		::ShowWindow(::GetDlgItem(tab.basic, IDC_CRYPT_AUTH_IVSALT), SW_HIDE);
+	}
 
 	// Enable/Disable IV-Controls
 	if (current.iv_length == 0) {

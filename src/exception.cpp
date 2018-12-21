@@ -62,7 +62,8 @@ const char* ExcInvalid::messages[] = {
 	"invalid keyderivation.", 
 	"failed to parse salt-vector.", 
 	"failed to parse IV.", 
-	"failed to parse tag-vector"
+	"failed to parse tag-vector",
+	"failed to parse aad flag"
 };
 
 const char* ExcInfo::messages[] = { 

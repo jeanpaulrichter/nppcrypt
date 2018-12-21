@@ -77,7 +77,8 @@ public:
 		invalid_keyderivation,
 		invalid_salt,
 		invalid_iv,
-		invalid_tag
+		invalid_tag,
+		invalid_aad_flag
 	};
 	ExcInvalid(ID id) noexcept : id(id) {};
 	const char *what() const noexcept {

@@ -171,11 +171,12 @@ namespace crypt
 	{
 		struct Crypt
 		{
-			Crypt() : cipher(Cipher::rijndael), mode(Mode::gcm), iv(IV::random) {};
+			Crypt() : cipher(Cipher::rijndael), mode(Mode::gcm), iv(IV::random), aad(true) {};
 
 			crypt::Cipher			cipher;
 			crypt::Mode				mode;
 			crypt::IV				iv;
+			bool					aad;
 
 			struct Key
 			{
