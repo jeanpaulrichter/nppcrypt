@@ -80,6 +80,8 @@ public:
 	const unsigned char*	getKey(size_t i) const;
 
 	const crypt::Options::Crypt& getDefaultEncryption() { return default_crypt; };
+	const crypt::EncodingAlphabet* getBase32Alphabet() { return &base32_alphabet; };
+	const crypt::EncodingAlphabet* getBase64Alphabet() { return &base64_alphabet; };
 
 private:
 	CPreferences(CPreferences const&);
@@ -92,6 +94,8 @@ private:
 	std::wstring			filepath;
 	bool					file_loaded;
 	crypt::Options::Crypt	default_crypt;
+	crypt::EncodingAlphabet base32_alphabet;
+	crypt::EncodingAlphabet	base64_alphabet;
 };
 
 extern CPreferences&		preferences;

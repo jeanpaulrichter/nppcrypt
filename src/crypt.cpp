@@ -86,6 +86,8 @@ extern "C" {
 #include "cryptopp/crc.h"
 #include "cryptopp/siphash.h"
 
+using namespace crypt;
+
 template<typename T>
 T ipow(T base, T exp)
 {
@@ -103,7 +105,7 @@ T ipow(T base, T exp)
 namespace Strings
 {
 	static const std::string eol[3] = { "\r\n", "\n", "\r" };
-}
+};
 
 crypt::ExceptionError::ExceptionError(const std::string &m, const char* func, int ln) noexcept : line(ln)
 {
@@ -115,8 +117,6 @@ crypt::ExceptionError::ExceptionError(const std::string &m, const char* func, in
 #define throwInfo(arg) throw crypt::ExceptionInfo(arg);
 #define throwInvalid(arg) throw crypt::ExceptionArguments(arg);
 #define throwError(arg) throw crypt::ExceptionError(arg, __func__, __LINE__);
-
-using namespace crypt;
 
 // ===========================================================================================================================================================================================
 // TODO: maybe the factory should be used ... ( cryptopp/factory.h )
@@ -1129,6 +1129,31 @@ namespace intern
 	}
 
 }
+
+// ===========================================================================================================================================================================================
+
+bool crypt::EncodingAlphabet::setup(const char* alphabet, byte padding)
+{
+	size_t length = strlen(alphabet);
+	if (length == 32) {
+		lower.assign(alphabet, alphabet + length);
+		lower.push_back(0);
+		upper.resize(length + 1);
+		for (size_t i = 0; i < lower.size(); i++) {
+			upper[i] = isalpha(lower[i]) ? toupper(lower[i]) : lower[i];
+		}
+		CryptoPP::Base32Decoder::InitializeDecodingLookupArray(lookup, &lower[0], 32, true);		
+	} else if (length == 64) {
+		lower.assign(alphabet, alphabet + length);
+		lower.push_back(0);
+		CryptoPP::Base64Decoder::InitializeDecodingLookupArray(lookup, &lower[0], 64, false);
+	} else {
+		return false;
+	}
+	this->padding = padding;
+	return true;
+}
+
 // ===========================================================================================================================================================================================
 
 crypt::UserData::UserData()
@@ -1749,28 +1774,19 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 				buffer.resize(buffer.size() - tag_size);
 				break;
 			}
-			case Encoding::base16: case Encoding::base32:
+			case Encoding::base16: case Encoding::base32: case Encoding::base64:
 			{
 				int linelength = options.encoding.linebreaks ? (int)options.encoding.linelength : 0;
+				const std::string& s_eol = Strings::eol[(int)options.encoding.eol];
 				if (options.encoding.enc == Encoding::base16) {
 					StringSource(temp.data(), temp.size() - tag_size, true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
-						options.encoding.uppercase, linelength, Strings::eol[(int)options.encoding.eol]));
-				} else {
+						options.encoding.uppercase, linelength, s_eol));
+				} else if (options.encoding.enc == Encoding::base32) {
 					StringSource(temp.data(), temp.size() - tag_size, true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
-						options.encoding.uppercase, linelength, Strings::eol[(int)options.encoding.eol]));
-				}
-				init.tag.set(temp.data() + temp.size() - tag_size, tag_size);
-				break;
-			}
-			case Encoding::base64:
-			{
-				StringSource(temp.data(), temp.size() - tag_size, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
-					options.encoding.linebreaks, (int)options.encoding.linelength, CryptoPP::EOL(options.encoding.eol)));
-				if (options.encoding.linebreaks) {
-					buffer.pop_back();
-					if (options.encoding.eol == crypt::EOL::windows) {
-						buffer.pop_back();
-					}
+						options.encoding.uppercase, linelength, s_eol));
+				} else {
+					StringSource(temp.data(), temp.size() - tag_size, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer),
+						linelength, s_eol));
 				}
 				init.tag.set(temp.data() + temp.size() - tag_size, tag_size);
 				break;
@@ -1796,25 +1812,17 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 			case Encoding::base16: case Encoding::base32:
 			{
 				int linelength = options.encoding.linebreaks ? (int)options.encoding.linelength : 0;
+				const std::string& s_eol = Strings::eol[(int)options.encoding.eol];
 				if (options.encoding.enc == Encoding::base16) {
 					StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
-						new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, Strings::eol[(int)options.encoding.eol])));
+						new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, s_eol)));
+				} else if (options.encoding.enc == Encoding::base32) {
+					StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
+							new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, s_eol)));
 				} else {
 					StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
-							new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.uppercase, linelength, Strings::eol[(int)options.encoding.eol])));
-				}
-				break;
-			}
-			case crypt::Encoding::base64:
-			{
-				StringSource(in, in_len, true, new StreamTransformationFilter(*pEnc,
-						new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.encoding.linebreaks, (int)options.encoding.linelength, CryptoPP::EOL(options.encoding.eol))
-						));
-				if (options.encoding.linebreaks) {
-					buffer.pop_back();
-					if (options.encoding.eol == crypt::EOL::windows) {
-						buffer.pop_back();
-					}
+						new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), linelength, s_eol)
+					));
 				}
 				break;
 			}
@@ -2029,17 +2037,17 @@ void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, std::i
 		}
 		case crypt::Encoding::base16:
 		{
-			StringSource(&digest[0], digest.size(), true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), true, 0));
+			StringSource(&digest[0], digest.size(), true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
 			break;
 		}
 		case crypt::Encoding::base32:
 		{
-			StringSource(&digest[0], digest.size(), true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), true, 0));
+			StringSource(&digest[0], digest.size(), true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
 			break;
 		}
 		case crypt::Encoding::base64:
 		{
-			StringSource(&digest[0], digest.size(), true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), false));
+			StringSource(&digest[0], digest.size(), true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
 			break;
 		}
 		}
@@ -2073,17 +2081,17 @@ void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, const 
 		}
 		case crypt::Encoding::base16:
 		{
-			StringSource(&digest[0], digest.size(), true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), true, 0));
+			StringSource(&digest[0], digest.size(), true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
 			break;
 		}
 		case crypt::Encoding::base32:
 		{
-			StringSource(&digest[0], digest.size(), true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), true, 0));
+			StringSource(&digest[0], digest.size(), true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
 			break;
 		}
 		case crypt::Encoding::base64:
 		{
-			StringSource(&digest[0], digest.size(), true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), false));
+			StringSource(&digest[0], digest.size(), true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
 			break;
 		}
 		}
@@ -2109,13 +2117,32 @@ void crypt::shake128(const byte* in, size_t in_len, byte* out, size_t out_len)
 	}
 }
 
-void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options)
+void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options, const EncodingAlphabet* base32_alphabet, const EncodingAlphabet* base64_alphabet)
 {
 	using namespace CryptoPP;
 	using namespace crypt;
 
-	std::string s_seperator = (options.eol == crypt::EOL::windows) ? "\r\n" : "\n";
-	int groupsize = options.linebreaks ? (int)options.linelength : 0;
+	const std::string& s_eol = Strings::eol[(unsigned)options.eol];
+	int linelength = options.linebreaks ? (int)options.linelength : 0;
+	const byte* base32_uppercase = NULL;
+	const byte* base32_lowercase = NULL;
+	byte		base32_padding = 0;
+	const int*	base32_lookup = NULL;
+	const byte* base64_alpha = NULL;
+	const int*	base64_lookup = NULL;
+	byte		base64_padding = 0;
+
+	if (base32_alphabet) {
+		base32_uppercase = base32_alphabet->c_str(true);
+		base32_lowercase = base32_alphabet->c_str(false);
+		base32_padding = base32_alphabet->getPadding();
+		base32_lookup = base32_alphabet->getLookup();
+	}
+	if (base64_alphabet) {
+		base64_alpha = base64_alphabet->c_str();
+		base64_lookup = base64_alphabet->getLookup();
+		base64_padding = base64_alphabet->getPadding();
+	}
 
 	switch (options.from)
 	{
@@ -2125,17 +2152,17 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		{
 		case Encoding::base16:
 		{
-			StringSource(in, in_len, true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator));
+			StringSource(in, in_len, true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, linelength, s_eol));
 			break;
 		}
 		case Encoding::base32:
 		{
-			StringSource(in, in_len, true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator));
+			StringSource(in, in_len, true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, linelength, s_eol, base32_padding, base32_lowercase, base32_uppercase));
 			break;
 		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (int)options.linelength, CryptoPP::EOL(options.eol)));
+			StringSource(in, in_len, true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), linelength, s_eol, base64_padding, base64_alpha));
 			break;
 		}
 		}
@@ -2152,12 +2179,12 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		}
 		case Encoding::base32:
 		{
-			StringSource(in, in_len, true, new HexDecoder(new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator)));
+			StringSource(in, in_len, true, new HexDecoder(new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, linelength, s_eol, base32_padding, base32_lowercase, base32_uppercase)));
 			break;
 		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new HexDecoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (int)options.linelength, CryptoPP::EOL(options.eol))));
+			StringSource(in, in_len, true, new HexDecoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), linelength, s_eol, base64_padding, base64_alpha)));
 			break;
 		}
 		}
@@ -2169,17 +2196,17 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		{
 		case Encoding::ascii:
 		{
-			StringSource(in, in_len, true, new Base32Decoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
+			StringSource(in, in_len, true, new Base32Decoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), base32_lookup));
 			break;
 		}
 		case Encoding::base16:
 		{
-			StringSource(in, in_len, true, new Base32Decoder(new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator)));
+			StringSource(in, in_len, true, new Base32Decoder(new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, linelength, s_eol), base32_lookup));
 			break;
 		}
 		case Encoding::base64:
 		{
-			StringSource(in, in_len, true, new Base32Decoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.linebreaks, (int)options.linelength, CryptoPP::EOL(options.eol))));
+			StringSource(in, in_len, true, new Base32Decoder(new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), linelength, s_eol, base64_padding, base64_alpha), base32_lookup));
 			break;
 		}
 		}
@@ -2191,17 +2218,17 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 		{
 		case Encoding::ascii:
 		{
-			StringSource(in, in_len, true, new Base64Decoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
+			StringSource(in, in_len, true, new Base64Decoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), base64_lookup));
 			break;
 		}
 		case Encoding::base16:
 		{
-			StringSource(in, in_len, true, new Base64Decoder(new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator)));
+			StringSource(in, in_len, true, new Base64Decoder(new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, linelength, s_eol), base64_lookup));
 			break;
 		}
 		case Encoding::base32:
 		{
-			StringSource(in, in_len, true, new Base64Decoder(new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, groupsize, s_seperator)));
+			StringSource(in, in_len, true, new Base64Decoder(new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer), options.uppercase, linelength, s_eol, base32_padding, base32_lowercase, base32_uppercase), base64_lookup));
 			break;
 		}
 		}
@@ -2209,4 +2236,3 @@ void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buff
 	}
 	}
 }
-

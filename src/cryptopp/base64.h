@@ -11,8 +11,6 @@
 
 NAMESPACE_BEGIN(CryptoPP)
 
-enum class EOL : unsigned {	windows, unix, oldmac, COUNT };
-
 /// \brief Base64 encodes data using DUDE
 /// \details Base64 encodes data per <A HREF="http://tools.ietf.org/html/rfc4648#section-4">RFC 4648, Base 64 Encoding</A>.
 class Base64Encoder : public SimpleProxyFilter
@@ -25,11 +23,12 @@ public:
 	/// \details Base64Encoder constructs a default encoder. The constructor lacks a parameter for padding, and you must
 	///   use IsolatedInitialize() to modify the Base64Encoder after construction.
 	/// \sa IsolatedInitialize() for an example of modifying an encoder after construction.
-	Base64Encoder(BufferedTransformation *attachment = NULLPTR, bool insertLineBreaks = true, int maxLineLength = 72, EOL eol = EOL::unix)
+	/*Base64Encoder(BufferedTransformation *attachment = NULLPTR, bool insertLineBreaks = true, int maxLineLength = 72)
 		: SimpleProxyFilter(new BaseN_Encoder(new Grouper), attachment)
 	{
-		IsolatedInitialize(MakeParameters(Name::InsertLineBreaks(), insertLineBreaks)(Name::MaxLineLength(), maxLineLength)(Name::EOL(), eol));
-	}
+		IsolatedInitialize(MakeParameters(Name::InsertLineBreaks(), insertLineBreaks)(Name::MaxLineLength(), maxLineLength));
+	}*/
+	Base64Encoder(BufferedTransformation *attachment = NULLPTR, int linelength = 0, const std::string &eol = "\n", const byte padding = 0, const byte* alphabet = NULL);
 
 	/// \brief Initialize or reinitialize this object, without signal propagation
 	/// \param parameters a set of NameValuePairs used to initialize this object
@@ -62,8 +61,10 @@ public:
 	/// \brief Construct a Base64Decoder
 	/// \param attachment a BufferedTrasformation to attach to this object
 	/// \sa IsolatedInitialize() for an example of modifying an encoder after construction.
-	Base64Decoder(BufferedTransformation *attachment = NULLPTR)
-		: BaseN_Decoder(GetDecodingLookupArray(), 6, attachment) {}
+	/*Base64Decoder(BufferedTransformation *attachment = NULLPTR)
+		: BaseN_Decoder(GetDecodingLookupArray(), 6, attachment) {}*/
+	Base64Decoder(BufferedTransformation *attachment = NULLPTR, const int* lookup = NULL)
+		: BaseN_Decoder((lookup == NULL) ? GetDecodingLookupArray() : lookup, 6, attachment) {}
 
 	/// \brief Initialize or reinitialize this object, without signal propagation
 	/// \param parameters a set of NameValuePairs used to initialize this object
@@ -112,7 +113,7 @@ public:
 		: SimpleProxyFilter(new BaseN_Encoder(new Grouper), attachment)
 	{
 		CRYPTOPP_UNUSED(insertLineBreaks), CRYPTOPP_UNUSED(maxLineLength);
-		IsolatedInitialize(MakeParameters(Name::InsertLineBreaks(), false)(Name::MaxLineLength(), -1)(Name::Pad(),false));
+		IsolatedInitialize(MakeParameters(Name::InsertLineBreaks(), false)(Name::MaxLineLength(), -1)(Name::Pad(), false));
 	}
 
 	/// \details IsolatedInitialize() is used to initialize or reinitialize an object using a variable

@@ -18,6 +18,9 @@ NAMESPACE_BEGIN(CryptoPP)
 class Base32Encoder : public SimpleProxyFilter
 {
 public:
+
+	Base32Encoder(BufferedTransformation *attachment = NULLPTR, bool uppercase = true, int linelength = 0, const std::string &eol = "\n", const byte padding = 0, const byte* alphabet_lower = NULL, const byte* alphabet_upper = NULL);
+
 	/// \brief Construct a Base32Encoder
 	/// \param attachment a BufferedTrasformation to attach to this object
 	/// \param uppercase a flag indicating uppercase output
@@ -27,11 +30,11 @@ public:
 	/// \details Base32Encoder() constructs a default encoder. The constructor lacks fields for padding and
 	///   line breaks. You must use IsolatedInitialize() to change the default padding character or suppress it.
 	/// \sa Base32Encoder, Base32Decoder, Base32HexEncoder and Base32HexDecoder
-	Base32Encoder(BufferedTransformation *attachment = NULLPTR, bool uppercase = true, int groupSize = 0, const std::string &separator = ":", const std::string &terminator = "")
+	/*Base32Encoder(BufferedTransformation *attachment = NULLPTR, bool uppercase = true, int groupSize = 0, const std::string &separator = ":", const std::string &terminator = "")
 		: SimpleProxyFilter(new BaseN_Encoder(new Grouper), attachment)
 	{
 		IsolatedInitialize(MakeParameters(Name::Uppercase(), uppercase)(Name::GroupSize(), groupSize)(Name::Separator(), ConstByteArrayParameter(separator))(Name::Terminator(), ConstByteArrayParameter(terminator)));
-	}
+	}*/
 
 	/// \brief Initialize or reinitialize this object, without signal propagation
 	/// \param parameters a set of NameValuePairs used to initialize this object
@@ -65,8 +68,10 @@ public:
 	/// \brief Construct a Base32Decoder
 	/// \param attachment a BufferedTrasformation to attach to this object
 	/// \sa IsolatedInitialize() for an example of modifying a Base32Decoder after construction.
-	Base32Decoder(BufferedTransformation *attachment = NULLPTR)
-		: BaseN_Decoder(GetDefaultDecodingLookupArray(), 5, attachment) {}
+	/*Base32Decoder(BufferedTransformation *attachment = NULLPTR)
+		: BaseN_Decoder(GetDefaultDecodingLookupArray(), 5, attachment) {}*/
+	Base32Decoder(BufferedTransformation *attachment = NULLPTR, const int* lookup = NULL)
+		: BaseN_Decoder((lookup == NULL) ? GetDefaultDecodingLookupArray() : lookup, 5, attachment) {}
 
 	/// \brief Initialize or reinitialize this object, without signal propagation
 	/// \param parameters a set of NameValuePairs used to initialize this object

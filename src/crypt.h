@@ -146,6 +146,27 @@ namespace crypt
 		UserData		tag;
 	};
 
+	class EncodingAlphabet
+	{
+	public:
+		EncodingAlphabet() : padding(0) {};
+		bool setup(const char* alphabet, byte padding = 0);
+		const byte* c_str(bool uppercase = false) const {
+			if (uppercase) {
+				return (upper.size() == 0) ? NULL : &upper[0];
+			} else {
+				return (lower.size() == 0) ? NULL : &lower[0];
+			}
+		}
+		byte getPadding() const { return padding; };
+		const int* getLookup() const { return lookup; };
+	private:
+		int lookup[256];
+		std::vector<byte> lower;
+		std::vector<byte> upper;
+		byte padding;
+	};
+
 	namespace Options
 	{
 		struct Crypt
@@ -224,7 +245,7 @@ namespace crypt
 	void	shake128(const byte* in, size_t in_len, byte* out, size_t out_len);
 
 	/* -- convert encoding -- */
-	void	convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options);	
+	void	convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options, const EncodingAlphabet* base32_alphabet = NULL, const EncodingAlphabet* base64_alphabet = NULL);
 };
 
 #endif

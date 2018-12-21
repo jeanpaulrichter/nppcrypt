@@ -23,6 +23,7 @@ GNU General Public License for more details.
 #include "resource.h"
 #include <commctrl.h>
 #include "help.h"
+#include "preferences.h"
 
 DlgConvert::DlgConvert(crypt::Options::Convert& opt) : ModalDialog(), options(opt)
 {
@@ -80,7 +81,8 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 					if (!helper::Scintilla::getSelection(&pdata, &data_length)) {
 						return TRUE;
 					}
-					crypt::convert(pdata, data_length, buffer, options);
+
+					crypt::convert(pdata, data_length, buffer, options, preferences.getBase32Alphabet(), preferences.getBase64Alphabet());
 					if (LOWORD(wParam) == IDC_OK) {
 						helper::Scintilla::replaceSelection(buffer);
 					} else {

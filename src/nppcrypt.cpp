@@ -37,6 +37,8 @@ GNU General Public License for more details.
 #include "resource.h"
 #include "help.h"
 
+#include "cryptopp/base32.h"
+
 typedef std::map<std::wstring, CryptInfo> cryptfilemap;
 
 const TCHAR				NPP_PLUGIN_NAME[] = TEXT(NPPC_NAME);

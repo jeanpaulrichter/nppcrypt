@@ -1,6 +1,5 @@
 // base64.cpp - originally written and placed in the public domain by Wei Dai
 
-
 #include "config.h"
 #include "base64.h"
 
@@ -49,40 +48,53 @@ const int s_urlArray[256] = {
 
 ANONYMOUS_NAMESPACE_END
 
+Base64Encoder::Base64Encoder(BufferedTransformation *attachment, int linelength, const std::string &eol, const byte padding, const byte* alphabet)
+	: SimpleProxyFilter(new BaseN_Encoder(new Grouper), attachment)
+{
+	const byte* palpha = (alphabet != NULL) ? alphabet : &s_stdVec[0];
+	byte pad = (padding == 0) ? s_padding : padding;
+
+	m_filter->Initialize(
+		MakeParameters(Name::EncodingLookupArray(), palpha, false)
+		(Name::PaddingByte(), pad)
+		(Name::GroupSize(), linelength)
+		(Name::Separator(), ConstByteArrayParameter(eol))
+		(Name::Log2Base(), 6, true)
+	);
+}
+
 void Base64Encoder::IsolatedInitialize(const NameValuePairs &parameters)
 {
-	bool insertlineBreaks = parameters.GetValueWithDefault(Name::InsertLineBreaks(), true);
-	EOL eol = parameters.GetValueWithDefault(Name::EOL(), EOL::unix);
+	bool insertLineBreaks = parameters.GetValueWithDefault(Name::InsertLineBreaks(), true);
 	int maxLineLength = parameters.GetIntValueWithDefault(Name::MaxLineLength(), 72);
-	const char* EOL_s[] = { "", "\r\n", "\n", "\r" };
-	const char* linebreaks = insertlineBreaks ? EOL_s[(unsigned)eol + 1] : EOL_s[0];
+
+	const char *lineBreak = insertLineBreaks ? "\n" : "";
 
 	m_filter->Initialize(CombinedNameValuePairs(
 		parameters,
 		MakeParameters(Name::EncodingLookupArray(), &s_stdVec[0], false)
-			(Name::PaddingByte(), s_padding)
-			(Name::GroupSize(), insertlineBreaks ? maxLineLength : 0)
-			(Name::Separator(), ConstByteArrayParameter(linebreaks))
-			(Name::Terminator(), ConstByteArrayParameter(linebreaks))
-			(Name::Log2Base(), 6, true)));
+		(Name::PaddingByte(), s_padding)
+		(Name::GroupSize(), insertLineBreaks ? maxLineLength : 0)
+		(Name::Separator(), ConstByteArrayParameter(lineBreak))
+		(Name::Terminator(), ConstByteArrayParameter(lineBreak))
+		(Name::Log2Base(), 6, true)));
 }
 
 void Base64URLEncoder::IsolatedInitialize(const NameValuePairs &parameters)
 {
-	bool insertlineBreaks = parameters.GetValueWithDefault(Name::InsertLineBreaks(), true);
-	EOL eol = parameters.GetValueWithDefault(Name::EOL(), EOL::unix);
+	bool insertLineBreaks = parameters.GetValueWithDefault(Name::InsertLineBreaks(), true);
 	int maxLineLength = parameters.GetIntValueWithDefault(Name::MaxLineLength(), 72);
-	const char* EOL_s[] = { "", "\r\n", "\n", "\r" };
-	const char* linebreaks = insertlineBreaks ? EOL_s[(unsigned)eol + 1] : EOL_s[0];
+
+	const char *lineBreak = insertLineBreaks ? "\n" : "";
 
 	m_filter->Initialize(CombinedNameValuePairs(
 		parameters,
 		MakeParameters(Name::EncodingLookupArray(), &s_urlVec[0], false)
-			(Name::PaddingByte(), s_padding)
-			(Name::GroupSize(), insertlineBreaks ? maxLineLength : 0)
-			(Name::Separator(), ConstByteArrayParameter(linebreaks))
-			(Name::Terminator(), ConstByteArrayParameter(linebreaks))
-			(Name::Log2Base(), 6, true)));
+		(Name::PaddingByte(), s_padding)
+		(Name::GroupSize(), insertLineBreaks ? maxLineLength : 0)
+		(Name::Separator(), ConstByteArrayParameter(lineBreak))
+		(Name::Terminator(), ConstByteArrayParameter(lineBreak))
+		(Name::Log2Base(), 6, true)));
 }
 
 void Base64Decoder::IsolatedInitialize(const NameValuePairs &parameters)

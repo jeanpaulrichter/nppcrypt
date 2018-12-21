@@ -36,6 +36,8 @@ CPreferences::CPreferences()
 	files.askonsave = true;
 	files.enable = true;
 	file_loaded = false;
+	base32_alphabet.setup(NPPC_BASE32_ALPHABET, NPPC_BASE32_PAD);
+	base64_alphabet.setup(NPPC_BASE64_ALPHABET, NPPC_BASE64_PAD);
 };
 
 void CPreferences::load(const std::wstring& path, CurrentOptions& current)
@@ -142,6 +144,31 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
 		if (xml_defaultenc) {
 			parseCryptOptions(xml_defaultenc, default_crypt);
 		}
+		/* ----- encoding alphabets ----- */
+		tinyxml2::XMLElement* xml_base32 = xml_nppcrypt->FirstChildElement("base32");
+		if (xml_base32) {
+			crypt::byte padding = 0;
+			const char* pPadding = xml_base32->Attribute("padding");
+			if (pPadding) {
+				padding = (crypt::byte)*pPadding;
+			}
+			const char* pAlphabet = xml_base32->Attribute("alphabet");
+			if (pAlphabet && strlen(pAlphabet) == 32) {
+				base32_alphabet.setup(pAlphabet, padding);
+			}
+		}
+		tinyxml2::XMLElement* xml_base64 = xml_nppcrypt->FirstChildElement("base64");
+		if (xml_base64) {
+			crypt::byte padding = 0;
+			const char* pPadding = xml_base64->Attribute("padding");
+			if (pPadding) {
+				padding = (crypt::byte)*pPadding;
+			}
+			const char* pAlphabet = xml_base64->Attribute("alphabet");
+			if (pAlphabet && strlen(pAlphabet) == 64) {
+				base64_alphabet.setup(pAlphabet, padding);
+			}
+		}
 		/* ----- key presets ----- */
 		tinyxml2::XMLElement* xml_presets = xml_nppcrypt->FirstChildElement("key_presets");
 		if (xml_presets) {
@@ -231,6 +258,16 @@ void CPreferences::save(CurrentOptions& current)
 		fout << " <default_encryption>" << eol;
 		writeCryptOptions(fout, default_crypt, "  ", eol);
 		fout << " </default_encryption>" << eol;
+		if (base32_alphabet.getPadding() > 0) {
+			fout << " <base32 padding=\"" << (char)base32_alphabet.getPadding() << "\" alphabet=\"" << (const char*)base32_alphabet.c_str() << "\" />" << eol;
+		} else {
+			fout << " <base32 alphabet=\"" << (const char*)base32_alphabet.c_str() << "\" />" << eol;
+		}
+		if (base64_alphabet.getPadding() > 0) {
+			fout << " <base64 padding=\"" << (char)base64_alphabet.getPadding() << "\" alphabet=\"" << (const char*)base64_alphabet.c_str() << "\" />" << eol;
+		} else {
+			fout << " <base64 alphabet=\"" << (const char*)base64_alphabet.c_str() << "\" />" << eol;
+		}
 		fout << " <key_presets>" << eol;
 		for (size_t i = 1; i < keys.size(); i++) {
 			std::string label, value;

@@ -1,7 +1,6 @@
 // base32.cpp - written and placed in the public domain by Frank Palazzolo, based on hex.cpp by Wei Dai
 //              extended hex alphabet added by JW in November, 2017.
 
-
 #include "base32.h"
 
 NAMESPACE_BEGIN(CryptoPP)
@@ -51,6 +50,25 @@ const int s_hexArray[256] = {
 };
 
 ANONYMOUS_NAMESPACE_END
+
+Base32Encoder::Base32Encoder(BufferedTransformation *attachment, bool uppercase, int linelength, const std::string &eol, const byte padding, const byte* alphabet_lower, const byte* alphabet_upper)
+	: SimpleProxyFilter(new BaseN_Encoder(new Grouper), attachment)
+{
+	const byte* alphabet;
+	if (alphabet_lower && alphabet_upper) {
+		alphabet = uppercase ? alphabet_upper : alphabet_lower;
+	} else {
+		alphabet = uppercase ? &s_stdUpper[0] : &s_stdLower[0];
+	}
+	m_filter->Initialize(
+		MakeParameters(Name::EncodingLookupArray(), alphabet, false)
+		(Name::Log2Base(), 5, true)
+		(Name::GroupSize(), linelength)
+		(Name::Separator(), ConstByteArrayParameter(eol))
+		(Name::Pad(), (padding != 0))
+		(Name::PaddingByte(), padding)
+	);
+};
 
 void Base32Encoder::IsolatedInitialize(const NameValuePairs &parameters)
 {
