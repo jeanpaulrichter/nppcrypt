@@ -21,41 +21,41 @@ GNU General Public License for more details.
 
 INT_PTR CALLBACK DlgAbout::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	switch (message) 
-	{
+    switch (message) 
+    {
         case WM_INITDIALOG :
-		{
-			SetDlgItemText(_hSelf, IDC_ABOUT_VERSION, TEXT(NPPC_ABOUT_VERSION));
+        {
+            SetDlgItemText(_hSelf, IDC_ABOUT_VERSION, TEXT(NPPC_ABOUT_VERSION));
 
             github.init(_hInst, _hSelf);
-			github.create(::GetDlgItem(_hSelf, IDC_ABOUT_GITHUB), NPPC_ABOUT_GITHUB);
-			cryptopp.init(_hInst, _hSelf);
-			cryptopp.create(::GetDlgItem(_hSelf, IDC_ABOUT_CRYPTOPP), NPPC_ABOUT_CRYPTOPP);
-			tinyxml2.init(_hInst, _hSelf);
-			tinyxml2.create(::GetDlgItem(_hSelf, IDC_ABOUT_TINYXML2), NPPC_ABOUT_TINYXML2);
-			bcrypt.init(_hInst, _hSelf);
-			bcrypt.create(::GetDlgItem(_hSelf, IDC_ABOUT_BCRYPT), NPPC_ABOUT_BCRYPT);
-			scrypt.init(_hInst, _hSelf);
-			scrypt.create(::GetDlgItem(_hSelf, IDC_ABOUT_SCRYPT), NPPC_ABOUT_SCRYPT);
-			goToCenter();
+            github.create(::GetDlgItem(_hSelf, IDC_ABOUT_GITHUB), NPPC_ABOUT_GITHUB);
+            cryptopp.init(_hInst, _hSelf);
+            cryptopp.create(::GetDlgItem(_hSelf, IDC_ABOUT_CRYPTOPP), NPPC_ABOUT_CRYPTOPP);
+            tinyxml2.init(_hInst, _hSelf);
+            tinyxml2.create(::GetDlgItem(_hSelf, IDC_ABOUT_TINYXML2), NPPC_ABOUT_TINYXML2);
+            bcrypt.init(_hInst, _hSelf);
+            bcrypt.create(::GetDlgItem(_hSelf, IDC_ABOUT_BCRYPT), NPPC_ABOUT_BCRYPT);
+            scrypt.init(_hInst, _hSelf);
+            scrypt.create(::GetDlgItem(_hSelf, IDC_ABOUT_SCRYPT), NPPC_ABOUT_SCRYPT);
+            goToCenter();
 
-			return TRUE;
-		}
-		case WM_COMMAND : 
-	    {
-		    switch (LOWORD(wParam))
-		    {
-				case IDC_OK: 
-					EndDialog(_hSelf, IDC_OK);
-				    return TRUE;
-				case IDC_CANCEL : case IDCANCEL:
-				    EndDialog(_hSelf, IDC_CANCEL);
-					return TRUE;
-			    default :
-				    break;
-		    }
-		    break;
-	    }
-	}
-	return FALSE;
+            return TRUE;
+        }
+        case WM_COMMAND : 
+        {
+            switch (LOWORD(wParam))
+            {
+                case IDC_OK: 
+                    EndDialog(_hSelf, IDC_OK);
+                    return TRUE;
+                case IDC_CANCEL : case IDCANCEL:
+                    EndDialog(_hSelf, IDC_CANCEL);
+                    return TRUE;
+                default :
+                    break;
+            }
+            break;
+        }
+    }
+    return FALSE;
 }

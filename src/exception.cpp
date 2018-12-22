@@ -19,55 +19,55 @@ GNU General Public License for more details.
 
 ExcError::ExcError(ID id, const char* func, unsigned int line) noexcept : id(id), line(line)
 {
-	std::ostringstream o;
-	o << "[" << func << ":" << line << "] " << messages[(unsigned)id];
-	msg.assign(o.str());
+    std::ostringstream o;
+    o << "[" << func << ":" << line << "] " << messages[(unsigned)id];
+    msg.assign(o.str());
 };
 
-const char* ExcError::messages[] = { 
-	"unexpected error.", 
-	"failed to get scintilla character pointer.", 
-	"failed to get scintilla handle.", 
-	"failed to get file path.", 
-	"conversion to utf8 failed.", 
-	"conversion to wchar failed.", 
-	"failed to read preferences-files.", 
-	"failed to parse preferences-file.",
-	"failed to create header."
+const char* ExcError::messages[] = {
+    "unexpected error.",
+    "failed to get scintilla character pointer.",
+    "failed to get scintilla handle.",
+    "failed to get file path.",
+    "conversion to utf8 failed.",
+    "conversion to wchar failed.",
+    "failed to read preferences-files.",
+    "failed to parse preferences-file.",
+    "failed to create header."
 };
 
-const char* ExcInvalid::messages[] = { 
-	"no header found.", 
-	"invalid key-preset id.", 
-	"invalid cipher mode.", 
-	"invalid key-length.", 
-	"invalid pbkdf2 parameters.", 
-	"invalid bcrypt parameters.", 
-	"invalid scrypt parameters.", 
-	"invalid salt-length.", 
-	"invalid bcrypt salt-length (must be 16 bytes).", 
-	"invalid line-length.", 
-	"hash does not support this digest-length.", 
-	"hash does not support key.", 
-	"hash requires key.", 
-	"cannot convert encoding.", 
-	"invalid header.", 
-	"failed to parse header version.", 
-	"invalid hmac-data.", 
-	"invalid hmac-hash.", 
-	"invalid cipher.", 
-	"missing key-length.", 
-	"missing cipher-mode.", 
-	"invalid encoding.", 
-	"invalid keyderivation.", 
-	"failed to parse salt-vector.", 
-	"failed to parse IV.", 
-	"failed to parse tag-vector",
-	"failed to parse aad flag"
+const char* ExcInvalid::messages[] = {
+    "no header found.",
+    "invalid key-preset id.",
+    "invalid cipher mode.",
+    "invalid key-length.",
+    "invalid pbkdf2 parameters.",
+    "invalid bcrypt parameters.",
+    "invalid scrypt parameters.",
+    "invalid salt-length.",
+    "invalid bcrypt salt-length (must be 16 bytes).",
+    "invalid line-length.",
+    "hash does not support this digest-length.",
+    "hash does not support key.",
+    "hash requires key.",
+    "cannot convert encoding.",
+    "invalid header.",
+    "failed to parse header version.",
+    "invalid hmac-data.",
+    "invalid hmac-hash.",
+    "invalid cipher.",
+    "missing key-length.",
+    "missing cipher-mode.",
+    "invalid encoding.",
+    "invalid keyderivation.",
+    "failed to parse salt-vector.",
+    "failed to parse IV.",
+    "failed to parse tag-vector",
+    "failed to parse aad flag"
 };
 
-const char* ExcInfo::messages[] = { 
-	"the file is empty.", 
-	"hmac authentification failed.", 
-	"wrong header version.", 
+const char* ExcInfo::messages[] = {
+    "the file is empty.",
+    "hmac authentification failed.",
+    "wrong header version.",
 };

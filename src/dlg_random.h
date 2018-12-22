@@ -26,15 +26,15 @@ GNU General Public License for more details.
 class DlgRandom : public ModalDialog
 {
 public:
-	DlgRandom(RandomOptions& opt);
+    DlgRandom(RandomOptions& opt);
 
 private:
-	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	void				updateEncodingControls(crypt::Encoding enc);
+    INT_PTR CALLBACK    run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+    void                updateEncodingControls(crypt::Encoding enc);
 
-	RandomOptions&		options;
-	HelpCtrl			help_enc;
-	HelpCtrl			help_restrictions;
+    RandomOptions&      options;
+    HelpCtrl            help_enc;
+    HelpCtrl            help_restrictions;
 };
 
 #endif

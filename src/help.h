@@ -25,70 +25,70 @@ GNU General Public License for more details.
 
 namespace helper
 {
-	namespace Scintilla
-	{
-		HWND			getCurrent();
-		void			replaceSelection(const std::basic_string<byte>& buffer);
-		void			replaceSelection(const char* s, size_t len);
-		size_t			getSelectionLength();
-		bool			getSelection(const byte** pdata, size_t* length, size_t* start = NULL, size_t* end = NULL);
-	};
+    namespace Scintilla
+    {
+        HWND            getCurrent();
+        void            replaceSelection(const std::basic_string<byte>& buffer);
+        void            replaceSelection(const char* s, size_t len);
+        size_t          getSelectionLength();
+        bool            getSelection(const byte** pdata, size_t* length, size_t* start = NULL, size_t* end = NULL);
+    };
 
-	namespace Buffer
-	{
-		uptr_t			getCurrent();
-		bool			is8Bit(uptr_t);
-		bool			isCurrent8Bit();
-		void			getPath(uptr_t bufferid, std::wstring& path, std::wstring& filename, std::wstring& extension);
-	};
+    namespace Buffer
+    {
+        uptr_t          getCurrent();
+        bool            is8Bit(uptr_t);
+        bool            isCurrent8Bit();
+        void            getPath(uptr_t bufferid, std::wstring& path, std::wstring& filename, std::wstring& extension);
+    };
 
-	namespace Windows
-	{
-		void			copyToClipboard(const unsigned char* s, size_t len);
-		void			copyToClipboard(const std::basic_string<byte>& buffer);
-		void			wchar_to_utf8(const wchar_t* i, int i_len, std::string& o);
-		void			wchar_to_utf8(const wchar_t* i, int i_len, crypt::secure_string& o);
-		void			utf8_to_wchar(const char* i, int i_len, std::wstring& o);
-		void			utf8_to_wchar(const char* i, int i_len, crypt::secure_wstring& o);
-		void			error(HWND hwnd, const char* msg);
+    namespace Windows
+    {
+        void            copyToClipboard(const unsigned char* s, size_t len);
+        void            copyToClipboard(const std::basic_string<byte>& buffer);
+        void            wchar_to_utf8(const wchar_t* i, int i_len, std::string& o);
+        void            wchar_to_utf8(const wchar_t* i, int i_len, crypt::secure_string& o);
+        void            utf8_to_wchar(const char* i, int i_len, std::wstring& o);
+        void            utf8_to_wchar(const char* i, int i_len, crypt::secure_wstring& o);
+        void            error(HWND hwnd, const char* msg);
 
-		class ToWCHAR
-		{
-		public:
-			ToWCHAR(const char* s, int len = -1) {
-				if (len < -1) {
-					len = -1;
-				}
-				if (s && len) {
-					int charlen = ::MultiByteToWideChar(CP_UTF8, 0, s, len, NULL, 0);
-					if (charlen >= 1) {
-						buf.resize((size_t)charlen);
-						if (MultiByteToWideChar(CP_UTF8, 0, s, len, &buf[0], charlen)) {
-							if (buf.size() > 0 && len == -1) {
-								buf.pop_back();
-							}
-						}
-					}
-				}
-			}
-			~ToWCHAR() {
-				buf = L"FUCK";
-			}
-			const wchar_t* c_str() {
-				return buf.c_str();
-			}
-		private:
-			std::wstring buf;
-		};
+        class ToWCHAR
+        {
+        public:
+            ToWCHAR(const char* s, int len = -1) {
+                if (len < -1) {
+                    len = -1;
+                }
+                if (s && len) {
+                    int charlen = ::MultiByteToWideChar(CP_UTF8, 0, s, len, NULL, 0);
+                    if (charlen >= 1) {
+                        buf.resize((size_t)charlen);
+                        if (MultiByteToWideChar(CP_UTF8, 0, s, len, &buf[0], charlen)) {
+                            if (buf.size() > 0 && len == -1) {
+                                buf.pop_back();
+                            }
+                        }
+                    }
+                }
+            }
+            ~ToWCHAR() {
+                buf = L"FUCK";
+            }
+            const wchar_t* c_str() {
+                return buf.c_str();
+            }
+        private:
+            std::wstring buf;
+        };
 
-	};
+    };
 
-	namespace NPP
-	{
-		HINSTANCE		getDLLHandle();
-		HWND			getWindow();
-		bool			setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *sk, bool check0nInit = false);
-	};
+    namespace NPP
+    {
+        HINSTANCE       getDLLHandle();
+        HWND            getWindow();
+        bool            setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *sk, bool check0nInit = false);
+    };
 };
 
 #endif

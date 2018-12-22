@@ -25,15 +25,15 @@ GNU General Public License for more details.
 class DlgAuth: public ModalDialog
 {
 public:    
-						DlgAuth() : ModalDialog() {};
-   	bool				doDialog(const TCHAR* filename=NULL);
-	crypt::UserData&	getInput();
+                        DlgAuth() : ModalDialog() {};
+    bool                doDialog(const TCHAR* filename=NULL);
+    crypt::UserData&    getInput();
 
 private:
-	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+    INT_PTR CALLBACK    run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	crypt::UserData		input;
-	std::wstring		caption;
+    crypt::UserData     input;
+    std::wstring        caption;
 };
 
 

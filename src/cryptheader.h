@@ -23,57 +23,57 @@ class CryptHeader
 {
 public:
 
-	struct HMAC {
-		HMAC() : enable(false), keypreset_id(-1) {};
+    struct HMAC {
+        HMAC() : enable(false), keypreset_id(-1) {};
 
-		bool					enable;
-		int						keypreset_id;
-		crypt::Options::Hash	hash;
-	};
+        bool                    enable;
+        int                     keypreset_id;
+        crypt::Options::Hash    hash;
+    };
 
-						CryptHeader(HMAC& h) : version(NPPC_VERSION), hmac(h) {};
-	int					getVersion() { return version; };
+        CryptHeader(HMAC& h) : version(NPPC_VERSION), hmac(h) {};
+    int getVersion() { return version; };
 
 protected:
 
-	struct DataPointer {
-		DataPointer() : start(NULL), length(0) {};
+    struct DataPointer {
+        DataPointer() : start(NULL), length(0) {};
 
-		const crypt::byte*	start;
-		size_t				length;
-	};
+        const crypt::byte* start;
+        size_t             length;
+    };
 
-	HMAC&				hmac;
-	int					version;
-	DataPointer			body;
+    HMAC&       hmac;
+    int         version;
+    DataPointer body;
 };
 
 class CryptHeaderReader : public CryptHeader
 {
 public:
-								CryptHeaderReader(HMAC& hmac) : CryptHeader(hmac) {};
-	bool						parse(crypt::Options::Crypt& options, crypt::InitData& initdata, const crypt::byte* in, size_t in_len);
-	const crypt::byte*			getEncrypted() { return encrypted.start; };
-	size_t						getEncryptedLength() { return encrypted.length; };
-	bool						checkHMAC();
+                        CryptHeaderReader(HMAC& hmac) : CryptHeader(hmac) {};
+    bool                parse(crypt::Options::Crypt& options, crypt::InitData& initdata, const crypt::byte* in, size_t in_len);
+    const crypt::byte*  getEncrypted() { return encrypted.start; };
+    size_t              getEncryptedLength() { return encrypted.length; };
+    bool                checkHMAC();
 
 private:
-	crypt::UserData				hmac_digest;
-	DataPointer					encrypted;
+    crypt::UserData     hmac_digest;
+    DataPointer          encrypted;
 };
 
 class CryptHeaderWriter : public CryptHeader
 {
 public:
-							CryptHeaderWriter(HMAC& hmac) : CryptHeader(hmac) {};
-	void					create(const crypt::Options::Crypt& options, const crypt::InitData& initdata, const crypt::byte* data, size_t data_length);
-	const char*				c_str() { return buffer.c_str(); };
-	size_t					size() { return buffer.size(); };
+                CryptHeaderWriter(HMAC& hmac) : CryptHeader(hmac) {};
+    void        create(const crypt::Options::Crypt& options, const crypt::InitData& initdata, const crypt::byte* data, size_t data_length);
+    const char* c_str() { return buffer.c_str(); };
+    size_t      size() { return buffer.size(); };
 
 private:
-	size_t					base64length(size_t bin_length, bool linebreaks=false, size_t line_length=0, bool windows=false);
+    size_t      base64length(size_t bin_length, bool linebreaks=false, size_t line_length=0, bool windows=false);
 
-	std::string						buffer;
+    std::string buffer;
 };
 
 #endif

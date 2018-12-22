@@ -37,465 +37,463 @@ GNU General Public License for more details.
 #include "resource.h"
 #include "help.h"
 
-#include "cryptopp/base32.h"
-
 typedef std::map<std::wstring, CryptInfo> cryptfilemap;
 
-const TCHAR				NPP_PLUGIN_NAME[] = TEXT(NPPC_NAME);
-const int				NPPCRYPT_VERSION = NPPC_VERSION;
+const TCHAR             NPP_PLUGIN_NAME[] = TEXT(NPPC_NAME);
+const int               NPPCRYPT_VERSION = NPPC_VERSION;
 
-FuncItem				funcItem[NPPC_FUNC_COUNT];
-NppData					nppData;
-HINSTANCE				m_hInstance;
-CurrentOptions			current;
-cryptfilemap			crypt_files;
-bool					UndoFileEncryption = false;
+FuncItem                funcItem[NPPC_FUNC_COUNT];
+NppData                 nppData;
+HINSTANCE               m_hInstance;
+CurrentOptions          current;
+cryptfilemap            crypt_files;
+bool                    UndoFileEncryption = false;
 
-DlgCrypt				dlg_crypt;
-DlgHash					dlg_hash(current.hash);
-DlgRandom				dlg_random(current.random);
-DlgAuth					dlg_auth;
-DlgPreferences			dlg_preferences;
-DlgAbout				dlg_about;
-DlgConvert				dlg_convert(current.convert);
-DlgInitdata				dlg_initdata;
+DlgCrypt                dlg_crypt;
+DlgHash                 dlg_hash(current.hash);
+DlgRandom               dlg_random(current.random);
+DlgAuth                 dlg_auth;
+DlgPreferences          dlg_preferences;
+DlgAbout                dlg_about;
+DlgConvert              dlg_convert(current.convert);
+DlgInitdata             dlg_initdata;
 
 
 BOOL APIENTRY DllMain( HANDLE hModule, DWORD reasonForCall, LPVOID lpReserved )
 {
-	switch (reasonForCall)
+    switch (reasonForCall)
     {
-	case DLL_PROCESS_ATTACH:
-	{
-		#ifdef _DEBUG
-			_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-		#endif
-		m_hInstance = (HINSTANCE)hModule;
-		break;
-	}
-	case DLL_PROCESS_DETACH:
-	{
-		preferences.save(current);
-		dlg_random.destroy();
-		dlg_hash.destroy();
-		dlg_crypt.destroy();
-		dlg_about.destroy();
-		dlg_preferences.destroy();
-		dlg_auth.destroy();
-		dlg_convert.destroy();
-		dlg_initdata.destroy();
-  		break;
-	}
-	case DLL_THREAD_ATTACH:
-	{
-		break;
-	}
-	case DLL_THREAD_DETACH:
-	{
-		break;
-	}
+    case DLL_PROCESS_ATTACH:
+    {
+        #ifdef _DEBUG
+            _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+        #endif
+        m_hInstance = (HINSTANCE)hModule;
+        break;
+    }
+    case DLL_PROCESS_DETACH:
+    {
+        preferences.save(current);
+        dlg_random.destroy();
+        dlg_hash.destroy();
+        dlg_crypt.destroy();
+        dlg_about.destroy();
+        dlg_preferences.destroy();
+        dlg_auth.destroy();
+        dlg_convert.destroy();
+        dlg_initdata.destroy();
+        break;
+    }
+    case DLL_THREAD_ATTACH:
+    {
+        break;
+    }
+    case DLL_THREAD_DETACH:
+    {
+        break;
+    }
     }
     return TRUE;
 }
 
 extern "C" __declspec(dllexport) void setInfo(NppData notpadPlusData)
 {
-	nppData = notpadPlusData;
+    nppData = notpadPlusData;
 
-	helper::NPP::setCommand(0, TEXT("Encrypt"), EncryptDlg, NULL, false);
-	helper::NPP::setCommand(1, TEXT("Decrypt"), DecryptDlg, NULL, false);
-	helper::NPP::setCommand(2, TEXT("Hash"), HashDlg, NULL, false);
-	helper::NPP::setCommand(3, TEXT("Random"), RandomDlg, NULL, false);
-	helper::NPP::setCommand(4, TEXT("Convert"), ConvertDlg, NULL, false);
-	helper::NPP::setCommand(5, TEXT("---"), NULL, NULL, false);
-	helper::NPP::setCommand(6, TEXT("Preferences"), PreferencesDlg, NULL, false);
-	helper::NPP::setCommand(7, TEXT("---"), NULL, NULL, false);
-	helper::NPP::setCommand(8, TEXT("About"), AboutDlg, NULL, false);
+    helper::NPP::setCommand(0, TEXT("Encrypt"), EncryptDlg, NULL, false);
+    helper::NPP::setCommand(1, TEXT("Decrypt"), DecryptDlg, NULL, false);
+    helper::NPP::setCommand(2, TEXT("Hash"), HashDlg, NULL, false);
+    helper::NPP::setCommand(3, TEXT("Random"), RandomDlg, NULL, false);
+    helper::NPP::setCommand(4, TEXT("Convert"), ConvertDlg, NULL, false);
+    helper::NPP::setCommand(5, TEXT("---"), NULL, NULL, false);
+    helper::NPP::setCommand(6, TEXT("Preferences"), PreferencesDlg, NULL, false);
+    helper::NPP::setCommand(7, TEXT("---"), NULL, NULL, false);
+    helper::NPP::setCommand(8, TEXT("About"), AboutDlg, NULL, false);
 
-	dlg_random.init(m_hInstance, nppData._nppHandle, IDD_RANDOM, IDC_OK);
-	dlg_hash.init(m_hInstance, nppData._nppHandle, IDD_HASH, IDC_OK);
-	dlg_crypt.init(m_hInstance, nppData._nppHandle, IDD_CRYPT, IDC_OK);
-	dlg_about.init(m_hInstance, nppData._nppHandle, IDD_ABOUT, IDC_OK);
-	dlg_preferences.init(m_hInstance, nppData._nppHandle, IDD_PREFERENCES, IDC_OK);
-	dlg_auth.init(m_hInstance, nppData._nppHandle, IDD_AUTH, IDC_OK);
-	dlg_convert.init(m_hInstance, nppData._nppHandle, IDD_CONVERT, IDC_OK);
-	dlg_initdata.init(m_hInstance, nppData._nppHandle, IDD_INITDATA, IDC_OK);
+    dlg_random.init(m_hInstance, nppData._nppHandle, IDD_RANDOM, IDC_OK);
+    dlg_hash.init(m_hInstance, nppData._nppHandle, IDD_HASH, IDC_OK);
+    dlg_crypt.init(m_hInstance, nppData._nppHandle, IDD_CRYPT, IDC_OK);
+    dlg_about.init(m_hInstance, nppData._nppHandle, IDD_ABOUT, IDC_OK);
+    dlg_preferences.init(m_hInstance, nppData._nppHandle, IDD_PREFERENCES, IDC_OK);
+    dlg_auth.init(m_hInstance, nppData._nppHandle, IDD_AUTH, IDC_OK);
+    dlg_convert.init(m_hInstance, nppData._nppHandle, IDD_CONVERT, IDC_OK);
+    dlg_initdata.init(m_hInstance, nppData._nppHandle, IDD_INITDATA, IDC_OK);
 
-	TCHAR preffile_s[MAX_PATH];
-	::SendMessage(nppData._nppHandle, NPPM_GETPLUGINSCONFIGDIR, MAX_PATH, (LPARAM)preffile_s);
-	int preffile_len = lstrlen(preffile_s);
-	if (preffile_len + 16 < MAX_PATH) {
-		lstrcpy(preffile_s + preffile_len, TEXT("\\nppcrypt.xml"));
-		preferences.load(preffile_s, current);
-	}
+    TCHAR preffile_s[MAX_PATH];
+    ::SendMessage(nppData._nppHandle, NPPM_GETPLUGINSCONFIGDIR, MAX_PATH, (LPARAM)preffile_s);
+    int preffile_len = lstrlen(preffile_s);
+    if (preffile_len + 16 < MAX_PATH) {
+        lstrcpy(preffile_s + preffile_len, TEXT("\\nppcrypt.xml"));
+        preferences.load(preffile_s, current);
+    }
 }
 
 extern "C" __declspec(dllexport) BOOL isUnicode()
 {
-	return TRUE;
+    return TRUE;
 }
 
 extern "C" __declspec(dllexport) const TCHAR * getName()
 {
-	return NPP_PLUGIN_NAME;
+    return NPP_PLUGIN_NAME;
 }
 
 extern "C" __declspec(dllexport) FuncItem * getFuncsArray(int *nbF)
 {
-	*nbF = int(NPPC_FUNC_COUNT);
-	return funcItem;
+    *nbF = int(NPPC_FUNC_COUNT);
+    return funcItem;
 }
 
 extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam, LPARAM lParam)
 {
-	return TRUE;
+    return TRUE;
 }
 
 extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 {
-	switch (notifyCode->nmhdr.code) 
-	{
-	case NPPN_FILEOPENED:
-	{
-		if (!preferences.files.enable) {
-			return;
-		}
-		try {
-			std::wstring path, filename, extension;
-			helper::Buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
+    switch (notifyCode->nmhdr.code)
+    {
+    case NPPN_FILEOPENED:
+    {
+        if (!preferences.files.enable) {
+            return;
+        }
+        try {
+            std::wstring path, filename, extension;
+            helper::Buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
 
-			if(preferences.files.extension.compare(extension) == 0) {
-				::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
-				HWND hCurScintilla = helper::Scintilla::getCurrent();
+            if(preferences.files.extension.compare(extension) == 0) {
+                ::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
+                HWND hCurScintilla = helper::Scintilla::getCurrent();
 
-				int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
-				if (data_length <= 0) {
-					throwInfo(file_empty);
-				}
-				byte* pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER, 0, 0);
-				if (!pData) {
-					throwError(no_scintilla_pointer);
-				}
+                int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
+                if (data_length <= 0) {
+                    throwInfo(file_empty);
+                }
+                byte* pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER, 0, 0);
+                if (!pData) {
+                    throwError(no_scintilla_pointer);
+                }
 
-				CryptInfo				crypt;
-				crypt::InitData			initdata;
-				CryptHeaderReader		header(crypt.hmac);
+                CryptInfo               crypt;
+                crypt::InitData         initdata;
+                CryptHeaderReader       header(crypt.hmac);
 
-				if (!header.parse(crypt.options, initdata, pData, data_length)) {
-					throwInvalid(no_header);
-				}
+                if (!header.parse(crypt.options, initdata, pData, data_length)) {
+                    throwInvalid(no_header);
+                }
 
-				if(crypt.hmac.enable) {
-					if (crypt.hmac.keypreset_id < 0) {
-						if (!dlg_auth.doDialog()) {
-							return;
-						}
-						crypt.hmac.hash.key.set(dlg_auth.getInput());
-						if (!header.checkHMAC()) {
-							throwInfo(hmac_auth_failed);
-						}
-					} else {
-						if (crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
-							throwInvalid(invalid_keypreset_id);
-						} else {
-							crypt.hmac.hash.key.set(preferences.getKey(crypt.hmac.keypreset_id), 16);
-							if (!header.checkHMAC()) {
-								throwInfo(hmac_auth_failed);
-							}
-						}
-					}
-				}
+                if(crypt.hmac.enable) {
+                    if (crypt.hmac.keypreset_id < 0) {
+                        if (!dlg_auth.doDialog()) {
+                            return;
+                        }
+                        crypt.hmac.hash.key.set(dlg_auth.getInput());
+                        if (!header.checkHMAC()) {
+                            throwInfo(hmac_auth_failed);
+                        }
+                    } else {
+                        if (crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
+                            throwInvalid(invalid_keypreset_id);
+                        } else {
+                            crypt.hmac.hash.key.set(preferences.getKey(crypt.hmac.keypreset_id), 16);
+                            if (!header.checkHMAC()) {
+                                throwInfo(hmac_auth_failed);
+                            }
+                        }
+                    }
+                }
 
-				if (dlg_crypt.decryptDialog(&crypt, &initdata.iv, &filename)) {
-					std::basic_string<byte> buffer;
-					crypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, crypt.options, crypt.password, initdata);
+                if (dlg_crypt.decryptDialog(&crypt, &initdata.iv, &filename)) {
+                    std::basic_string<byte> buffer;
+                    crypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, crypt.options, crypt.password, initdata);
 
-					::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
-					::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
-					::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
-					::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
-					::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
+                    ::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
+                    ::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
+                    ::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
+                    ::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
+                    ::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
 
-					crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
-				}
-			}
-		} catch (ExcInfo& exc) {
-			if (exc.getID() != ExcInfo::ID::file_empty) {
-				helper::Windows::error(nppData._nppHandle, exc.what());
-			}
-		} catch(std::exception& exc) {
-			helper::Windows::error(nppData._nppHandle, exc.what());
-		} catch(...) {
-			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
-		}
-		break;
-	}
-	/* Why NPPN_FILESAVED instead of NPPN_FILEBEFORESAVE thus effectivly saving the file twice? 
-		Because if the user chooses "save as" there is no way of knowing the new filename in NPPN_FILEBEFORESAVE 
-		Btw: "Save a Copy as..." does trigger neither NPPN_FILESAVED nor NPPN_FILEBEFORESAVE. same goes for automatic backup saves.*/
-	case NPPN_FILESAVED: case NPPN_FILERENAMED:
-	{
-		try	{
-			if (!preferences.files.enable) {
-				return;
-			}
+                    crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
+                }
+            }
+        } catch (ExcInfo& exc) {
+            if (exc.getID() != ExcInfo::ID::file_empty) {
+                helper::Windows::error(nppData._nppHandle, exc.what());
+            }
+        } catch(std::exception& exc) {
+            helper::Windows::error(nppData._nppHandle, exc.what());
+        } catch(...) {
+            ::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+        }
+        break;
+    }
+    /* Why NPPN_FILESAVED instead of NPPN_FILEBEFORESAVE thus effectivly saving the file twice?
+        Because if the user chooses "save as" there is no way of knowing the new filename in NPPN_FILEBEFORESAVE
+        Btw: "Save a Copy as..." does trigger neither NPPN_FILESAVED nor NPPN_FILEBEFORESAVE. same goes for automatic backup saves.*/
+    case NPPN_FILESAVED: case NPPN_FILERENAMED:
+    {
+        try {
+            if (!preferences.files.enable) {
+                return;
+            }
 
-			if (UndoFileEncryption) {
-				HWND hCurScintilla = helper::Scintilla::getCurrent();
-				::SendMessage(hCurScintilla, SCI_UNDO, 0, 0);
-				::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
-				::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
-				::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
-				UndoFileEncryption = false;
-			} else {
-				std::wstring path, filename, extension;
-				helper::Buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
+            if (UndoFileEncryption) {
+                HWND hCurScintilla = helper::Scintilla::getCurrent();
+                ::SendMessage(hCurScintilla, SCI_UNDO, 0, 0);
+                ::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
+                ::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
+                ::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
+                UndoFileEncryption = false;
+            } else {
+                std::wstring path, filename, extension;
+                helper::Buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
 
-				if (preferences.files.extension.compare(extension) == 0) {
+                if (preferences.files.extension.compare(extension) == 0) {
 
-					cryptfilemap::iterator	fiter = crypt_files.find(path);
-					CryptInfo& crypt = (fiter != crypt_files.end()) ? fiter->second : current.crypt;
+                    cryptfilemap::iterator  fiter = crypt_files.find(path);
+                    CryptInfo& crypt = (fiter != crypt_files.end()) ? fiter->second : current.crypt;
 
-					::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
-					HWND hCurScintilla = helper::Scintilla::getCurrent();
+                    ::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
+                    HWND hCurScintilla = helper::Scintilla::getCurrent();
 
-					int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
-					if (data_length <= 0) {
-						throwInfo(file_empty);
-					}
+                    int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
+                    if (data_length <= 0) {
+                        throwInfo(file_empty);
+                    }
 
-					byte* pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
-					if (!pData) {
-						throwError(no_scintilla_pointer);
-					}
+                    byte* pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
+                    if (!pData) {
+                        throwError(no_scintilla_pointer);
+                    }
 
-					crypt::InitData			initdata;
-					CryptHeaderWriter		header(crypt.hmac);
-					std::basic_string<byte>	buffer;
-					bool					autoencrypt = false;
+                    crypt::InitData         initdata;
+                    CryptHeaderWriter       header(crypt.hmac);
+                    std::basic_string<byte> buffer;
+                    bool                    autoencrypt = false;
 
-					if(fiter != crypt_files.end()) {					
-						if(preferences.files.askonsave)	{
-							std::wstring asksave_msg;
-							if (filename.size() > 32) {
-								asksave_msg = TEXT("change encryption of ") + filename.substr(0,32) + TEXT("...?");
-							} else {
-								asksave_msg = TEXT("change encryption of ") + filename + TEXT("?");
-							}
-							if (::MessageBox(nppData._nppHandle, asksave_msg.c_str(), TEXT("nppcrypt"), MB_YESNO | MB_ICONQUESTION) != IDYES) {
-								autoencrypt = true;
-							}
-						} else {
-							autoencrypt = true;
-						}
-						if(autoencrypt)	{
-							crypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
-							header.create(crypt.options, initdata, &buffer[0], buffer.size());
-						}
-					}						
-					if(!autoencrypt) {
-						int encoding = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
-						bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
+                    if(fiter != crypt_files.end()) {
+                        if(preferences.files.askonsave) {
+                            std::wstring asksave_msg;
+                            if (filename.size() > 32) {
+                                asksave_msg = TEXT("change encryption of ") + filename.substr(0,32) + TEXT("...?");
+                            } else {
+                                asksave_msg = TEXT("change encryption of ") + filename + TEXT("?");
+                            }
+                            if (::MessageBox(nppData._nppHandle, asksave_msg.c_str(), TEXT("nppcrypt"), MB_YESNO | MB_ICONQUESTION) != IDYES) {
+                                autoencrypt = true;
+                            }
+                        } else {
+                            autoencrypt = true;
+                        }
+                        if(autoencrypt) {
+                            crypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
+                            header.create(crypt.options, initdata, &buffer[0], buffer.size());
+                        }
+                    }
+                    if(!autoencrypt) {
+                        int encoding = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
+                        bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
 
-						if(dlg_crypt.encryptDialog(&crypt, &initdata.iv, &filename)) {
-							crypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
-							header.create(crypt.options, initdata, &buffer[0], buffer.size());
-							if(fiter == crypt_files.end()) {
-								crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
-							}
-						} else {
-							return;
-						}
-					}
-					::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
-					::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
-					::SendMessage(hCurScintilla, SCI_APPENDTEXT, header.size(), (LPARAM)header.c_str());
-					::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
-					::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
+                        if(dlg_crypt.encryptDialog(&crypt, &initdata.iv, &filename)) {
+                            crypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
+                            header.create(crypt.options, initdata, &buffer[0], buffer.size());
+                            if(fiter == crypt_files.end()) {
+                                crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
+                            }
+                        } else {
+                            return;
+                        }
+                    }
+                    ::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
+                    ::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
+                    ::SendMessage(hCurScintilla, SCI_APPENDTEXT, header.size(), (LPARAM)header.c_str());
+                    ::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
+                    ::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
 
-					UndoFileEncryption = true;
-					::SendMessage(nppData._nppHandle, NPPM_SAVECURRENTFILE, 0, 0);
-				}
-			}
-		} catch (ExcInfo& exc) {
-			if (exc.getID() != ExcInfo::ID::file_empty) {
-				helper::Windows::error(nppData._nppHandle, exc.what());
-			}
-		} catch(std::exception& exc) {
-			helper::Windows::error(nppData._nppHandle, exc.what());
-		} catch(...) {
-			::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
-		}
-		break;
-	}
-	case NPPN_FILEBEFORECLOSE:
-	{
-		std::wstring path, filename, extension;
-		helper::Buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
-		if (preferences.files.extension.compare(extension) == 0) {
-			crypt_files.erase(path);
-		}
-		break;
-	}
-	}
+                    UndoFileEncryption = true;
+                    ::SendMessage(nppData._nppHandle, NPPM_SAVECURRENTFILE, 0, 0);
+                }
+            }
+        } catch (ExcInfo& exc) {
+            if (exc.getID() != ExcInfo::ID::file_empty) {
+                helper::Windows::error(nppData._nppHandle, exc.what());
+            }
+        } catch(std::exception& exc) {
+            helper::Windows::error(nppData._nppHandle, exc.what());
+        } catch(...) {
+            ::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+        }
+        break;
+    }
+    case NPPN_FILEBEFORECLOSE:
+    {
+        std::wstring path, filename, extension;
+        helper::Buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
+        if (preferences.files.extension.compare(extension) == 0) {
+            crypt_files.erase(path);
+        }
+        break;
+    }
+    }
 }
 
 // ====================================================================================================================================================================
 
 void EncryptDlg()
 {
-	try {
-		const byte*	pData;
-		size_t		data_length;
-		size_t		sel_start;
+    try {
+        const byte* pData;
+        size_t      data_length;
+        size_t      sel_start;
 
-		if (!helper::Scintilla::getSelection(&pData, &data_length, &sel_start)) {
-			return;
-		}
+        if (!helper::Scintilla::getSelection(&pData, &data_length, &sel_start)) {
+            return;
+        }
 
-		crypt::InitData				initdata;
+        crypt::InitData             initdata;
 
-		if(dlg_crypt.encryptDialog(&current.crypt, &initdata.iv)) {
+        if(dlg_crypt.encryptDialog(&current.crypt, &initdata.iv)) {
 
-			std::basic_string<byte>		buffer;
-			crypt::encrypt(pData, data_length, buffer, current.crypt.options, current.crypt.password, initdata);
+            std::basic_string<byte>     buffer;
+            crypt::encrypt(pData, data_length, buffer, current.crypt.options, current.crypt.password, initdata);
 
-			CryptHeaderWriter header(current.crypt.hmac);
-			header.create(current.crypt.options, initdata, &buffer[0], buffer.size());
+            CryptHeaderWriter header(current.crypt.hmac);
+            header.create(current.crypt.options, initdata, &buffer[0], buffer.size());
 
-			HWND hCurScintilla = helper::Scintilla::getCurrent();
-			::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
-			::SendMessage(hCurScintilla, SCI_TARGETFROMSELECTION, 0, 0);
-			::SendMessage(hCurScintilla, SCI_REPLACETARGET, header.size(), (LPARAM)header.c_str());
-			::SendMessage(hCurScintilla, SCI_SETSEL, sel_start + header.size(), sel_start + header.size());
-			::SendMessage(hCurScintilla, SCI_TARGETFROMSELECTION, 0, 0);
-			::SendMessage(hCurScintilla, SCI_REPLACETARGET, buffer.size(), (LPARAM)&buffer[0]);	
-			::SendMessage(hCurScintilla, SCI_SETSEL, sel_start, sel_start + header.size() + buffer.size());
-			::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
+            HWND hCurScintilla = helper::Scintilla::getCurrent();
+            ::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
+            ::SendMessage(hCurScintilla, SCI_TARGETFROMSELECTION, 0, 0);
+            ::SendMessage(hCurScintilla, SCI_REPLACETARGET, header.size(), (LPARAM)header.c_str());
+            ::SendMessage(hCurScintilla, SCI_SETSEL, sel_start + header.size(), sel_start + header.size());
+            ::SendMessage(hCurScintilla, SCI_TARGETFROMSELECTION, 0, 0);
+            ::SendMessage(hCurScintilla, SCI_REPLACETARGET, buffer.size(), (LPARAM)&buffer[0]);
+            ::SendMessage(hCurScintilla, SCI_SETSEL, sel_start, sel_start + header.size() + buffer.size());
+            ::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
 
-			current.crypt.password.clear();
-		}
-	} catch (std::exception& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (...) {
-		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
-	}
+            current.crypt.password.clear();
+        }
+    } catch (std::exception& exc) {
+        helper::Windows::error(nppData._nppHandle, exc.what());
+    } catch (...) {
+        ::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+    }
 }
 
 void DecryptDlg()
 {
-	try
-	{
-		const byte*	pData;
-		size_t		data_length;
-		size_t		sel_start;
+    try
+    {
+        const byte* pData;
+        size_t      data_length;
+        size_t      sel_start;
 
-		if (!helper::Scintilla::getSelection(&pData, &data_length, &sel_start)) {
-			return;
-		}
+        if (!helper::Scintilla::getSelection(&pData, &data_length, &sel_start)) {
+            return;
+        }
 
-		crypt::InitData		initdata;
-		CryptHeaderReader	header(current.crypt.hmac);		
+        crypt::InitData     initdata;
+        CryptHeaderReader   header(current.crypt.hmac);
 
-		/* parse header and check hmac if present */
-		bool header_found = header.parse(current.crypt.options, initdata, pData, data_length);
-		if (header_found) {
-			if (current.crypt.hmac.enable) {
-				if (current.crypt.hmac.keypreset_id < 0) {
-					if (!dlg_auth.doDialog()) {
-						return;
-					}
-					current.crypt.hmac.hash.key.set(dlg_auth.getInput());
-					if (!header.checkHMAC()) {
-						throwInfo(hmac_auth_failed);
-					}
-				} else {
-					if (current.crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
-						throwInvalid(invalid_keypreset_id);
-					} else {
-						current.crypt.hmac.hash.key.set(preferences.getKey(current.crypt.hmac.keypreset_id), 16);
-						if (!header.checkHMAC()) {
-							throwInfo(hmac_auth_failed);
-						}
-					}
-				}
-			}
-		}
+        /* parse header and check hmac if present */
+        bool header_found = header.parse(current.crypt.options, initdata, pData, data_length);
+        if (header_found) {
+            if (current.crypt.hmac.enable) {
+                if (current.crypt.hmac.keypreset_id < 0) {
+                    if (!dlg_auth.doDialog()) {
+                        return;
+                    }
+                    current.crypt.hmac.hash.key.set(dlg_auth.getInput());
+                    if (!header.checkHMAC()) {
+                        throwInfo(hmac_auth_failed);
+                    }
+                } else {
+                    if (current.crypt.hmac.keypreset_id >= preferences.getKeyNum()) {
+                        throwInvalid(invalid_keypreset_id);
+                    } else {
+                        current.crypt.hmac.hash.key.set(preferences.getKey(current.crypt.hmac.keypreset_id), 16);
+                        if (!header.checkHMAC()) {
+                            throwInfo(hmac_auth_failed);
+                        }
+                    }
+                }
+            }
+        }
 
-		if(dlg_crypt.decryptDialog(&current.crypt, &initdata.iv, NULL, !header_found)) {
+        if(dlg_crypt.decryptDialog(&current.crypt, &initdata.iv, NULL, !header_found)) {
 
-			/* check if salt or tag data is mising */
-			size_t need_salt_len = (current.crypt.options.key.salt_bytes > 0 && initdata.salt.size() != current.crypt.options.key.salt_bytes) ? current.crypt.options.key.salt_bytes : 0;
-			size_t need_tag_len = 0;
-			if (crypt::help::checkProperty(current.crypt.options.cipher, crypt::BLOCK)) {
-				if (current.crypt.options.mode == crypt::Mode::gcm && initdata.tag.size() != crypt::Constants::gcm_tag_size) {
-					need_tag_len = crypt::Constants::gcm_tag_size;
-				} else if (current.crypt.options.mode == crypt::Mode::ccm && initdata.tag.size() != crypt::Constants::ccm_tag_size) {
-					need_tag_len = crypt::Constants::ccm_tag_size;
-				} else if (current.crypt.options.mode == crypt::Mode::eax && initdata.tag.size() != crypt::Constants::eax_tag_size) {
-					need_tag_len = crypt::Constants::eax_tag_size;
-				}
-			}
-			if (need_salt_len > 0 || need_tag_len > 0) {
-				if (!dlg_initdata.doDialog(&initdata, need_salt_len, need_tag_len)) {
-					return;
-				}
-			}
+            /* check if salt or tag data is mising */
+            size_t need_salt_len = (current.crypt.options.key.salt_bytes > 0 && initdata.salt.size() != current.crypt.options.key.salt_bytes) ? current.crypt.options.key.salt_bytes : 0;
+            size_t need_tag_len = 0;
+            if (crypt::help::checkProperty(current.crypt.options.cipher, crypt::BLOCK)) {
+                if (current.crypt.options.mode == crypt::Mode::gcm && initdata.tag.size() != crypt::Constants::gcm_tag_size) {
+                    need_tag_len = crypt::Constants::gcm_tag_size;
+                } else if (current.crypt.options.mode == crypt::Mode::ccm && initdata.tag.size() != crypt::Constants::ccm_tag_size) {
+                    need_tag_len = crypt::Constants::ccm_tag_size;
+                } else if (current.crypt.options.mode == crypt::Mode::eax && initdata.tag.size() != crypt::Constants::eax_tag_size) {
+                    need_tag_len = crypt::Constants::eax_tag_size;
+                }
+            }
+            if (need_salt_len > 0 || need_tag_len > 0) {
+                if (!dlg_initdata.doDialog(&initdata, need_salt_len, need_tag_len)) {
+                    return;
+                }
+            }
 
-			std::basic_string<byte>	buffer;
-			decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, current.crypt.options, current.crypt.password, initdata);
-			helper::Scintilla::replaceSelection(buffer);
+            std::basic_string<byte> buffer;
+            decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, current.crypt.options, current.crypt.password, initdata);
+            helper::Scintilla::replaceSelection(buffer);
 
-			current.crypt.password.clear();
-		}
-	} catch (std::exception& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch(...) {
-		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
-	}
+            current.crypt.password.clear();
+        }
+    } catch (std::exception& exc) {
+        helper::Windows::error(nppData._nppHandle, exc.what());
+    } catch(...) {
+        ::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+    }
 }
 
 void HashDlg()
 {
-	try	{
-		dlg_hash.doDialog();
-	} catch (std::exception& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (...) {
-		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
-	}
+    try {
+        dlg_hash.doDialog();
+    } catch (std::exception& exc) {
+        helper::Windows::error(nppData._nppHandle, exc.what());
+    } catch (...) {
+        ::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+    }
 }
 
 void RandomDlg()
 {
-	try	{
-		dlg_random.doDialog();
-	} catch (std::exception& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (...) {
-		::MessageBox(nppData._nppHandle, TEXT("Unkown exception!"), TEXT("Error"), MB_OK);
-	}
+    try {
+        dlg_random.doDialog();
+    } catch (std::exception& exc) {
+        helper::Windows::error(nppData._nppHandle, exc.what());
+    } catch (...) {
+        ::MessageBox(nppData._nppHandle, TEXT("Unkown exception!"), TEXT("Error"), MB_OK);
+    }
 }
 
 void ConvertDlg()
 {
-	try	{
-		if (helper::Scintilla::getSelectionLength()) {
-			dlg_convert.doDialog();
-		}
-	} catch (std::exception& exc) {
-		helper::Windows::error(nppData._nppHandle, exc.what());
-	} catch (...) {
-		::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
-	}
+    try {
+        if (helper::Scintilla::getSelectionLength()) {
+            dlg_convert.doDialog();
+        }
+    } catch (std::exception& exc) {
+        helper::Windows::error(nppData._nppHandle, exc.what());
+    } catch (...) {
+        ::MessageBox(nppData._nppHandle, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+    }
 }
 
 void PreferencesDlg()
 {
-	dlg_preferences.doDialog();
+    dlg_preferences.doDialog();
 }
 
 void AboutDlg()
 {
-	dlg_about.doDialog();
+    dlg_about.doDialog();
 }

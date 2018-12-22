@@ -24,16 +24,16 @@ GNU General Public License for more details.
 class DlgAbout : public ModalDialog
 {
 public:
-						DlgAbout(): ModalDialog() {};
+                        DlgAbout(): ModalDialog() {};
 
 private:
-	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+    INT_PTR CALLBACK    run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	URLCtrl				github;
-	URLCtrl				cryptopp;
-	URLCtrl				tinyxml2;
-	URLCtrl				bcrypt;
-	URLCtrl				scrypt;
+    URLCtrl             github;
+    URLCtrl             cryptopp;
+    URLCtrl             tinyxml2;
+    URLCtrl             bcrypt;
+    URLCtrl             scrypt;
 };
 
 #endif

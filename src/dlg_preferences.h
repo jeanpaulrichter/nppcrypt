@@ -24,12 +24,12 @@ GNU General Public License for more details.
 class DlgPreferences: public ModalDialog
 {
 public:
-						DlgPreferences() : ModalDialog() {};
+                        DlgPreferences() : ModalDialog() {};
 
 private:
-	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+    INT_PTR CALLBACK    run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	URLCtrl				url_error;
+    URLCtrl             url_error;
 };
 
 #endif

@@ -25,36 +25,36 @@ GNU General Public License for more details.
 class HelpCtrl : public Window
 {
 public:
-	HelpCtrl();
-	~HelpCtrl();
-	void setup(HINSTANCE hInst, HWND hParent, HWND hCtrl, bool warning = false);
-	void setURL(const char* s, bool tooltip = false);
-	void enableURL(bool v);
-	void setTooltip(const char* s);
-	void enableTooltip(bool v);
-	void enable(bool v);
-	void setWarning(bool warning);
-	void destroy();
+    HelpCtrl();
+    ~HelpCtrl();
+    void setup(HINSTANCE hInst, HWND hParent, HWND hCtrl, bool warning = false);
+    void setURL(const char* s, bool tooltip = false);
+    void enableURL(bool v);
+    void setTooltip(const char* s);
+    void enableTooltip(bool v);
+    void enable(bool v);
+    void setWarning(bool warning);
+    void destroy();
 
 private:
-	std::wstring	s_url;
-	bool			url_active;
-	bool			hover;
-	bool			warning;
-	static HCURSOR	hCursor;
-	WNDPROC			oldproc;
-	HWND			hwnd_tooltip;
-	HICON			icon_disabled;
-	HICON			icons_normal[2];
-	HICON			icons_warning[2];
-	bool			icons_ready;
+    std::wstring    s_url;
+    bool            url_active;
+    bool            hover;
+    bool            warning;
+    static HCURSOR  hCursor;
+    WNDPROC         oldproc;
+    HWND            hwnd_tooltip;
+    HICON           icon_disabled;
+    HICON           icons_normal[2];
+    HICON           icons_warning[2];
+    bool            icons_ready;
 
-	void			_settooltip(LPWSTR s);
+    void            _settooltip(LPWSTR s);
 
-	static LRESULT CALLBACK HelpCtrlProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
-		return ((HelpCtrl *)(::GetWindowLongPtr(hwnd, GWLP_USERDATA)))->runProc(hwnd, Message, wParam, lParam);
-	};
-	LRESULT runProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
+    static LRESULT CALLBACK HelpCtrlProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
+        return ((HelpCtrl *)(::GetWindowLongPtr(hwnd, GWLP_USERDATA)))->runProc(hwnd, Message, wParam, lParam);
+    };
+    LRESULT runProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 };
 
 #endif

@@ -24,16 +24,16 @@ GNU General Public License for more details.
 class DlgConvert : public ModalDialog
 {
 public:
-						DlgConvert(crypt::Options::Convert& opt);
+                        DlgConvert(crypt::Options::Convert& opt);
 
 private:
-	INT_PTR CALLBACK	run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-	void				updateOptions();
-	void				enableOptions(bool v) const;
-	void				OnSourceChanged(crypt::Encoding enc) const;
-	void				OnTargetChanged(crypt::Encoding enc) const;
+    INT_PTR CALLBACK    run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+    void                updateOptions();
+    void                enableOptions(bool v) const;
+    void                OnSourceChanged(crypt::Encoding enc) const;
+    void                OnTargetChanged(crypt::Encoding enc) const;
 
-	crypt::Options::Convert&	options;
+    crypt::Options::Convert&    options;
 };
 
 #endif

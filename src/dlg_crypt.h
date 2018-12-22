@@ -33,102 +33,102 @@ GNU General Public License for more details.
 class DlgCrypt : public ModalDialog
 {
 public:
-		 DlgCrypt();
+         DlgCrypt();
     void destroy();
-	bool encryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename = NULL);
-	bool decryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename = NULL, bool disable_easymode = false);
+    bool encryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename = NULL);
+    bool decryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename = NULL, bool disable_easymode = false);
 
 private:
-	enum class Operation { Encryption, Decryption };
+    enum class Operation { Encryption, Decryption };
 
-	/* global message callback */
-	INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+    /* global message callback */
+    INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	bool setup(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename);
-	void setupDialog();
-	void changeActiveTab(int id);
-	void setModus(CryptInfo::Modus modus);
+    bool setup(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename);
+    void setupDialog();
+    void changeActiveTab(int id);
+    void setModus(CryptInfo::Modus modus);
 
-	bool prepareOptionsAdvanced();
-	bool prepareOptionsEasy();
-	bool OnClickOKAdvanced();
-	bool OnClickOKEasy();
+    bool prepareOptionsAdvanced();
+    bool prepareOptionsEasy();
+    bool OnClickOKAdvanced();
+    bool OnClickOKEasy();
 
-	/* methods to validate user-input: */
-	void checkSpinControlValue(int ctrlID);
-	bool checkPassword(crypt::secure_string& s, bool strict);
-	bool checkCustomIV(crypt::UserData& data, bool reencode);
-	bool checkHMACKey(crypt::UserData& data, bool reencode);
-	
-	/* methods to change controls based on current selection */
-	void updateEncodingControls(crypt::Encoding enc);
-	void updateHashDigestControl(crypt::Hash h, HWND hwnd, int ctrlID);
-	void updateKeyDerivationControls();
-	void updateCipherControls();
-	void updateHMACKeyControls();
-	void updateCipherInfo();
-	void updateIVControls();	
-	
-	Operation				operation;
-	const std::wstring*		filename;
-	CryptInfo*				crypt;
-	crypt::UserData*		ivdata;
-	bool					confirm_password;
-	bool					no_easymode;
+    /* methods to validate user-input: */
+    void checkSpinControlValue(int ctrlID);
+    bool checkPassword(crypt::secure_string& s, bool strict);
+    bool checkCustomIV(crypt::UserData& data, bool reencode);
+    bool checkHMACKey(crypt::UserData& data, bool reencode);
 
-	struct CurStatus
-	{
-		CurStatus() : tab(-1), iv_length(0), key_length(0) {};
+    /* methods to change controls based on current selection */
+    void updateEncodingControls(crypt::Encoding enc);
+    void updateHashDigestControl(crypt::Hash h, HWND hwnd, int ctrlID);
+    void updateKeyDerivationControls();
+    void updateCipherControls();
+    void updateHMACKeyControls();
+    void updateCipherInfo();
+    void updateIVControls();
 
-		CryptInfo::Modus		modus;
-		crypt::Cipher			cipher;
-		crypt::Mode				mode;
-		crypt::KeyDerivation	key_derivation;
-		crypt::secure_string	password;
-		int						tab;
-		size_t					iv_length;
-		size_t					key_length;
-	} current;
+    Operation               operation;
+    const std::wstring*     filename;
+    CryptInfo*              crypt;
+    crypt::UserData*        ivdata;
+    bool                    confirm_password;
+    bool                    no_easymode;
 
-	struct InvalidInput
-	{
-		InvalidInput() : password(false), iv(false), hmac_key(false), brush(NULL) {};
+    struct CurStatus
+    {
+        CurStatus() : tab(-1), iv_length(0), key_length(0) {};
 
-		bool	password;
-		bool	iv;
-		bool	hmac_key;
-		HBRUSH	brush;
-	} invalid;
+        CryptInfo::Modus        modus;
+        crypt::Cipher           cipher;
+        crypt::Mode             mode;
+        crypt::KeyDerivation    key_derivation;
+        crypt::secure_string    password;
+        int                     tab;
+        size_t                  iv_length;
+        size_t                  key_length;
+    } current;
 
-	struct MainDialogs
-	{
-		HWND tab;
-		HWND easy;
-	} dialogs;
+    struct InvalidInput
+    {
+        InvalidInput() : password(false), iv(false), hmac_key(false), brush(NULL) {};
 
-	struct TabDialogs
-	{
-		TabDialogs() : basic(NULL), encoding(NULL), key(NULL), iv(NULL), auth(NULL){};
+        bool    password;
+        bool    iv;
+        bool    hmac_key;
+        HBRUSH  brush;
+    } invalid;
 
-		HWND basic;
-		HWND encoding;
-		HWND key;
-		HWND iv;
-		HWND auth;		
-	} tab;
+    struct MainDialogs
+    {
+        HWND tab;
+        HWND easy;
+    } dialogs;
 
-	struct HelpControls
-	{
-		HelpCtrl cipher;
-		HelpCtrl mode;
-		HelpCtrl auth_ivsalt;
-		HelpCtrl encoding;
-		HelpCtrl salt;
-		HelpCtrl keyalgorithm;
-		HelpCtrl iv;
-		HelpCtrl auth;
-		HelpCtrl easymode;
-	} help;
+    struct TabDialogs
+    {
+        TabDialogs() : basic(NULL), encoding(NULL), key(NULL), iv(NULL), auth(NULL){};
+
+        HWND basic;
+        HWND encoding;
+        HWND key;
+        HWND iv;
+        HWND auth;
+    } tab;
+
+    struct HelpControls
+    {
+        HelpCtrl cipher;
+        HelpCtrl mode;
+        HelpCtrl auth_ivsalt;
+        HelpCtrl encoding;
+        HelpCtrl salt;
+        HelpCtrl keyalgorithm;
+        HelpCtrl iv;
+        HelpCtrl auth;
+        HelpCtrl easymode;
+    } help;
 };
 
 

@@ -26,31 +26,31 @@ GNU General Public License for more details.
 class DlgHash : public ModalDialog
 {
 public:
-						DlgHash(crypt::Options::Hash& opt);
-	void				destroy();
+            DlgHash(crypt::Options::Hash& opt);
+    void    destroy();
 
 private:
-	/**** messagehandler ****/
-	INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+    /**** messagehandler ****/
+    INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-	/**** update this->options ****/
-	bool prepareOptions();
-	/**** make sure custom key is valid ****/
-	bool checkKey(bool updatedata);
+    /**** update this->options ****/
+    bool prepareOptions();
+    /**** make sure custom key is valid ****/
+    bool checkKey(bool updatedata);
 
-	/**** update dialog on change of algorithm ****/
-	void onChangeAlgorithm(size_t digest = 0);
-	/**** enable/disable key-controls ****/
-	void updateKeyControls(bool enable);
-	/**** update encoding controls ****/
-	void updateEncodingControls(crypt::Encoding enc);
-	
-	crypt::Options::Hash&	options;
-	size_t					keylength;
-	bool					invalid_key;
-	HelpCtrl				help_enc;
-	HelpCtrl				help_hash;
-	HBRUSH					brush_red;
+    /**** update dialog on change of algorithm ****/
+    void onChangeAlgorithm(size_t digest = 0);
+    /**** enable/disable key-controls ****/
+    void updateKeyControls(bool enable);
+    /**** update encoding controls ****/
+    void updateEncodingControls(crypt::Encoding enc);
+
+    crypt::Options::Hash&   options;
+    size_t                  keylength;
+    bool                    invalid_key;
+    HelpCtrl                help_enc;
+    HelpCtrl                help_hash;
+    HBRUSH                  brush_red;
 };
 
 #endif
