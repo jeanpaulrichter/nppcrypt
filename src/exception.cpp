@@ -84,9 +84,9 @@ const char* ExcInfo::messages[] = {
 
 const char* ExcInfo::urls[] = {
     NULL,
-    "hmac authentification failed.",
-    "wrong header version.",
-    "https://www.github.com/jeanpaulrichter/nppcrypt/nppcryptfiles"
+    "https://github.com/jeanpaulrichter/nppcrypt#faq_5",
+    "https://github.com/jeanpaulrichter/nppcrypt#faq_4",
+    "https://github.com/jeanpaulrichter/nppcrypt#faq_2"
 };
 
 const char* ExcInfo::url_captions[] = {

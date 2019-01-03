@@ -450,7 +450,7 @@ void DlgCrypt::setupDialog()
 
     dialogs.easy = CreateDialogParam(hinst, MAKEINTRESOURCE(IDD_CRYPT_EASYMODE), _hSelf, (DLGPROC)dlgProc, (LPARAM)this);
     help.easymode.setup(_hInst, dialogs.easy, ::GetDlgItem(dialogs.easy, IDC_CRYPT_HELP_EASY));
-    help.easymode.setURL(NPPC_ABOUT_GITHUB);
+    help.easymode.setURL(NPPC_EASYMODE_HELP_URL);
 
     RECT rc;
     GetClientRect(dialogs.tab, &rc);
