@@ -567,7 +567,7 @@ void crypt::help::validate(Options::Convert options, bool exceptions)
 {
     if (options.from == options.to) {
         if (exceptions) {
-            throwInvalid(convert_target);
+            throwInvalid(invalid_convert_target_enc);
         } else {
             if (options.to == Encoding::ascii) {
                 options.to = Encoding::base16;

@@ -118,7 +118,7 @@ bool CryptHeaderReader::parse(crypt::Options::Crypt& options, crypt::InitData& i
             throwInvalid(invalid_cipher);
         }
         if (!crypt::help::getUnsigned(xml_crypt->Attribute("key-length"), t_options.key.length)) {
-            throwInvalid(keylength_missing);
+            throwInvalid(missing_keylength);
         }
         if (crypt::help::checkProperty(t_options.cipher, crypt::BLOCK)) {
             if (!crypt::help::getCipherMode(xml_crypt->Attribute("mode"), t_options.mode)) {

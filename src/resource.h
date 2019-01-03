@@ -188,6 +188,8 @@ GNU General Public License for more details.
 #define IDC_INITDATA_TAG                1002
 #define IDC_INITDATA_SALT_ENC           1003
 #define IDC_INITDATA_TAG_ENC            1004
+#define IDC_INITDATA_SALT_LABEL         1005
+#define IDC_INITDATA_TAG_LABEL          1006
 
 #define IDC_AUTH_KEY                    1000
 #define IDC_AUTH_KEY_ENC                1001

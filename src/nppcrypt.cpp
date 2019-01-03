@@ -180,7 +180,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
                 CryptHeaderReader       header(crypt.hmac);
 
                 if (!header.parse(crypt.options, initdata, pData, data_length)) {
-                    throwInvalid(no_header);
+                    throwInvalid(missing_header);
                 }
 
                 if(crypt.hmac.enable) {

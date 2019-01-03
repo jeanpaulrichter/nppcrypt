@@ -33,11 +33,12 @@ const char* ExcError::messages[] = {
     "conversion to wchar failed.",
     "failed to read preferences-files.",
     "failed to parse preferences-file.",
-    "failed to create header."
+    "failed to create header.",
+    "failed to write to output file.",
+    "failed to read input file."
 };
 
 const char* ExcInvalid::messages[] = {
-    "no header found.",
     "invalid key-preset id.",
     "invalid cipher mode.",
     "invalid key-length.",
@@ -48,22 +49,30 @@ const char* ExcInvalid::messages[] = {
     "invalid bcrypt salt-length (must be 16 bytes).",
     "invalid line-length.",
     "hash does not support this digest-length.",
-    "hash does not support key.",
-    "hash requires key.",
-    "cannot convert encoding.",
-    "invalid header.",
+    "invalid header.",    
     "failed to parse header version.",
     "invalid hmac-data.",
     "invalid hmac-hash.",
     "invalid cipher.",
-    "missing key-length.",
-    "missing cipher-mode.",
     "invalid encoding.",
     "invalid keyderivation.",
     "failed to parse salt-vector.",
     "failed to parse IV.",
     "failed to parse tag-vector",
-    "failed to parse aad flag"
+    "failed to parse aad flag",
+    "invalid hash.",
+    "failed to parse hash-key.",
+    "invalid action parameter.",
+    "cannot convert to same encoding.",
+    "no header found.",
+    "missing key-length.",
+    "missing cipher-mode.",
+    "missing hmac-key.",
+    "missing IV.",
+    "missing Salt.",
+    "hash does not support key.",
+    "hash requires key.",
+    "only decryption of utf8 file possible."
 };
 
 const char* ExcInfo::messages[] = {

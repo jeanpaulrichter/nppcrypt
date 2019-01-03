@@ -35,7 +35,9 @@ public:
         wchar_conversion,
         preffile_read,
         preffile_parse,
-        header_write_failed
+        header_write_failed,
+        failed_to_write_file,
+        failed_to_read_file
     };
     ExcError(ID id, const char* func, unsigned int line) noexcept;
     const char *what() const noexcept {
@@ -52,7 +54,6 @@ class ExcInvalid : public std::exception
 {
 public:
     enum class ID : unsigned {
-        no_header,
         invalid_keypreset_id,
         invalid_mode,
         invalid_keylength,
@@ -63,22 +64,30 @@ public:
         invalid_bcrypt_saltlength,
         invalid_linelength,
         invalid_hash_digestlen,
-        hash_without_keysupport,
-        hash_requires_key,
-        convert_target,
         invalid_header,
         invalid_header_version,
         invalid_hmac_data,
         invalid_hmac_hash,
         invalid_cipher,
-        keylength_missing,
-        cipher_mode_missing,
         invalid_encoding,
         invalid_keyderivation,
         invalid_salt,
         invalid_iv,
         invalid_tag,
-        invalid_aad_flag
+        invalid_aad_flag,
+        invalid_hash,
+        invalid_hash_key,
+        invalid_cmdline_action,
+        invalid_convert_target_enc,
+        missing_header,
+        missing_keylength,
+        missing_cipher_mode,
+        missing_hmac_key,
+        missing_iv,
+        missing_salt,
+        hash_without_keysupport,
+        hash_requires_key,
+        cmdline_only_utf8
     };
     ExcInvalid(ID id) noexcept : id(id) {};
     const char *what() const noexcept {

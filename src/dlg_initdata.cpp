@@ -59,10 +59,28 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 
         ::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT, EM_LIMITTEXT, 1024, 0);
         ::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG, EM_LIMITTEXT, 1024, 0);
-        ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_SALT), (saltlength > 0));
-        ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_SALT_ENC), (saltlength > 0));
-        ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_TAG), (taglength > 0));
-        ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_TAG_ENC), (taglength > 0));
+
+        if (saltlength > 0) {
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_SALT), true);
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_SALT_ENC), true);
+            std::wostringstream slabel;
+            slabel << "salt (" << saltlength << " bytes):";
+            ::SetWindowText(::GetDlgItem(_hSelf, IDC_INITDATA_SALT_LABEL), slabel.str().c_str());
+        } else {
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_SALT), false);
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_SALT_ENC), false);
+        }
+
+        if (taglength > 0) {
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_TAG), true);
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_TAG_ENC), true);
+            std::wostringstream slabel;
+            slabel << "tag (" << taglength << " bytes):";
+            ::SetWindowText(::GetDlgItem(_hSelf, IDC_INITDATA_TAG_LABEL), slabel.str().c_str());
+        } else {
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_TAG), false);
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_INITDATA_TAG_ENC), false);
+        }
 
         goToCenter();
         return TRUE;

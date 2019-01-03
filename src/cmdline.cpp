@@ -504,10 +504,10 @@ namespace check
             }
             if (!hmac.hash.key.size()) {
                 if (*opt.nointeraction) {
-                    throw std::exception("hmac key missing.");
+                    throwInvalid(missing_hmac_key);
                 }
                 if (!help::getUserInput("enter HMAC key", hmac.hash.key, crypt::Encoding::ascii, 2, true, false)) {
-                    throw std::exception("hmac key missing.");
+                    throwInvalid(missing_hmac_key);
                 }
             }
         }
@@ -545,16 +545,16 @@ namespace check
             } else {
                 options.iv = crypt::IV::custom;
                 if (!help::setUserData(args.iv.c_str(), args.iv.size(), iv, crypt::Encoding::base64)) {
-                    throw std::exception("IV missing.");
+                    throwInvalid(missing_iv);
                 }
             }
         }
         if (decryption && (options.iv != crypt::IV::zero && options.iv != crypt::IV::keyderivation) && !iv.size()) {
             if (*opt.nointeraction) {
-                throw std::exception("IV missing.");
+                throwInvalid(missing_iv);
             }
             if (!help::getUserInput("IV data missing. please specify", iv, crypt::Encoding::base64, 2, false, true)) {
-                throw std::exception("IV missing.");
+                throwInvalid(missing_iv);
             }
         }
     }
@@ -568,10 +568,10 @@ namespace check
         }
         if (options.key.salt_bytes > 0 && !salt.size()) {
             if (*opt.nointeraction) {
-                throw std::exception("Salt missing.");
+                throwInvalid(missing_salt);
             }
             if (!help::getUserInput("salt data missing. please specify", salt, crypt::Encoding::base64, 2, false, true)) {
-                throw std::exception("Salt missing.");
+                throwInvalid(missing_salt);
             }
         }
     }
@@ -590,7 +590,7 @@ namespace check
         if (opt.output->count()) {
             std::fstream f(args.output, std::ios::out | std::ios::binary);
             if (!f.is_open()) {
-                throw std::exception("failed to write output-file.");
+                throwError(failed_to_write_file);
             }
             f.close();
         }
@@ -603,12 +603,12 @@ namespace check
         help::splitArgument(args.hash, pos, ':');
 
         if (!crypt::help::getHash(args.hash.c_str(), options.algorithm)) {
-            throw std::exception("invalid hash");
+            throwInvalid(invalid_hash);
         }
         if (pos.size() > 1) {
             options.digest_length = std::atoi(&args.hash[pos[1]]) / 8;
             if (!crypt::help::checkHashDigest(options.algorithm, options.digest_length)) {
-                throw std::exception("invalid hash");
+                throwInvalid(invalid_hash);
             }
         } else {
             options.digest_length = 0;
@@ -617,10 +617,10 @@ namespace check
         if (opt.hash_key->count()) {
             if (!help::setUserData(args.hash_key.c_str(), args.hash_key.size(), options.key, crypt::Encoding::ascii)) {
                 if (*opt.nointeraction) {
-                    throw std::exception("invalid hash-key.");
+                    throwInvalid(invalid_hash_key);
                 }
                 if (!help::getUserInput("enter key", options.key, crypt::Encoding::ascii, 2, true, false)) {
-                    throw std::exception("invalid hash-key.");
+                    throwInvalid(invalid_hash_key);
                 }
             }
             options.use_key = true;
@@ -641,7 +641,7 @@ namespace check
         }
 
         if (crypt::help::checkProperty(options.algorithm, crypt::KEY_REQUIRED) && !options.use_key) {
-            throw std::exception("key required");
+            throwInvalid(hash_requires_key);
         }
     }
 }
@@ -737,7 +737,7 @@ void hash(const std::string& filename)
         std::string temp = out.str();
         FileWriter fout(args.output);
         if (!fout.write((const crypt::byte*)temp.c_str(), temp.size())) {
-            throw std::exception("failed to write output-file.");
+            throwError(failed_to_write_file);
         }
     } else {
         std::cout << out.str();
@@ -782,14 +782,14 @@ void hash(const crypt::byte* input, size_t input_length)
         crypt::hash(options, buffer, { { input, input_length } });
         out << crypt::help::getString(options.algorithm) << "-" << options.digest_length * 8 << ": " << (const char*)buffer.c_str() << std::endl;
     } else {
-        throw std::exception("invalid hash.");
+        throwInvalid(invalid_hash);
     }
     
     if (opt.output->count()) {
         std::string temp = out.str();
         FileWriter fout(args.output);
         if (!fout.write((const crypt::byte*)temp.c_str(), temp.size())) {
-            throw std::exception("failed to write output-file.");
+            throwError(failed_to_write_file);
         }
     } else {
         std::cout << out.str();
@@ -806,7 +806,7 @@ void decrypt(const crypt::byte* input, size_t input_length, File::BOM bom)
     crypt::InitData                   init;
 
     if (bom != File::BOM::utf8 && bom != File::BOM::none) {
-        throw std::exception("only decryption of utf8 file possible.");
+        throwInvalid(cmdline_only_utf8);
     }
 
     bool verbose = !*opt.silent;
@@ -836,7 +836,7 @@ void decrypt(const crypt::byte* input, size_t input_length, File::BOM bom)
             if (hmac.keypreset_id >= 0) {
                 std::cout << "hmac authentication skipped (presets not available)." << std::endl;
             } else if (!header.checkHMAC()) {
-                throw std::exception("HMAC authentication failed.");
+                throwInfo(hmac_auth_failed);
             }
         }
         crypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), outputData, options, password, init);
@@ -846,7 +846,7 @@ void decrypt(const crypt::byte* input, size_t input_length, File::BOM bom)
     if (opt.output->count()) {
         FileWriter fout(args.output, bom);
         if (!fout.write(outputData.c_str(), outputData.size())) {
-            throw std::exception("failed to write output file.");
+            throwError(failed_to_write_file);
         }
     } else {
         std::cout << outputData.c_str() << std::endl;
@@ -890,7 +890,7 @@ void encrypt(const crypt::byte* input, size_t input_length)
     if (write_to_file) {
         FileWriter fout(args.output);
         if (!fout.write(outputData.c_str(), outputData.size(), header.c_str(), header.size())) {
-            throw std::exception("failed to write output file.");
+            throwError(failed_to_write_file);
         }
         if (verbose || !create_header) {
             print::initdata(options, init);
@@ -947,7 +947,7 @@ int main(int argc, char** argv)
             } else if (args.action.compare("enc") == 0) {
                 action = Action::encrypt;
             } else {
-                throw std::exception("invalid action");
+                throwInvalid(invalid_cmdline_action);
             }
         }
         
@@ -959,7 +959,7 @@ int main(int argc, char** argv)
                 FileReader fin(args.input);
                 bom = fin.getBOM();
                 if (!fin.getData(inputData)) {
-                    throw std::exception("failed to read file");
+                    throwError(failed_to_read_file);
                 }
             }
             if (!*opt.silent) {
