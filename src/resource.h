@@ -30,6 +30,8 @@ GNU General Public License for more details.
 #define IDD_CONVERT                     112
 #define IDD_INITDATA                    113
 #define IDD_CRYPT_EASYMODE              114
+#define IDD_INFO                        115
+#define IDD_MSGBOX                      116
 
 #define IDC_STATIC                      -1
 #define IDC_OK                          998
@@ -40,6 +42,9 @@ GNU General Public License for more details.
 #define IDI_HELPCTRL_WARNING            203
 #define IDI_HELPCTRL_WARNING_HOVER      204
 #define IDI_HELPCTRL_DISABLED           205
+#define IDI_MSGBOX_INFO                 206
+#define IDI_MSGBOX_ERROR                207
+#define IDI_MSGBOX_WARNING              208
 
 #define IDC_CRYPT_TAB                   1000
 #define IDC_CRYPT_CIPHER                1001
@@ -194,3 +199,8 @@ GNU General Public License for more details.
 #define IDC_ABOUT_TINYXML2              1003
 #define IDC_ABOUT_BCRYPT                1004
 #define IDC_ABOUT_SCRYPT                1005
+
+#define IDC_MSGBOX_TEXT                 1000
+#define IDC_MSGBOX_LINK                 1001
+#define IDC_MSGBOX_GROUP                1002
+#define IDC_MSGBOX_ICON                 1003

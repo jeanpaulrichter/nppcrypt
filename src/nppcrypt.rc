@@ -356,8 +356,24 @@ LTEXT           ",", IDC_STATIC, 149, 36, 6, 10
 LTEXT           ",", IDC_STATIC, 176, 36, 6, 10
 END
 
-IDI_HELPCTRL_NORMAL               ICON                    "icons\\help_normal.ico"
-IDI_HELPCTRL_NORMAL_HOVER         ICON                    "icons\\help_normal_hover.ico"
-IDI_HELPCTRL_WARNING              ICON                    "icons\\help_warning.ico"
-IDI_HELPCTRL_WARNING_HOVER        ICON                    "icons\\help_warning_hover.ico"
-IDI_HELPCTRL_DISABLED             ICON                    "icons\\help_disabled.ico"
+IDD_MSGBOX DIALOGEX 0, 0, 215, 70
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+FONT 8, "MS Shell Dlg"
+BEGIN
+GROUPBOX        "", IDC_MSGBOX_GROUP, 5, 1, 205, 50
+ICON             "", IDC_MSGBOX_ICON, 9, 6, 22, 22
+LTEXT           "", IDC_MSGBOX_TEXT, 36, 10, 168, 28
+LTEXT           "more", IDC_MSGBOX_LINK, 36, 38, 168, 8
+PUSHBUTTON      "OK", IDOK, 93, 53, 50, 14, BS_FLAT
+END
+
+
+IDI_HELPCTRL_NORMAL                 ICON                    "icons/help_normal.ico"
+IDI_HELPCTRL_NORMAL_HOVER           ICON                    "icons/help_normal_hover.ico"
+IDI_HELPCTRL_WARNING                ICON                    "icons/help_warning.ico"
+IDI_HELPCTRL_WARNING_HOVER          ICON                    "icons/help_warning_hover.ico"
+IDI_HELPCTRL_DISABLED               ICON                    "icons/help_disabled.ico"
+IDI_MSGBOX_INFO                     ICON                    "icons/msgbox_info.ico"
+IDI_MSGBOX_ERROR                    ICON                    "icons/msgbox_error.ico"
+IDI_MSGBOX_WARNING                  ICON                    "icons/msgbox_warning.ico"

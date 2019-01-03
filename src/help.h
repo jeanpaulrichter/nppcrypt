@@ -23,9 +23,9 @@ GNU General Public License for more details.
 #include "npp\PluginInterface.h"
 #include "crypt.h"
 
-namespace helper
+namespace help
 {
-    namespace Scintilla
+    namespace scintilla
     {
         HWND            getCurrent();
         void            replaceSelection(const std::basic_string<byte>& buffer);
@@ -34,7 +34,7 @@ namespace helper
         bool            getSelection(const byte** pdata, size_t* length, size_t* start = NULL, size_t* end = NULL);
     };
 
-    namespace Buffer
+    namespace buffer
     {
         uptr_t          getCurrent();
         bool            is8Bit(uptr_t);
@@ -42,7 +42,7 @@ namespace helper
         void            getPath(uptr_t bufferid, std::wstring& path, std::wstring& filename, std::wstring& extension);
     };
 
-    namespace Windows
+    namespace windows
     {
         void            copyToClipboard(const unsigned char* s, size_t len);
         void            copyToClipboard(const std::basic_string<byte>& buffer);
@@ -71,9 +71,6 @@ namespace helper
                     }
                 }
             }
-            ~ToWCHAR() {
-                buf = L"FUCK";
-            }
             const wchar_t* c_str() {
                 return buf.c_str();
             }
@@ -83,7 +80,7 @@ namespace helper
 
     };
 
-    namespace NPP
+    namespace npp
     {
         HINSTANCE       getDLLHandle();
         HWND            getWindow();

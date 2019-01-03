@@ -115,7 +115,7 @@ void URLCtrl::create(HWND itemHandle, const char* link, COLORREF linkColor, bool
 	// set the URL text (not the display text)	
 	if (link) {
 		try {
-			helper::Windows::utf8_to_wchar(link, (int)strlen(link), _URL);
+			help::windows::utf8_to_wchar(link, (int)strlen(link), _URL);
 		} catch (...) {
 			_URL = TEXT("error");
 		}
@@ -182,7 +182,7 @@ void URLCtrl::changeURL(const char* url)
 {
 	if (url) {
 		try {
-			helper::Windows::utf8_to_wchar(url, (int)strlen(url), _URL);
+			help::windows::utf8_to_wchar(url, (int)strlen(url), _URL);
 		} catch (...) {
 			_URL.clear();
 		}

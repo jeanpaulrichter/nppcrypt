@@ -22,6 +22,7 @@ GNU General Public License for more details.
 #include "npp/Definitions.h"
 #include "help.h"
 #include "crypt_help.h"
+#include "messagebox.h"
 
 DlgHash::DlgHash(crypt::Options::Hash& opt) : ModalDialog(), options(opt)
 {
@@ -46,7 +47,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
         }
         invalid_key = false;
 
-        if(!helper::Buffer::isCurrent8Bit()) {
+        if(!help::buffer::isCurrent8Bit()) {
             if (options.encoding == crypt::Encoding::ascii) {
                 options.encoding = crypt::Encoding::base16;
                 ::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_ENC_ASCII), false);
@@ -58,7 +59,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
         ::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE64, BM_SETCHECK, (options.encoding == crypt::Encoding::base64), 0);
 
         for(crypt::help::Hashnames it; *it; ++it) {
-            ::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)helper::Windows::ToWCHAR(*it).c_str());
+            ::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
         }
         ::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_SETCURSEL, (int)options.algorithm, 0);
 
@@ -106,19 +107,21 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
                     if (!prepareOptions()) {
                         return TRUE;
                     }
-                    helper::Scintilla::getSelection(&pdata, &data_length);
+                    help::scintilla::getSelection(&pdata, &data_length);
                     crypt::hash(options, buffer, { { pdata, data_length} });
                     if (LOWORD(wParam) == IDC_OK) {
-                        helper::Scintilla::replaceSelection(buffer);
+                        help::scintilla::replaceSelection(buffer);
                     } else {
-                        helper::Windows::copyToClipboard(buffer);
+                        help::windows::copyToClipboard(buffer);
                     }
                     options.key.clear();
                     EndDialog(_hSelf, IDC_OK);
                 } catch (std::exception& exc) {
-                    helper::Windows::error(_hSelf, exc.what());
+                    msgbox::error(_hSelf, exc.what());
+                    return false;
                 } catch (...) {
-                    ::MessageBox(_hSelf, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+                    msgbox::error(_hSelf, "unknown exception!");
+                    return false;
                 }
                 break;
             }

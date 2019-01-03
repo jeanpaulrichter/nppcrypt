@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #include "exception.h"
 #include "crypt_help.h"
 #include <sstream>
+#include "messagebox.h"
 
 DlgCrypt::DlgCrypt() : ModalDialog()
 {
@@ -284,7 +285,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
                 int category = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER_TYPE, CB_GETCURSEL, 0, 0);
                 ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_RESETCONTENT, 0, 0);
                 for (crypt::help::CipherNames it(category); *it; ++it) {
-                    ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_ADDSTRING, 0, (LPARAM)helper::Windows::ToWCHAR(*it).c_str());
+                    ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
                 }
                 ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_SETCURSEL, 0, 0);
                 updateCipherControls();
@@ -440,7 +441,7 @@ void DlgCrypt::setupDialog()
     tie.pszText = TEXT("auth");
     TabCtrl_InsertItem(dialogs.tab, 4, &tie);
 
-    HINSTANCE hinst = helper::NPP::getDLLHandle();
+    HINSTANCE hinst = help::npp::getDLLHandle();
     tab.basic = CreateDialogParam(hinst, MAKEINTRESOURCE(IDD_CRYPT_BASIC), dialogs.tab, (DLGPROC)dlgProc, (LPARAM)this);
     tab.key = CreateDialogParam(hinst, MAKEINTRESOURCE(IDD_CRYPT_KEY), dialogs.tab, (DLGPROC)dlgProc, (LPARAM)this);
     tab.auth = CreateDialogParam(hinst, MAKEINTRESOURCE(IDD_CRYPT_AUTH), dialogs.tab, (DLGPROC)dlgProc, (LPARAM)this);
@@ -467,12 +468,12 @@ void DlgCrypt::setupDialog()
     int category = crypt::help::getCipherCategory(current.cipher);
 
     for (crypt::help::CipherCategories it; *it; ++it) {
-        ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER_TYPE, CB_ADDSTRING, 0, (LPARAM)helper::Windows::ToWCHAR(*it).c_str());
+        ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER_TYPE, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
     }
     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER_TYPE, CB_SETCURSEL, category, 0);
     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_RESETCONTENT, 0, 0);
     for (crypt::help::CipherNames it(category); *it; ++it) {
-        ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_ADDSTRING, 0, (LPARAM)helper::Windows::ToWCHAR(*it).c_str());
+        ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
     }
     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_SETCURSEL, crypt::help::getCipherIndex(current.cipher), 0);
 
@@ -495,7 +496,7 @@ void DlgCrypt::setupDialog()
 
     // ------- Encoding
     // no binary output if buffer is 16 bit
-    if (operation == Operation::Encryption && !helper::Buffer::isCurrent8Bit()) {
+    if (operation == Operation::Encryption && !help::buffer::isCurrent8Bit()) {
         if (crypt->options.encoding.enc == crypt::Encoding::ascii) {
             crypt->options.encoding.enc = crypt::Encoding::base16;
         }
@@ -535,7 +536,7 @@ void DlgCrypt::setupDialog()
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_SALT, BM_SETCHECK, (crypt->options.key.salt_bytes > 0), 0);
 
     for (crypt::help::Hashnames it(crypt::HMAC_SUPPORT); *it; ++it) {
-        ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_ADDSTRING, 0, (LPARAM)helper::Windows::ToWCHAR(*it).c_str());
+        ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
     }
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETRANGE32, crypt::Constants::pbkdf2_iter_min, crypt::Constants::pbkdf2_iter_max);
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(tab.key, IDC_CRYPT_PBKDF2_ITER), 0);
@@ -622,7 +623,7 @@ void DlgCrypt::setupDialog()
     // ------- Auth
     ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_SETCHECK, crypt->hmac.enable, 0);
     for(crypt::help::Hashnames it(crypt::HMAC_SUPPORT); *it; ++it) {
-        ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_ADDSTRING, 0, (LPARAM)helper::Windows::ToWCHAR(*it).c_str());
+        ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
     }
     ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_SETCURSEL, crypt::help::getHashIndex(crypt->hmac.hash.algorithm, crypt::HMAC_SUPPORT), 0);
     updateHashDigestControl(crypt->hmac.hash.algorithm, tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH);
@@ -924,7 +925,10 @@ bool DlgCrypt::prepareOptionsAdvanced()
         setText(IDC_CRYPT_PASSWORD_ADVANCED, current.password, tab.basic);
         current.password.clear();
     } catch (std::exception& exc) {
-        helper::Windows::error(_hSelf, exc.what());
+        msgbox::error(_hSelf, exc.what());
+        return false;
+    } catch (...) {
+        msgbox::error(_hSelf, "unknown exception!");
         return false;
     }
     return true;
@@ -1405,7 +1409,7 @@ void DlgCrypt::updateCipherControls()
     // refill combobox with the modes available for the current cipher:
     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_RESETCONTENT, 0, 0);
     for (crypt::help::CipherModes it(current.cipher); *it; ++it) {
-        ::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_ADDSTRING, 0, (LPARAM)helper::Windows::ToWCHAR(*it).c_str());
+        ::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
     }
 
     int cur_mode_count = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_GETCOUNT, 0, 0);

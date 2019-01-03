@@ -21,12 +21,13 @@ GNU General Public License for more details.
 #include "preferences.h"
 #include "npp/PluginInterface.h"
 #include "npp/Definitions.h"
+#include "messagebox.h"
 
 extern NppData      nppData;
 extern HINSTANCE    m_hInstance;
 extern FuncItem     funcItem[NPPC_FUNC_COUNT];
 
-HWND helper::Scintilla::getCurrent()
+HWND help::scintilla::getCurrent()
 {
     int which = -1;
     ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTSCINTILLA, 0, (LPARAM)&which);
@@ -39,15 +40,15 @@ HWND helper::Scintilla::getCurrent()
     }
 }
 
-size_t helper::Scintilla::getSelectionLength()
+size_t help::scintilla::getSelectionLength()
 {
-    HWND hCurScintilla = helper::Scintilla::getCurrent();
+    HWND hCurScintilla = help::scintilla::getCurrent();
     size_t selStart = ::SendMessage(hCurScintilla, SCI_GETSELECTIONSTART, 0, 0);
     size_t selEnd = ::SendMessage(hCurScintilla, SCI_GETSELECTIONEND, 0, 0);
     return selEnd - selStart;
 }
 
-bool helper::Scintilla::getSelection(const byte** pdata, size_t* length, size_t* start, size_t* end)
+bool help::scintilla::getSelection(const byte** pdata, size_t* length, size_t* start, size_t* end)
 {
     if (pdata == NULL || length == NULL) {
         return false;
@@ -55,7 +56,7 @@ bool helper::Scintilla::getSelection(const byte** pdata, size_t* length, size_t*
     *pdata = NULL;
     *length = 0;
 
-    HWND hCurScintilla = helper::Scintilla::getCurrent();
+    HWND hCurScintilla = help::scintilla::getCurrent();
     size_t selStart = ::SendMessage(hCurScintilla, SCI_GETSELECTIONSTART, 0, 0);
     size_t selEnd = ::SendMessage(hCurScintilla, SCI_GETSELECTIONEND, 0, 0);
     size_t data_length = selEnd - selStart;
@@ -79,9 +80,9 @@ bool helper::Scintilla::getSelection(const byte** pdata, size_t* length, size_t*
     return true;
 }
 
-void helper::Scintilla::replaceSelection(const std::basic_string<byte>& buffer)
+void help::scintilla::replaceSelection(const std::basic_string<byte>& buffer)
 {
-    HWND hCurScintilla = helper::Scintilla::getCurrent();
+    HWND hCurScintilla = help::scintilla::getCurrent();
     size_t selStart = ::SendMessage(hCurScintilla, SCI_GETSELECTIONSTART, 0, 0);
     ::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
     ::SendMessage(hCurScintilla, SCI_TARGETFROMSELECTION, 0, 0);
@@ -90,9 +91,9 @@ void helper::Scintilla::replaceSelection(const std::basic_string<byte>& buffer)
     ::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
 }
 
-void helper::Scintilla::replaceSelection(const char* s, size_t len)
+void help::scintilla::replaceSelection(const char* s, size_t len)
 {
-    HWND hCurScintilla = helper::Scintilla::getCurrent();
+    HWND hCurScintilla = help::scintilla::getCurrent();
     size_t selStart = ::SendMessage(hCurScintilla, SCI_GETSELECTIONSTART, 0, 0);
     ::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
     ::SendMessage(hCurScintilla, SCI_TARGETFROMSELECTION, 0, 0);
@@ -103,24 +104,24 @@ void helper::Scintilla::replaceSelection(const char* s, size_t len)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-uptr_t helper::Buffer::getCurrent()
+uptr_t help::buffer::getCurrent()
 {
     return ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTBUFFERID, 0, 0);
 }
 
-bool helper::Buffer::is8Bit(uptr_t id)
+bool help::buffer::is8Bit(uptr_t id)
 {
     int cur_buffer_enc = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, id, 0);
     return (cur_buffer_enc == uni8Bit || cur_buffer_enc == uniUTF8 || cur_buffer_enc == uniCookie);
 }
 
-bool helper::Buffer::isCurrent8Bit()
+bool help::buffer::isCurrent8Bit()
 {
     int cur_buffer_enc = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, ::SendMessage(nppData._nppHandle, NPPM_GETCURRENTBUFFERID, 0, 0), 0);
     return (cur_buffer_enc == uni8Bit || cur_buffer_enc == uniUTF8 || cur_buffer_enc == uniCookie);
 }
 
-void helper::Buffer::getPath(uptr_t bufferid, std::wstring& path, std::wstring& filename, std::wstring& extension)
+void help::buffer::getPath(uptr_t bufferid, std::wstring& path, std::wstring& filename, std::wstring& extension)
 {
     int path_length = (int)::SendMessage(nppData._nppHandle, NPPM_GETFULLPATHFROMBUFFERID, bufferid, NULL);
     if (path_length <= 0) {
@@ -143,7 +144,7 @@ void helper::Buffer::getPath(uptr_t bufferid, std::wstring& path, std::wstring& 
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void helper::Windows::copyToClipboard(const unsigned char* s, size_t len)
+void help::windows::copyToClipboard(const unsigned char* s, size_t len)
 {
     if (!OpenClipboard(NULL)) {
         return;
@@ -179,12 +180,12 @@ void helper::Windows::copyToClipboard(const unsigned char* s, size_t len)
     CloseClipboard();
 }
 
-void helper::Windows::copyToClipboard(const std::basic_string<byte>& buffer)
+void help::windows::copyToClipboard(const std::basic_string<byte>& buffer)
 {
     copyToClipboard(buffer.c_str(), buffer.size());
 }
 
-void helper::Windows::wchar_to_utf8(const wchar_t* i, int i_len, std::string& o)
+void help::windows::wchar_to_utf8(const wchar_t* i, int i_len, std::string& o)
 {
     if (i_len < -1) {
         i_len = -1;
@@ -202,7 +203,7 @@ void helper::Windows::wchar_to_utf8(const wchar_t* i, int i_len, std::string& o)
     }
 }
 
-void helper::Windows::wchar_to_utf8(const wchar_t* i, int i_len, crypt::secure_string& o)
+void help::windows::wchar_to_utf8(const wchar_t* i, int i_len, crypt::secure_string& o)
 {
     if (i_len < -1) {
         i_len = -1;
@@ -220,7 +221,7 @@ void helper::Windows::wchar_to_utf8(const wchar_t* i, int i_len, crypt::secure_s
     }
 }
 
-void helper::Windows::utf8_to_wchar(const char* i, int i_len, std::wstring& o)
+void help::windows::utf8_to_wchar(const char* i, int i_len, std::wstring& o)
 {
     if (i_len < -1) {
         i_len = -1;
@@ -238,7 +239,7 @@ void helper::Windows::utf8_to_wchar(const char* i, int i_len, std::wstring& o)
     }
 }
 
-void helper::Windows::utf8_to_wchar(const char* i, int i_len, crypt::secure_wstring& o)
+void help::windows::utf8_to_wchar(const char* i, int i_len, crypt::secure_wstring& o)
 {
     if (i_len < -1) {
         i_len = -1;
@@ -256,28 +257,28 @@ void helper::Windows::utf8_to_wchar(const char* i, int i_len, crypt::secure_wstr
     }
 }
 
-void helper::Windows::error(HWND hwnd, const char* msg)
+void help::windows::error(HWND hwnd, const char* msg)
 {
     std::wstring temp;
     try {
-        helper::Windows::utf8_to_wchar(msg, -1, temp);
+        help::windows::utf8_to_wchar(msg, -1, temp);
     } catch (...) {}
     ::MessageBox(hwnd, temp.c_str(), TEXT("Error"), MB_OK);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-HINSTANCE helper::NPP::getDLLHandle()
+HINSTANCE help::npp::getDLLHandle()
 {
     return m_hInstance;
 }
 
-HWND helper::NPP::getWindow()
+HWND help::npp::getWindow()
 {
     return nppData._nppHandle;
 }
 
-bool helper::NPP::setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *sk, bool check0nInit)
+bool help::npp::setCommand(size_t index, TCHAR *cmdName, PFUNCPLUGINCMD pFunc, ShortcutKey *sk, bool check0nInit)
 {
     if (index >= NPPC_FUNC_COUNT) {
         return false;

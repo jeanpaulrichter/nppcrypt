@@ -84,6 +84,7 @@ public:
     const char *what() const noexcept {
         return messages[(unsigned)id];
     };
+    ID getID() { return id; };
 private:
     ID id;
     static const char* messages[];
@@ -95,16 +96,21 @@ public:
     enum class ID : unsigned {
         file_empty,
         hmac_auth_failed,
-        bad_header_version
+        bad_header_version,
+        no_text_selected
     };
     ExcInfo(ID id) noexcept : id(id) {};
     const char *what() const noexcept {
         return messages[(unsigned)id];
     };
     ID getID() { return id; };
+    const char* getURL() { return urls[(unsigned)id]; };
+    const char* getURLCaption() { return url_captions[(unsigned)id]; };
 private:
     ID id;
     static const char* messages[];
+    static const char* urls[];
+    static const char* url_captions[];
 };
 
 #define throwError(id) throw ExcError(ExcError::ID::id, __func__, __LINE__);

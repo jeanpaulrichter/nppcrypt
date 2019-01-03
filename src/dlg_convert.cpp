@@ -24,6 +24,7 @@ GNU General Public License for more details.
 #include <commctrl.h>
 #include "help.h"
 #include "preferences.h"
+#include "messagebox.h"
 
 DlgConvert::DlgConvert(crypt::Options::Convert& opt) : ModalDialog(), options(opt)
 {
@@ -78,21 +79,21 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
                     std::basic_string<byte> buffer;
 
                     updateOptions(); 
-                    if (!helper::Scintilla::getSelection(&pdata, &data_length)) {
+                    if (!help::scintilla::getSelection(&pdata, &data_length)) {
                         return TRUE;
                     }
 
                     crypt::convert(pdata, data_length, buffer, options, preferences.getBase32Alphabet(), preferences.getBase64Alphabet());
                     if (LOWORD(wParam) == IDC_OK) {
-                        helper::Scintilla::replaceSelection(buffer);
+                        help::scintilla::replaceSelection(buffer);
                     } else {
-                        helper::Windows::copyToClipboard(buffer);
+                        help::windows::copyToClipboard(buffer);
                     }
                     EndDialog(_hSelf, IDC_OK);
                 } catch (std::exception& exc) {
-                    helper::Windows::error(_hSelf, exc.what());
+                    msgbox::error(_hSelf, exc.what());
                 } catch (...) {
-                    ::MessageBox(_hSelf, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+                    msgbox::error(_hSelf, "unknown exception!");
                 }
                 break;
             }

@@ -160,7 +160,7 @@ void HelpCtrl::setURL(const char* s, bool tooltip)
         return;
     }
     try {
-        helper::Windows::utf8_to_wchar(s, (int)strlen(s), s_url);
+        help::windows::utf8_to_wchar(s, (int)strlen(s), s_url);
         if (tooltip) {
             _settooltip((LPWSTR)s_url.c_str());
         }
@@ -183,7 +183,7 @@ void HelpCtrl::setTooltip(const char* s)
     }
     try {
         std::wstring temp;
-        helper::Windows::utf8_to_wchar(s, (int)strlen(s), temp);
+        help::windows::utf8_to_wchar(s, (int)strlen(s), temp);
         _settooltip((LPWSTR)temp.c_str());
     } catch (...) {}
 }

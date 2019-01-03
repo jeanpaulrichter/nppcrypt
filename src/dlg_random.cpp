@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #include "exception.h"
 #include "help.h"
 #include "crypt_help.h"
+#include "messagebox.h"
 
 DlgRandom::DlgRandom(RandomOptions& opt) : ModalDialog(), options(opt)
 {
@@ -36,7 +37,7 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
         ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf,IDC_RANDOM_EDIT), 0);
         ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETPOS32, 0, options.length);
 
-        if (!helper::Buffer::isCurrent8Bit() && options.encoding == crypt::Encoding::ascii) {
+        if (!help::buffer::isCurrent8Bit() && options.encoding == crypt::Encoding::ascii) {
             options.encoding = crypt::Encoding::base16;
             ::EnableWindow(::GetDlgItem(_hSelf, IDC_RANDOM_ENC_BINARY), false);
         }
@@ -115,16 +116,18 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
                     data.get(str, options.encoding);
 
                     if (LOWORD(wParam) == IDC_OK) {
-                        helper::Scintilla::replaceSelection(str.c_str(), str.size());
+                        help::scintilla::replaceSelection(str.c_str(), str.size());
                     } else {
-                        helper::Windows::copyToClipboard((const unsigned char*)str.c_str(), str.size());
+                        help::windows::copyToClipboard((const unsigned char*)str.c_str(), str.size());
                     }
                     EndDialog(_hSelf, IDC_OK);
                     return TRUE;
                 } catch (std::exception& exc) {
-                    helper::Windows::error(_hSelf, exc.what());
+                    msgbox::error(_hSelf, exc.what());
+                    return false;
                 } catch (...) {
-                    ::MessageBox(_hSelf, TEXT("Unkown Exception!"), TEXT("Error"), MB_OK);
+                    msgbox::error(_hSelf, "unknown exception!");
+                    return false;
                 }
                 break;
             }

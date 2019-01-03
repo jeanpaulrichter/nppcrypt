@@ -22,64 +22,63 @@ namespace crypt
 {
     enum Properties { WEAK = 1, EAX = 2, CCM = 4, GCM = 8, BLOCK = 16, STREAM = 32, HMAC_SUPPORT = 64, KEY_SUPPORT = 128, KEY_REQUIRED = 256 };
 
-    class help
+    namespace help
     {
-    public:
-        static const char*  getString(Cipher cipher);
-        static const char*  getString(Mode mode);
-        static const char*  getString(Encoding enc);
-        static const char*  getString(KeyDerivation k);
-        static const char*  getString(IV iv);
-        static const char*  getString(Hash h);
-        static const char*  getString(UserData::Restriction r);
-        static const char*  getString(EOL eol);
-        static const char*  getString(bool v);
+        const char*  getString(Cipher cipher);
+        const char*  getString(Mode mode);
+        const char*  getString(Encoding enc);
+        const char*  getString(KeyDerivation k);
+        const char*  getString(IV iv);
+        const char*  getString(Hash h);
+        const char*  getString(UserData::Restriction r);
+        const char*  getString(EOL eol);
+        const char*  getString(bool v);
 
-        static bool         getCipher(const char* s, Cipher& c);
-        static bool         getCipherMode(const char* s, Mode& m);
-        static bool         getKeyDerivation(const char*s, KeyDerivation& v);
-        static bool         getEncoding(const char* s, Encoding& e);
-        static bool         getIVMode(const char* s, IV& iv);
-        static bool         getHash(const char* s, Hash& h);
-        static bool         getRandomRestriction(const char* s, UserData::Restriction& r);
-        static bool         getEOL(const char* s, EOL& eol);
-        static bool         getUnsigned(const char* s, size_t& i);
-        static bool         getInteger(const char* s, int& i, bool log2 = false);
-        static bool         getBoolean(const char* s, bool& b);
+        bool         getCipher(const char* s, Cipher& c);
+        bool         getCipherMode(const char* s, Mode& m);
+        bool         getKeyDerivation(const char*s, KeyDerivation& v);
+        bool         getEncoding(const char* s, Encoding& e);
+        bool         getIVMode(const char* s, IV& iv);
+        bool         getHash(const char* s, Hash& h);
+        bool         getRandomRestriction(const char* s, UserData::Restriction& r);
+        bool         getEOL(const char* s, EOL& eol);
+        bool         getUnsigned(const char* s, size_t& i);
+        bool         getInteger(const char* s, int& i, bool log2 = false);
+        bool         getBoolean(const char* s, bool& b);
 
-        static bool         checkCipherMode(Cipher cipher, Mode mode);
-        static bool         checkProperty(Cipher cipher, int filter);
-        static bool         checkProperty(Hash h, int filter);
-        static bool         checkHashDigest(Hash h, unsigned int digest);
-        static bool         checkCipherKeylength(Cipher cipher, size_t keylength);
+        bool         checkCipherMode(Cipher cipher, Mode mode);
+        bool         checkProperty(Cipher cipher, int filter);
+        bool         checkProperty(Hash h, int filter);
+        bool         checkHashDigest(Hash h, unsigned int digest);
+        bool         checkCipherKeylength(Cipher cipher, size_t keylength);
 
-        static void         validate(Options::Crypt options, bool exceptions = true);
-        static void         validate(Options::Hash options, bool exceptions = true);
-        static void         validate(Options::Convert options, bool exceptions = true);
+        void         validate(Options::Crypt options, bool exceptions = true);
+        void         validate(Options::Hash options, bool exceptions = true);
+        void         validate(Options::Convert options, bool exceptions = true);
 
-        static Mode         getModeByIndex(Cipher cipher, int index);
-        static int          getModeIndex(Cipher cipher, Mode mode);
-        static int          getCipherCategory(Cipher cipher);
-        static Cipher       getCipherByIndex(size_t category, size_t index);
-        static int          getCipherIndex(Cipher cipher);
-        static size_t       getCipherKeylengthByIndex(Cipher cipher, size_t index);
-        static Hash         getHashByIndex(size_t index, int filter);
-        static int          getHashIndex(Hash h, int filter);
-        static size_t       getHashDigestByIndex(Hash h, unsigned int index);
-        static int          getHashDigestIndex(Hash h, unsigned int digest);
+        Mode         getModeByIndex(Cipher cipher, int index);
+        int          getModeIndex(Cipher cipher, Mode mode);
+        int          getCipherCategory(Cipher cipher);
+        Cipher       getCipherByIndex(size_t category, size_t index);
+        int          getCipherIndex(Cipher cipher);
+        size_t       getCipherKeylengthByIndex(Cipher cipher, size_t index);
+        Hash         getHashByIndex(size_t index, int filter);
+        int          getHashIndex(Hash h, int filter);
+        size_t       getHashDigestByIndex(Hash h, unsigned int index);
+        int          getHashDigestIndex(Hash h, unsigned int digest);
 
-        static const char*  getHelpURL(Encoding enc);
-        static const char*  getHelpURL(Cipher cipher);
-        static const char*  getHelpURL(Mode m);
-        static const char*  getHelpURL(Hash h);
-        static const char*  getHelpURL(KeyDerivation k);
+        const char*  getHelpURL(Encoding enc);
+        const char*  getHelpURL(Cipher cipher);
+        const char*  getHelpURL(Mode m);
+        const char*  getHelpURL(Hash h);
+        const char*  getHelpURL(KeyDerivation k);
 
-        static const char*  getInfo(Cipher c);
-        static const char*  getInfo(Mode m);
-        static const char*  getInfo(Hash h);
-        static const char*  getInfo(IV iv);
-        static const char*  getInfo(KeyDerivation k);
-        static const char*  getInfo(Encoding e);
+        const char*  getInfo(Cipher c);
+        const char*  getInfo(Mode m);
+        const char*  getInfo(Hash h);
+        const char*  getInfo(IV iv);
+        const char*  getInfo(KeyDerivation k);
+        const char*  getInfo(Encoding e);
 
         class CipherCategories
         {
@@ -148,7 +147,7 @@ namespace crypt
             int i;
             size_t hash_index;
         };
-    };
+    }
 }
 
 #endif

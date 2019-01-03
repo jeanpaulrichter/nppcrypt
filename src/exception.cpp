@@ -68,6 +68,21 @@ const char* ExcInvalid::messages[] = {
 
 const char* ExcInfo::messages[] = {
     "the file is empty.",
+    "HMAC authentification failed.",
+    "Sadly this header version is no longer supported.",
+    "Please select the text you want to encrypt/decrypt. If you want to encrypt the entire file see 'nppcrypt-files' under 'preferences'.",
+};
+
+const char* ExcInfo::urls[] = {
+    NULL,
     "hmac authentification failed.",
     "wrong header version.",
+    "https://www.github.com/jeanpaulrichter/nppcrypt/nppcryptfiles"
+};
+
+const char* ExcInfo::url_captions[] = {
+    NULL,
+    "more information",
+    "help me!",
+    "more information"
 };

@@ -88,7 +88,7 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
             const char* pExt = xml_files->Attribute("extension");
             if (pExt && strlen(pExt) <= NPPC_FILE_EXT_MAXLENGTH) {
                 try {
-                    helper::Windows::utf8_to_wchar(pExt, -1, files.extension);
+                    help::windows::utf8_to_wchar(pExt, -1, files.extension);
                 } catch(...) {
                     // LOG???
                     files.extension = TEXT(NPPC_DEF_FILE_EXT);
@@ -185,7 +185,7 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
                     }
                     KeyPreset       key;
                     std::wstring    label;
-                    helper::Windows::utf8_to_wchar(pLabel, -1, label);
+                    help::windows::utf8_to_wchar(pLabel, -1, label);
                     CryptoPP::StringSource((const byte*)pValue, 24, true, new CryptoPP::Base64Decoder(new CryptoPP::ArraySink(key.data, 16)));
                     size_t i = 0;
                     while (i < label.size() && i < NPPC_MAX_PRESET_LABELLENGTH) {
@@ -227,7 +227,7 @@ void CPreferences::save(CurrentOptions& current)
             throw std::exception();
         }
         fout.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        using namespace crypt;
+        using namespace crypt::help;
 
         std::string eol = "\r\n";
         const crypt::Options::Crypt& crypt = current.crypt.options;
@@ -237,7 +237,7 @@ void CPreferences::save(CurrentOptions& current)
         const crypt::Options::Convert& convert = current.convert;
         std::string file_extension;
         try {
-            helper::Windows::wchar_to_utf8(files.extension.c_str(), (int)files.extension.size(), file_extension);
+            help::windows::wchar_to_utf8(files.extension.c_str(), (int)files.extension.size(), file_extension);
         } catch (...) {
             file_extension = NPPC_DEF_FILE_EXT;
         }
@@ -245,15 +245,15 @@ void CPreferences::save(CurrentOptions& current)
         /* ------------------------------ */
         fout << std::fixed;
         fout << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << eol << "<nppcrypt_preferences version=\"" << NPPC_VERSION << "\">" << eol;
-        fout << " <files monitor=\"" << help::getString(files.enable) << "\" askonsave=\"" << help::getString(files.askonsave) << "\" extension=\"" << file_extension << "\" />" << eol;
+        fout << " <files monitor=\"" << getString(files.enable) << "\" askonsave=\"" << getString(files.askonsave) << "\" extension=\"" << file_extension << "\" />" << eol;
         fout << " <current_options>" << eol;
-        fout << "  <encryption advanced=\"" << help::getString(current.crypt.modus == CryptInfo::Modus::advanced) << "\">" << eol;
+        fout << "  <encryption advanced=\"" << getString(current.crypt.modus == CryptInfo::Modus::advanced) << "\">" << eol;
         writeCryptOptions(fout, crypt, "   ", eol);
-        fout << "   <hmac enabled=\"" << help::getString(hmac.enable) << "\" hash=\"" << help::getString(hmac.hash.algorithm) << "\" digest-length=\"" << hmac.hash.digest_length << "\" keypreset-id=\"" << hmac.keypreset_id << "\" />" << eol;
+        fout << "   <hmac enabled=\"" << getString(hmac.enable) << "\" hash=\"" << getString(hmac.hash.algorithm) << "\" digest-length=\"" << hmac.hash.digest_length << "\" keypreset-id=\"" << hmac.keypreset_id << "\" />" << eol;
         fout << "  </encryption>" << eol;
-        fout << "  <hash algorithm=\"" << help::getString(hash.algorithm) << "\" encoding=\"" << help::getString(hash.encoding) << "\" usekey=\"" << help::getString(hash.use_key) << "\" />" << eol;
-        fout << "  <random restriction=\"" << help::getString(random.restriction) << "\" encoding =\"" << help::getString(random.encoding) << "\" length=\"" << random.length << "\" />" << eol;
-        fout << "  <convert source-enc=\"" << help::getString(convert.from) << "\" target-enc=\"" << help::getString(convert.to) << "\" eol=\"" << help::getString(convert.eol) << "\" linelength=\"" << convert.linelength << "\" linebreaks=\"" << help::getString(convert.linebreaks) << "\" uppercase=\"" << help::getString(convert.uppercase) << "\" />" << eol;
+        fout << "  <hash algorithm=\"" << getString(hash.algorithm) << "\" encoding=\"" << getString(hash.encoding) << "\" usekey=\"" << getString(hash.use_key) << "\" />" << eol;
+        fout << "  <random restriction=\"" << getString(random.restriction) << "\" encoding =\"" << getString(random.encoding) << "\" length=\"" << random.length << "\" />" << eol;
+        fout << "  <convert source-enc=\"" << getString(convert.from) << "\" target-enc=\"" << getString(convert.to) << "\" eol=\"" << getString(convert.eol) << "\" linelength=\"" << convert.linelength << "\" linebreaks=\"" << getString(convert.linebreaks) << "\" uppercase=\"" << getString(convert.uppercase) << "\" />" << eol;
         fout << " </current_options>" << eol;
         fout << " <default_encryption>" << eol;
         writeCryptOptions(fout, default_crypt, "  ", eol);
@@ -272,7 +272,7 @@ void CPreferences::save(CurrentOptions& current)
         for (size_t i = 1; i < keys.size(); i++) {
             std::string label, value;
             try {
-                helper::Windows::wchar_to_utf8(keys[i].label, -1, label);
+                help::windows::wchar_to_utf8(keys[i].label, -1, label);
                 CryptoPP::ArraySource(keys[i].data, 16, true, new CryptoPP::Base64Encoder(new CryptoPP::StringSink(value), false));
                 fout << "  <key label=\"" << label.c_str() << "\" value=\"" << value.c_str() << "\" />" << eol;
             } catch (...) {
@@ -334,24 +334,24 @@ const unsigned char* CPreferences::getKey(size_t i) const
 
 void CPreferences::writeCryptOptions(std::ofstream& f, const crypt::Options::Crypt& opt, const std::string& indent, const std::string& eol)
 {
-    using namespace crypt;
+    using namespace crypt::help;
 
-    f << indent << "<basic cipher=\"" << help::getString(opt.cipher) << "\" key-length=\"" << opt.key.length << "\" mode=\"" << help::getString(opt.mode) << "\" aad=\"" << help::getString(opt.aad) << "\" iv=\"" << help::getString(opt.iv) << "\" />" << eol;
-    f << indent << "<encoding enc=\"" << help::getString(opt.encoding.enc) << "\" eol=\"" << help::getString(opt.encoding.eol) << "\" linebreaks=\"" << help::getString(opt.encoding.linebreaks) << "\" line-length=\"" << opt.encoding.linelength << "\" uppercase=\"" << help::getString(opt.encoding.uppercase) << "\" />" << eol;
-    f << indent << "<key saltbytes=\"" << opt.key.salt_bytes << "\" algorithm=\"" << help::getString(opt.key.algorithm);
+    f << indent << "<basic cipher=\"" << getString(opt.cipher) << "\" key-length=\"" << opt.key.length << "\" mode=\"" << getString(opt.mode) << "\" aad=\"" << getString(opt.aad) << "\" iv=\"" << getString(opt.iv) << "\" />" << eol;
+    f << indent << "<encoding enc=\"" << getString(opt.encoding.enc) << "\" eol=\"" << getString(opt.encoding.eol) << "\" linebreaks=\"" << getString(opt.encoding.linebreaks) << "\" line-length=\"" << opt.encoding.linelength << "\" uppercase=\"" << getString(opt.encoding.uppercase) << "\" />" << eol;
+    f << indent << "<key saltbytes=\"" << opt.key.salt_bytes << "\" algorithm=\"" << getString(opt.key.algorithm);
     switch (opt.key.algorithm)
     {
-    case KeyDerivation::pbkdf2:
+    case crypt::KeyDerivation::pbkdf2:
     {
         f << "\" hash=\"" << crypt::help::getString((crypt::Hash)opt.key.options[0]) << "\" digest-length=\"" << opt.key.options[1] << "\" iterations=\"" << opt.key.options[2];
         break;
     }
-    case KeyDerivation::bcrypt:
+    case crypt::KeyDerivation::bcrypt:
     {
         f << "\" iterations=\"" << static_cast<size_t>(std::pow(2, opt.key.options[0]));
         break;
     }
-    case KeyDerivation::scrypt:
+    case crypt::KeyDerivation::scrypt:
     {
         f << "\" N=\"" << static_cast<size_t>(std::pow(2, opt.key.options[0])) << "\" r=\"" << opt.key.options[1] << "\" p=\"" << opt.key.options[2];
         break;

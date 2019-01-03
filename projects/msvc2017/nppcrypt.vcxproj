@@ -30,6 +30,7 @@
     <ClCompile Include="..\..\src\dlg_auth.cpp" />
     <ClCompile Include="..\..\src\dlg_convert.cpp" />
     <ClCompile Include="..\..\src\dlg_initdata.cpp" />
+    <ClCompile Include="..\..\src\messagebox.cpp" />
     <ClCompile Include="..\..\src\dlg_preferences.cpp" />
     <ClCompile Include="..\..\src\dlg_crypt.cpp" />
     <ClCompile Include="..\..\src\dlg_hash.cpp" />
@@ -63,6 +64,7 @@
     <ClInclude Include="..\..\src\dlg_auth.h" />
     <ClInclude Include="..\..\src\dlg_convert.h" />
     <ClInclude Include="..\..\src\dlg_initdata.h" />
+    <ClInclude Include="..\..\src\messagebox.h" />
     <ClInclude Include="..\..\src\dlg_preferences.h" />
     <ClInclude Include="..\..\src\dlg_crypt.h" />
     <ClInclude Include="..\..\src\dlg_hash.h" />
@@ -107,6 +109,7 @@
     <Image Include="..\..\src\icons\help_normal_hover.ico" />
     <Image Include="..\..\src\icons\help_warning.ico" />
     <Image Include="..\..\src\icons\help_warning_hover.ico" />
+    <Image Include="..\..\src\icons\info.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1590D7CD-7D3A-4AB7-A355-EE02F7FB987D}</ProjectGuid>

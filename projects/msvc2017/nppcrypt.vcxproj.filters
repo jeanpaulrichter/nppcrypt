@@ -146,6 +146,9 @@
     <ClCompile Include="..\..\src\modaldialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\messagebox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\crypt.h">
@@ -268,6 +271,9 @@
     <ClInclude Include="..\..\src\modaldialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\messagebox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\src\icons\help_warning_hover.ico">
@@ -283,6 +289,9 @@
       <Filter>Resource Files\icons</Filter>
     </Image>
     <Image Include="..\..\src\icons\help_warning.ico">
+      <Filter>Resource Files\icons</Filter>
+    </Image>
+    <Image Include="..\..\src\icons\info.ico">
       <Filter>Resource Files\icons</Filter>
     </Image>
   </ItemGroup>

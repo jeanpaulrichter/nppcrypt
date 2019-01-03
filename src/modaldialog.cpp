@@ -86,9 +86,9 @@ void ModalDialog::getText(int id, crypt::secure_string& str, HWND hwnd)
             crypt::secure_wstring temp;
             temp.resize((size_t)length + 1);
             ::GetDlgItemText(hwnd, id, &temp[0], length + 1);
-            helper::Windows::wchar_to_utf8(temp.c_str(), length, str);
+            help::windows::wchar_to_utf8(temp.c_str(), length, str);
         } catch (std::exception& exc) {
-            helper::Windows::error(_hSelf, exc.what());
+            help::windows::error(_hSelf, exc.what());
         }
     }
 }
@@ -103,10 +103,10 @@ void ModalDialog::setText(int id, const crypt::secure_string& str, HWND hwnd)
     } else {
         try {
             crypt::secure_wstring temp;
-            helper::Windows::utf8_to_wchar(str.c_str(), (int)str.size(), temp);
+            help::windows::utf8_to_wchar(str.c_str(), (int)str.size(), temp);
             ::SetDlgItemText(hwnd, id, temp.c_str());
         } catch (std::exception& exc) {
-            helper::Windows::error(_hSelf, exc.what());
+            help::windows::error(_hSelf, exc.what());
         }
     }
 }
