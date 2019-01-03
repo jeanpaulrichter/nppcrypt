@@ -2,11 +2,14 @@
 //           HMQV provided by Jeffrey Walton, Ray Clayton and Uri Blumenthal.
 //           FHMQV provided by Uri Blumenthal.
 
-
+#include "pch.h"
 #include "config.h"
 #include "mqv.h"
 #include "hmqv.h"
 #include "fhmqv.h"
+
+// Squash MS LNK4221 and libtool warnings
+extern const char MQV_FNAME[] = __FILE__;
 
 NAMESPACE_BEGIN(CryptoPP)
 

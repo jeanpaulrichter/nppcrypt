@@ -1,6 +1,6 @@
 // rng.cpp - originally written and placed in the public domain by Wei Dai
 
-
+#include "pch.h"
 
 #include "rng.h"
 #include "fips140.h"

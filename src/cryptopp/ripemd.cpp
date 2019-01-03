@@ -3,7 +3,7 @@
 // RIPEMD-320, RIPEMD-128, RIPEMD-256 written by Kevin Springle
 // and also placed in the public domain
 
-
+#include "pch.h"
 #include "ripemd.h"
 #include "misc.h"
 

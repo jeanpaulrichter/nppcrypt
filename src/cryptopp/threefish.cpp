@@ -2,7 +2,7 @@
 //                 Based on public domain code by Keru Kuro. Kuro's code is
 //                 available at http://cppcrypto.sourceforge.net/.
 
-
+#include "pch.h"
 #include "config.h"
 
 #include "threefish.h"

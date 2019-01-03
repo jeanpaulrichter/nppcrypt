@@ -1,6 +1,6 @@
 // pssr.cpp - originally written and placed in the public domain by Wei Dai
 
-
+#include "pch.h"
 #include "pssr.h"
 #include "emsa2.h"
 #include "ripemd.h"

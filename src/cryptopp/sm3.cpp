@@ -7,7 +7,7 @@
 //    to include SM3 and SM4 related instructions so the function
 //    is stubbed for an eventual SM3_HashMultipleBlocks_ARMV8.
 
-
+#include "pch.h"
 #include "config.h"
 
 #include "sm3.h"

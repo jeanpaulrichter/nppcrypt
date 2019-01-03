@@ -778,7 +778,7 @@ namespace intern
         }
         case Cipher::chacha20:
         {
-            return encryption ? (SymmetricCipher*)(new ChaCha20::Encryption) : (new ChaCha20::Decryption);
+            return encryption ? (SymmetricCipher*)(new ChaCha::Encryption) : (new ChaCha::Decryption);
         }
         case Cipher::panama:
         {
@@ -1420,8 +1420,8 @@ bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, size_t& key_le
         break;
     case Cipher::chacha20:
         block_size = 0;
-        iv_length = ChaCha20::IV_LENGTH;
-        key_length = (key_length == 0) ? ChaCha20::DEFAULT_KEYLENGTH : ChaCha20::StaticGetValidKeyLength(key_length);
+        iv_length = ChaCha::IV_LENGTH;
+        key_length = (key_length == 0) ? ChaCha::DEFAULT_KEYLENGTH : ChaCha::StaticGetValidKeyLength(key_length);
         break;
     case Cipher::des:
         block_size = iv_length = DES::BLOCKSIZE;

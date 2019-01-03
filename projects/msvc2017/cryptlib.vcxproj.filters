@@ -32,7 +32,7 @@
     <ClCompile Include="..\..\src\cryptopp\aria.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\aria-simd.cpp">
+    <ClCompile Include="..\..\src\cryptopp\aria_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\ariatab.cpp">
@@ -59,7 +59,10 @@
     <ClCompile Include="..\..\src\cryptopp\blake2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\blake2-simd.cpp">
+    <ClCompile Include="..\..\src\cryptopp\blake2s_simd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\blake2b_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\blowfish.cpp">
@@ -86,6 +89,18 @@
     <ClCompile Include="..\..\src\cryptopp\chacha.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\chacha_simd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\chacha_avx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\cham.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\cham_simd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\channels.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -98,10 +113,13 @@
     <ClCompile Include="..\..\src\cryptopp\crc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\crc-simd.cpp">
+    <ClCompile Include="..\..\src\cryptopp\crc_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\cryptlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\darn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\default.cpp">
@@ -120,6 +138,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\dll.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\donna_32.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\donna_64.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\donna_sse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\dsa.cpp">
@@ -164,7 +191,7 @@
     <ClCompile Include="..\..\src\cryptopp\gcm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\gcm-simd.cpp">
+    <ClCompile Include="..\..\src\cryptopp\gcm_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\gf256.cpp">
@@ -185,7 +212,16 @@
     <ClCompile Include="..\..\src\cryptopp\gzip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\hc128.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\hc256.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\hex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\hight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\hmac.cpp">
@@ -213,6 +249,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\keccak.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\keccakc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\lea.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\lea_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\luc.cpp">
@@ -248,9 +293,6 @@
     <ClCompile Include="..\..\src\cryptopp\nbtheory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\network.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\oaep.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -261,6 +303,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\panama.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\pkcspad.cpp">
@@ -287,6 +332,9 @@
     <ClCompile Include="..\..\src\cryptopp\randpool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\rabbit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\rc2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -305,7 +353,7 @@
     <ClCompile Include="..\..\src\cryptopp\rijndael.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\rijndael-simd.cpp">
+    <ClCompile Include="..\..\src\cryptopp\rijndael_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\ripemd.cpp">
@@ -341,7 +389,7 @@
     <ClCompile Include="..\..\src\cryptopp\sha.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\sha-simd.cpp">
+    <ClCompile Include="..\..\src\cryptopp\sha_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\sha3.cpp">
@@ -350,7 +398,7 @@
     <ClCompile Include="..\..\src\cryptopp\shacal2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\shacal2-simd.cpp">
+    <ClCompile Include="..\..\src\cryptopp\shacal2_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\shark.cpp">
@@ -359,10 +407,19 @@
     <ClCompile Include="..\..\src\cryptopp\sharkbox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\simeck.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\simeck_simd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\simon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\simon-simd.cpp">
+    <ClCompile Include="..\..\src\cryptopp\simon64_simd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\simon128_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\simple.cpp">
@@ -377,13 +434,16 @@
     <ClCompile Include="..\..\src\cryptopp\sm4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cryptopp\sm4_simd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\speck.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\speck-simd.cpp">
+    <ClCompile Include="..\..\src\cryptopp\speck64_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\socketft.cpp">
+    <ClCompile Include="..\..\src\cryptopp\speck128_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\sosemanuk.cpp">
@@ -395,7 +455,7 @@
     <ClCompile Include="..\..\src\cryptopp\squaretb.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\sse-simd.cpp">
+    <ClCompile Include="..\..\src\cryptopp\sse_simd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\strciphr.cpp">
@@ -416,9 +476,6 @@
     <ClCompile Include="..\..\src\cryptopp\tigertab.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\trdlocal.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\ttmac.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -431,16 +488,13 @@
     <ClCompile Include="..\..\src\cryptopp\vmac.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\wait.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\wake.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\whrlpool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cryptopp\winpipes.cpp">
+    <ClCompile Include="..\..\src\cryptopp\xed25519.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cryptopp\xtr.cpp">
@@ -460,10 +514,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\doc\cryptopp\Doxyfile" />
-    <None Include="..\..\doc\cryptopp\GNUmakefile" />
-    <None Include="..\..\doc\cryptopp\License.txt" />
-    <None Include="..\..\doc\cryptopp\Readme.txt" />
+    <None Include="Doxyfile" />
+    <None Include="GNUmakefile" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\cryptopp\3way.h">
@@ -472,7 +524,7 @@
     <ClInclude Include="..\..\src\cryptopp\adler32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\cryptopp\adv-simd.h">
+    <ClInclude Include="..\..\src\cryptopp\adv_simd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\aes.h">
@@ -529,6 +581,9 @@
     <ClInclude Include="..\..\src\cryptopp\ccm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\cham.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\channels.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -545,6 +600,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\cryptlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\darn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\default.h">
@@ -566,6 +624,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\dsa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\donna.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\donna_32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\donna_64.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\donna_sse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\eax.h">
@@ -631,7 +701,16 @@
     <ClInclude Include="..\..\src\cryptopp\gzip.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\hc128.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\hc256.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\hex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\hight.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\hkdf.h">
@@ -664,7 +743,13 @@
     <ClInclude Include="..\..\src\cryptopp\keccak.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\keccakc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\lubyrack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\lea.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\luc.h">
@@ -709,9 +794,6 @@
     <ClInclude Include="..\..\src\cryptopp\naclite.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\cryptopp\network.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\nr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -728,6 +810,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\panama.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\pkcspad.h">
@@ -755,6 +840,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\randpool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\rabbit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\rc2.h">
@@ -820,6 +908,9 @@
     <ClInclude Include="..\..\src\cryptopp\shark.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\cryptopp\simeck.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\simon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -842,9 +933,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\speck.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\cryptopp\socketft.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\sosemanuk.h">
@@ -871,9 +959,6 @@
     <ClInclude Include="..\..\src\cryptopp\trap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\cryptopp\trdlocal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\trunhash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -889,19 +974,16 @@
     <ClInclude Include="..\..\src\cryptopp\vmac.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\cryptopp\wait.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\wake.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\whrlpool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\cryptopp\winpipes.h">
+    <ClInclude Include="..\..\src\cryptopp\words.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\cryptopp\words.h">
+    <ClInclude Include="..\..\src\cryptopp\xed25519.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cryptopp\xtr.h">
@@ -927,5 +1009,7 @@
     <CustomBuild Include="..\..\src\cryptopp\rdrand.asm">
       <Filter>Source Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="..\..\src\cryptopp\x64dll.asm" />
+    <CustomBuild Include="..\..\src\cryptopp\x64masm.asm" />
   </ItemGroup>
 </Project>

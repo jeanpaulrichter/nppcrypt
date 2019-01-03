@@ -1,6 +1,6 @@
 // dh2.cpp - originally written and placed in the public domain by Wei Dai
 
-
+#include "pch.h"
 #include "cryptlib.h"
 #include "misc.h"
 #include "dh2.h"

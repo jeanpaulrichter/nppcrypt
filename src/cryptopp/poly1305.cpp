@@ -1,7 +1,7 @@
 // poly1305.cpp - written and placed in the public domain by Jeffrey Walton and Jean-Pierre Munch
 //                Based on Andy Polyakov's Base-2^26 scalar multiplication implementation for OpenSSL.
 
-
+#include "pch.h"
 #include "cryptlib.h"
 #include "aes.h"
 #include "cpu.h"
@@ -10,6 +10,12 @@
 NAMESPACE_BEGIN(CryptoPP)
 
 #define CONSTANT_TIME_CARRY(a,b) ((a ^ ((a ^ b) | ((a - b) ^ b))) >> (sizeof(a) * 8 - 1))
+
+template <class T>
+std::string Poly1305_Base<T>::AlgorithmProvider() const
+{
+	return m_cipher.AlgorithmProvider();
+}
 
 template <class T>
 void Poly1305_Base<T>::UncheckedSetKey(const byte *key, unsigned int length, const NameValuePairs &params)

@@ -6,7 +6,7 @@
 // to clarify the copyright status of this file. It should now be
 // completely in the public domain.
 
-
+#include "pch.h"
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 #include "arc4.h"
 

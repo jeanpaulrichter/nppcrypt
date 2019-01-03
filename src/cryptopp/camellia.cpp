@@ -9,7 +9,7 @@ attacks. The protection is similar to what was implemented for Rijndael.
 See comments at top of rijndael.cpp for more details.
 */
 
-
+#include "pch.h"
 #include "config.h"
 
 #if CRYPTOPP_MSC_VERSION
@@ -60,7 +60,7 @@ NAMESPACE_BEGIN(CryptoPP)
 	ROUND(lh, ll, rh, rl, k0, k1)						\
 	ROUND(rh, rl, lh, ll, k2, k3)
 
-#ifdef CRYPTOPP_LITTLE_ENDIAN
+#if (CRYPTOPP_LITTLE_ENDIAN)
 #define EFI(i) (1-(i))
 #else
 #define EFI(i) (i)

@@ -1,6 +1,6 @@
 // rc2.cpp - originally written and placed in the public domain by Wei Dai
 
-
+#include "pch.h"
 #include "rc2.h"
 #include "misc.h"
 #include "argnames.h"

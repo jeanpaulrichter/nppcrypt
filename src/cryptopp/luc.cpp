@@ -1,6 +1,6 @@
 // luc.cpp - originally written and placed in the public domain by Wei Dai
 
-
+#include "pch.h"
 #include "luc.h"
 #include "asn.h"
 #include "sha.h"

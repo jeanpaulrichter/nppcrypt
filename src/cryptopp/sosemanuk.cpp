@@ -2,7 +2,7 @@
 
 // use "cl /EP /P /DCRYPTOPP_GENERATE_X64_MASM sosemanuk.cpp" to generate MASM code
 
-
+#include "pch.h"
 #include "config.h"
 
 #if CRYPTOPP_MSC_VERSION
@@ -18,6 +18,17 @@
 #include "cpu.h"
 
 NAMESPACE_BEGIN(CryptoPP)
+
+std::string SosemanukPolicy::AlgorithmProvider() const
+{
+#ifndef CRYPTOPP_DISABLE_SOSEMANUK_ASM
+# if CRYPTOPP_SSE2_ASM_AVAILABLE
+	if (HasSSE2())
+		return "SSE2";
+# endif
+#endif
+	return "C++";
+}
 
 void SosemanukPolicy::CipherSetKey(const NameValuePairs &params, const byte *userKey, size_t keylen)
 {

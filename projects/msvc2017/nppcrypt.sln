@@ -9,6 +9,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nppcrypt", "nppcrypt.vcxpro
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmdline", "cmdline.vcxproj", "{590397A2-220D-472D-8EE1-EC60275CF073}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C39F4B46-6E89-4074-902E-CA57073044D2} = {C39F4B46-6E89-4074-902E-CA57073044D2}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{68EF3EC8-A8D9-4F6F-98AF-E5E5E8A97F72}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\README.md = ..\..\README.md
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cryptlib", "cryptlib.vcxproj", "{C39F4B46-6E89-4074-902E-CA57073044D2}"
 EndProject

@@ -5,7 +5,7 @@
 // compression library. In particular it is not affected by the double free bug
 // (http://www.kb.cert.org/vuls/id/368819).
 
-
+#include "pch.h"
 
 #include "zinflate.h"
 #include "secblock.h"

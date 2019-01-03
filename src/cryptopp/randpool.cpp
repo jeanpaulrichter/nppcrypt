@@ -4,7 +4,7 @@
 // of reusing random numbers after state rollback (which may occur
 // when running in a virtual machine like VMware).
 
-
+#include "pch.h"
 
 #ifndef CRYPTOPP_IMPORTS
 

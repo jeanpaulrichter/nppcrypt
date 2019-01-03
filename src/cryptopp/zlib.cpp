@@ -5,7 +5,7 @@
 // (RFC 1950) that the library implements. This file is part of a
 // complete reimplementation of the zlib compression format.
 
-
+#include "pch.h"
 #include "zlib.h"
 #include "zdeflate.h"
 #include "zinflate.h"

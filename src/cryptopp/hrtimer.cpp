@@ -1,6 +1,6 @@
 // hrtimer.cpp - originally written and placed in the public domain by Wei Dai
 
-
+#include "pch.h"
 #include "hrtimer.h"
 #include "misc.h"
 

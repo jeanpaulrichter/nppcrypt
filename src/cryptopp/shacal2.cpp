@@ -11,7 +11,7 @@
 //
 // The original code and all modifications are in the public domain.
 
-
+#include "pch.h"
 #include "config.h"
 #include "shacal2.h"
 #include "misc.h"
@@ -43,6 +43,15 @@ NAMESPACE_BEGIN(CryptoPP)
 extern void SHACAL2_Enc_ProcessAndXorBlock_SHANI(const word32* subKeys,
                 const byte *inBlock, const byte *xorBlock, byte *outBlock);
 #endif
+
+std::string SHACAL2::Base::AlgorithmProvider() const
+{
+#if CRYPTOPP_SHANI_AVAILABLE
+    if (HasSHA())
+        return "SHANI";
+#endif
+	return "C++";
+}
 
 void SHACAL2::Base::UncheckedSetKey(const byte *userKey, unsigned int keylen, const NameValuePairs &)
 {

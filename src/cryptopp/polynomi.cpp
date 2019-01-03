@@ -3,7 +3,7 @@
 // Part of the code for polynomial evaluation and interpolation
 // originally came from Hal Finney's public domain secsplit.c.
 
-
+#include "pch.h"
 #include "polynomi.h"
 #include "secblock.h"
 
