@@ -482,7 +482,7 @@ void DlgCrypt::setupDialog()
     help.cipher.setup(_hInst, tab.basic, ::GetDlgItem(tab.basic, IDC_CRYPT_HELP_CIPHER));
     help.mode.setup(_hInst, tab.basic, ::GetDlgItem(tab.basic, IDC_CRYPT_HELP_MODE));
     help.auth_ivsalt.setup(_hInst, tab.basic, ::GetDlgItem(tab.basic, IDC_CRYPT_HELP_AUTH_IVSALT));
-    help.auth_ivsalt.setTooltip("authenticate IV & salt");
+    help.auth_ivsalt.setTooltip("authenticate IV + salt");
     help.auth_ivsalt.setURL(NPPC_CRYPT_AUTH_IVSALT_URL);
 
     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_AUTH_IVSALT, BM_SETCHECK, crypt->options.aad, 0);
@@ -940,6 +940,11 @@ bool DlgCrypt::prepareOptionsEasy()
     if (operation == Operation::Encryption) {
         crypt->options = preferences.getDefaultEncryption();
     }
+    // ------- no hmac
+    crypt->hmac.enable = false;
+    crypt->hmac.hash.key.clear();
+    crypt->hmac.hash.use_key = false;
+    crypt->hmac.keypreset_id = 0;
     // ------- password
     crypt->password.set(current.password.c_str(), current.password.size(), crypt::Encoding::ascii);
     // ------- modus
