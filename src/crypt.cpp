@@ -1749,7 +1749,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 
             penc->SetKeyWithIV(tKey.data(), key_len, ptVec, iv_len);
             if (penc->NeedsPrespecifiedDataLengths()) {
-                penc->SpecifyDataLengths(init.salt.size() + init.iv.size(), in_len, 0);
+                penc->SpecifyDataLengths(options.aad ? (init.salt.size() + init.iv.size()) : 0, in_len, 0);
             }
 
             AuthenticatedEncryptionFilter ef(*penc, NULL, false, tag_size );
@@ -1919,8 +1919,8 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
             }
             }
 
-            if (options.mode == Mode::ccm) {
-                penc->SpecifyDataLengths(init.salt.size() + init.iv.size(), Encrypted_size, 0);
+            if (penc->NeedsPrespecifiedDataLengths()) {
+                penc->SpecifyDataLengths(options.aad ? (init.salt.size() + init.iv.size()) : 0, Encrypted_size, 0);
             }
 
             AuthenticatedDecryptionFilter df(*penc, NULL, AuthenticatedDecryptionFilter::MAC_AT_BEGIN | AuthenticatedDecryptionFilter::THROW_EXCEPTION, tag_size);
