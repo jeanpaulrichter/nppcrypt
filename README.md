@@ -6,9 +6,9 @@ encryption-tool / plugin for notepad++ (https://notepad-plus-plus.org).
 features: encryption/decryption with symmetric ciphers like aes. hash-functions like sha3. generation of random values (i.e. for passwords), various encoding options.
 
 ##### download:
-1.0.1.6:
-* x64:: [download](https://github.com/jeanpaulrichter/nppcrypt/releases/download/1.0.1.6/nppcrypt_1.0.1.6_x64.zip) (md5: xxx)
-* x86:: [download](https://github.com/jeanpaulrichter/nppcrypt/releases/download/1.0.1.6/nppcrypt_1.0.1.6_x86.zip) (md5: xxx)
+1.0.1.6 BETA:
+* x64:: [download](http://www.cerberus-design.de/nppcrypt_1.0.1.6b_x64.zip) (md5: B5D80CE9DF62488023ADB8265F658F11)
+* x86:: [download](http://www.cerberus-design.de/nppcrypt_1.0.1.6b_x86.zip) (md5: F31DA1B7A539B5926D5C144B0F9608F8)
 * Linux version: see [FAQ: compiling nppcrypt](#faq_6)
 ###### old versions:
 * 1.0.1.5: [x86](https://github.com/jeanpaulrichter/nppcrypt/releases/download/1.0.1.5/nppcrypt_1.0.1.5_x86.zip) (md5: 2D5D894EBA15A653FADD1776B66417BB), [x64](https://github.com/jeanpaulrichter/nppcrypt/releases/download/1.0.1.5/nppcrypt_1.0.1.5_x64.zip) (md5: B2BD52509310A324E0A8090DFC8CCB70)
