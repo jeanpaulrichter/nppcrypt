@@ -109,7 +109,8 @@ public:
         file_empty,
         hmac_auth_failed,
         bad_header_version,
-        no_text_selected
+        no_text_selected,
+        no_convert_text_selected
     };
     ExcInfo(ID id) noexcept : id(id) {};
     const char *what() const noexcept {

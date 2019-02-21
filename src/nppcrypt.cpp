@@ -488,6 +488,8 @@ void ConvertDlg()
     try {
         if (help::scintilla::getSelectionLength()) {
             dlg_convert.doDialog();
+        } else {
+            throwInfo(no_convert_text_selected);
         }
     } catch (ExcInfo& exc) {
         msgbox::info(nppData._nppHandle, exc.what(), exc.getURL(), exc.getURLCaption());

@@ -83,18 +83,21 @@ const char* ExcInfo::messages[] = {
     "HMAC authentification failed.",
     "Sadly this header version is no longer supported.",
     "Please select the text you want to encrypt/decrypt. If you want to encrypt the entire file see 'nppcrypt-files' under 'preferences'.",
+    "Please select the text you want to convert!"
 };
 
 const char* ExcInfo::urls[] = {
     NULL,
     "https://github.com/jeanpaulrichter/nppcrypt#faq_5",
     "https://github.com/jeanpaulrichter/nppcrypt#faq_4",
-    "https://github.com/jeanpaulrichter/nppcrypt#faq_2"
+    "https://github.com/jeanpaulrichter/nppcrypt#faq_2",
+    NULL
 };
 
 const char* ExcInfo::url_captions[] = {
     NULL,
     "more information",
     "help me!",
-    "more information"
+    "more information",
+    NULL
 };
