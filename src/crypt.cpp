@@ -807,7 +807,7 @@ namespace intern
                 if (options.digest_length < 1 || options.digest_length > 64) {
                     options.digest_length = 32;
                 }
-                return new BLAKE2b(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0Ui64, false, (unsigned int)options.digest_length);
+                return new BLAKE2b(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0, false, (unsigned int)options.digest_length);
                 break;
             }
             case Hash::blake2s:
@@ -815,7 +815,7 @@ namespace intern
                 if (options.digest_length < 1 && options.digest_length > 32) {
                     options.digest_length = 32;
                 }
-                return new BLAKE2s(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0Ui64, false, (unsigned int)options.digest_length);
+                return new BLAKE2s(options.key.BytePtr(), options.key.size(), NULL, 0, NULL, 0, false, (unsigned int)options.digest_length);
                 break;
             }
             case Hash::cmac_aes:

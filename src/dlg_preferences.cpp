@@ -33,6 +33,10 @@ INT_PTR CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM
         ::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_EXT, EM_LIMITTEXT, NPPC_FILE_EXT_MAXLENGTH, 0);
         ::SetDlgItemText(_hSelf, IDC_PREF_FILES_EXT, preferences.files.extension.c_str());
 
+        ::EnableWindow(::GetDlgItem(_hSelf, IDC_PREF_FILES_ASK), preferences.files.enable);
+        ::EnableWindow(::GetDlgItem(_hSelf, IDC_PREF_FILES_EXT), preferences.files.enable);
+        ::EnableWindow(::GetDlgItem(_hSelf, IDC_PREF_FILES_STATIC_EXT), preferences.files.enable);
+
         ::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_VALUE, EM_LIMITTEXT, 24, 0);
         ::SendDlgItemMessage(_hSelf, IDC_PREF_KEYS_LABEL, EM_LIMITTEXT, NPPC_MAX_PRESET_LABELLENGTH, 0);
         for (size_t i = 0; i < preferences.getKeyNum(); i++) {
@@ -68,6 +72,14 @@ INT_PTR CALLBACK DlgPreferences::run_dlgProc(UINT message, WPARAM wParam, LPARAM
         {
             EndDialog(_hSelf, IDC_CANCEL);
             return TRUE;
+        }
+        case IDC_PREF_FILES_ENABLE:
+        {
+            bool c = ::SendDlgItemMessage(_hSelf, IDC_PREF_FILES_ENABLE, BM_GETCHECK, 0, 0) ? true : false;
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_PREF_FILES_ASK), c);
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_PREF_FILES_EXT), c);
+            ::EnableWindow(::GetDlgItem(_hSelf, IDC_PREF_FILES_STATIC_EXT), c);
+            break;
         }
         case IDC_PREF_KEYS_ADD:
         {

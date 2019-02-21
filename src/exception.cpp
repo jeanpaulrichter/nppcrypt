@@ -64,12 +64,15 @@ const char* ExcInvalid::messages[] = {
     "failed to parse hash-key.",
     "invalid action parameter.",
     "cannot convert to same encoding.",
+    "invalid eol.",
+    "failed to parse case."
     "no header found.",
     "missing key-length.",
     "missing cipher-mode.",
     "missing hmac-key.",
     "missing IV.",
     "missing Salt.",
+    "missing password.",
     "hash does not support key.",
     "hash requires key.",
     "only decryption of utf8 file possible."

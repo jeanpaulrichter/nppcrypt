@@ -339,10 +339,10 @@ namespace check
         }
         if (!password.size()) {
             if (*opt.nointeraction) {
-                throw std::exception("password missing");
+                throwInvalid(missing_password);
             }
             if (!help::getUserInput("enter password", password, crypt::Encoding::ascii, 3, true, false)) {
-                throw std::exception("password missing");
+                throwInvalid(missing_password);
             }
         }
     }
@@ -387,7 +387,7 @@ namespace check
             }
             if (pos.size() > 1) {
                 if (!crypt::help::getEOL(&args.encoding[pos[1]], options.encoding.eol)) {
-                    throw std::exception("invalid eol");
+                    throwInvalid(invalid_eol);
                 }
                 if (pos.size() > 2) {
                     options.encoding.linelength = std::atoi(&args.encoding[pos[2]]);
@@ -398,7 +398,7 @@ namespace check
                         } else if (strcmp(&args.encoding[pos[3]], "false") == 0) {
                             options.encoding.uppercase = false;
                         } else {
-                            throw std::exception("invalid uppercase");
+                            throwInvalid(invalid_uppercase);
                         }
                     }
                 }

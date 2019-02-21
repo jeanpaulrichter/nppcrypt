@@ -22,7 +22,9 @@ GNU General Public License for more details.
 #else
 #undef __USE_CRYPT
 #include <termios.h>
-#include <unistd.h>
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#define STDErR_FILENO 2
 #endif
 
 void setEcho(bool enable)

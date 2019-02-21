@@ -166,6 +166,7 @@ GNU General Public License for more details.
 #define IDC_PREF_KEYS_DEL               1007
 #define IDC_PREF_KEYS_RANDOM            1008
 #define IDC_PREF_ERROR                  1009
+#define IDC_PREF_FILES_STATIC_EXT       1010
 
 #define IDC_CONVERT_FROM_ASCII          1000
 #define IDC_CONVERT_FROM_BASE16         1001

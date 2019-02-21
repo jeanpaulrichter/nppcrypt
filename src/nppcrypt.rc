@@ -317,7 +317,7 @@ BEGIN
 PUSHBUTTON      "OK", IDC_OK, 95, 149, 58, 14
 GROUPBOX        "nppcrypt-files", IDC_STATIC, 3, 3, 153, 54
 CONTROL         "enable", IDC_PREF_FILES_ENABLE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 14, 35, 13
-LTEXT           "extension:", IDC_STATIC, 10, 41, 35, 11
+LTEXT           "extension:", IDC_PREF_FILES_STATIC_EXT, 10, 41, 35, 11
 EDITTEXT        IDC_PREF_FILES_EXT, 48, 39, 99, 12, ES_AUTOHSCROLL
 CONTROL         "ask for encryption when saving", IDC_PREF_FILES_ASK,
 "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 28, 118, 8
