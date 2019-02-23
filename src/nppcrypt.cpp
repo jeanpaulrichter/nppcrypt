@@ -39,6 +39,7 @@ GNU General Public License for more details.
 #include "help.h"
 
 typedef std::map<std::wstring, CryptInfo> cryptfilemap;
+enum class NppCryptFileSave : unsigned { DEFAULT, OLD_ENCRYPTION, NO_ENCRYPTION };
 
 const TCHAR             NPP_PLUGIN_NAME[] = TEXT(NPPC_NAME);
 const int               NPPCRYPT_VERSION = NPPC_VERSION;
@@ -48,7 +49,7 @@ NppData                 nppData;
 HINSTANCE               m_hInstance;
 CurrentOptions          current;
 cryptfilemap            crypt_files;
-bool                    UndoFileEncryption = false;
+NppCryptFileSave        crypt_file_cursave;
 
 DlgCrypt                dlg_crypt;
 DlgHash                 dlg_hash(current.hash);
@@ -228,92 +229,116 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
         }
         break;
     }
-    /* Why NPPN_FILESAVED instead of NPPN_FILEBEFORESAVE thus effectivly saving the file twice?
-        Because if the user chooses "save as" there is no way of knowing the new filename in NPPN_FILEBEFORESAVE
-        Btw: "Save a Copy as..." does trigger neither NPPN_FILESAVED nor NPPN_FILEBEFORESAVE. same goes for automatic backup saves.*/
-    case NPPN_FILESAVED: case NPPN_FILERENAMED:
+    case NPPN_FILESAVED:
     {
         try {
             if (!preferences.files.enable) {
                 return;
             }
+            std::wstring path, filename, extension;
+            help::buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
 
-            if (UndoFileEncryption) {
-                HWND hCurScintilla = help::scintilla::getCurrent();
-                ::SendMessage(hCurScintilla, SCI_UNDO, 0, 0);
-                ::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
-                ::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
-                ::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
-                UndoFileEncryption = false;
-            } else {
-                std::wstring path, filename, extension;
-                help::buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
+            if (preferences.files.extension.compare(extension) == 0) {
 
-                if (preferences.files.extension.compare(extension) == 0) {
-
-                    cryptfilemap::iterator  fiter = crypt_files.find(path);
-                    CryptInfo& crypt = (fiter != crypt_files.end()) ? fiter->second : current.crypt;
-
-                    ::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
+                if (crypt_file_cursave != NppCryptFileSave::NO_ENCRYPTION) {
                     HWND hCurScintilla = help::scintilla::getCurrent();
+                    ::SendMessage(hCurScintilla, SCI_UNDO, 0, 0);
+                    ::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
+                    ::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
+                    ::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
+                }
+                if (crypt_file_cursave == NppCryptFileSave::OLD_ENCRYPTION) {
+                    msgbox::info(nppData._nppHandle, "The file was saved using the old encryption!");
+                } else if (crypt_file_cursave == NppCryptFileSave::NO_ENCRYPTION) {
+                    msgbox::error(nppData._nppHandle, "The file was saved without encryption!");
+                }
+            }
+        } catch (ExcInfo& exc) {
+            if (exc.getID() != ExcInfo::ID::file_empty) {
+                msgbox::info(nppData._nppHandle, exc.what(), exc.getURL(), exc.getURLCaption());
+            }
+        } catch (std::exception& exc) {
+            msgbox::error(nppData._nppHandle, exc.what());
+        } catch (...) {
+            msgbox::error(nppData._nppHandle, "unknown exception!");
+        }
+        break;
+    }
+    case NPPN_FILEBEFORESAVE:
+    {
+        try {
+            if (!preferences.files.enable) {
+                return;
+            }
+            std::wstring path, filename, extension;
+            help::buffer::getPath(notifyCode->nmhdr.idFrom, path, filename, extension);
 
-                    int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
-                    if (data_length <= 0) {
-                        throwInfo(file_empty);
-                    }
+            if (preferences.files.extension.compare(extension) == 0) {
 
-                    byte* pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
-                    if (!pData) {
-                        throwError(no_scintilla_pointer);
-                    }
+                cryptfilemap::iterator  fiter = crypt_files.find(path);
+                bool                    old_encryption_available = (fiter != crypt_files.end());
+                CryptInfo& crypt = old_encryption_available ? fiter->second : current.crypt;
 
-                    crypt::InitData         initdata;
-                    CryptHeaderWriter       header(crypt.hmac);
-                    std::basic_string<byte> buffer;
-                    bool                    autoencrypt = false;
+                ::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
+                HWND hCurScintilla = help::scintilla::getCurrent();
 
-                    if(fiter != crypt_files.end()) {
-                        if(preferences.files.askonsave) {
-                            std::wstring asksave_msg;
-                            if (filename.size() > 32) {
-                                asksave_msg = TEXT("change encryption of ") + filename.substr(0,32) + TEXT("...?");
-                            } else {
-                                asksave_msg = TEXT("change encryption of ") + filename + TEXT("?");
-                            }
-                            if (::MessageBox(nppData._nppHandle, asksave_msg.c_str(), TEXT("nppcrypt"), MB_YESNO | MB_ICONQUESTION) != IDYES) {
-                                autoencrypt = true;
-                            }
+                int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
+                if (data_length <= 0) {
+                    throwInfo(file_empty);
+                }
+
+                byte* pData = (byte*)::SendMessage(hCurScintilla, SCI_GETCHARACTERPOINTER , 0, 0);
+                if (!pData) {
+                    throwError(no_scintilla_pointer);
+                }
+
+                crypt::InitData         initdata;
+                CryptHeaderWriter       header(crypt.hmac);
+                std::basic_string<byte> buffer;
+                bool                    autoencrypt = false;
+                crypt_file_cursave = NppCryptFileSave::DEFAULT;
+
+                if(old_encryption_available) {
+                    if(preferences.files.askonsave) {
+                        std::wstring asksave_msg;
+                        if (filename.size() > 32) {
+                            asksave_msg = TEXT("change encryption of ") + filename.substr(0,32) + TEXT("...?");
                         } else {
+                            asksave_msg = TEXT("change encryption of ") + filename + TEXT("?");
+                        }
+                        if (::MessageBox(nppData._nppHandle, asksave_msg.c_str(), TEXT("nppcrypt"), MB_YESNO | MB_ICONQUESTION) != IDYES) {
                             autoencrypt = true;
                         }
-                        if(autoencrypt) {
-                            crypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
-                            header.create(crypt.options, initdata, &buffer[0], buffer.size());
-                        }
+                    } else {
+                        autoencrypt = true;
                     }
-                    if(!autoencrypt) {
-                        int encoding = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
-                        bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
+                }
+                if(!autoencrypt) {
+                    int encoding = (int)::SendMessage(nppData._nppHandle, NPPM_GETBUFFERENCODING, notifyCode->nmhdr.idFrom, 0);
+                    bool no_ascii = (encoding != uni8Bit && encoding != uniUTF8 && encoding != uniCookie) ? true : false;
 
-                        if(dlg_crypt.encryptDialog(&crypt, &initdata.iv, &filename)) {
-                            crypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
-                            header.create(crypt.options, initdata, &buffer[0], buffer.size());
-                            if(fiter == crypt_files.end()) {
-                                crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
-                            }
+                    if(!dlg_crypt.encryptDialog(&crypt, &initdata.iv, &filename)) {
+                        if (old_encryption_available) {
+                            crypt = fiter->second;
+                            crypt_file_cursave = NppCryptFileSave::OLD_ENCRYPTION;
                         } else {
+                            crypt_file_cursave = NppCryptFileSave::NO_ENCRYPTION;
                             return;
                         }
                     }
-                    ::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
-                    ::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
-                    ::SendMessage(hCurScintilla, SCI_APPENDTEXT, header.size(), (LPARAM)header.c_str());
-                    ::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
-                    ::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
-
-                    UndoFileEncryption = true;
-                    ::SendMessage(nppData._nppHandle, NPPM_SAVECURRENTFILE, 0, 0);
                 }
+
+                crypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
+                header.create(crypt.options, initdata, &buffer[0], buffer.size());
+                if (!old_encryption_available) {
+                    crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
+                }
+
+                ::SendMessage(hCurScintilla, SCI_BEGINUNDOACTION, 0, 0);
+                ::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
+                ::SendMessage(hCurScintilla, SCI_APPENDTEXT, header.size(), (LPARAM)header.c_str());
+                ::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
+                ::SendMessage(hCurScintilla, SCI_ENDUNDOACTION, 0, 0);
             }
         } catch (ExcInfo& exc) {
             if (exc.getID() != ExcInfo::ID::file_empty) {

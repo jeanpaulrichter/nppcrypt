@@ -7,8 +7,8 @@ features: encryption/decryption with symmetric ciphers like aes. hash-functions 
 
 ##### download:
 1.0.1.6 BETA:
-* x64:: [download](http://www.cerberus-design.de/nppcrypt_1.0.1.6b_x64.zip) (md5: B5D80CE9DF62488023ADB8265F658F11)
-* x86:: [download](http://www.cerberus-design.de/nppcrypt_1.0.1.6b_x86.zip) (md5: F31DA1B7A539B5926D5C144B0F9608F8)
+* x64:: [download](http://www.cerberus-design.de/nppcrypt_1.0.1.6b_x64.zip) (md5: 4AB238A4EFF51584DE076F91AE7F9190)
+* x86:: [download](http://www.cerberus-design.de/nppcrypt_1.0.1.6b_x86.zip) (md5: 1B70D583162AA8EC6F031777BBB39990)
 * Linux version: see [FAQ: compiling nppcrypt](#faq_6)
 ###### old versions:
 * 1.0.1.5: [x86](https://github.com/jeanpaulrichter/nppcrypt/releases/download/1.0.1.5/nppcrypt_1.0.1.5_x86.zip) (md5: 2D5D894EBA15A653FADD1776B66417BB), [x64](https://github.com/jeanpaulrichter/nppcrypt/releases/download/1.0.1.5/nppcrypt_1.0.1.5_x64.zip) (md5: B2BD52509310A324E0A8090DFC8CCB70)
@@ -74,7 +74,7 @@ Well, first of all it would be quite hard to remember all the different options 
 
 ##### <a name="faq_2"></a>2. What is a nppcrypt-file?
 In the preferences-dialog you can specify a nppcrypt-file-extension (like mp3 doc etc.). If you futhermore check the "enable" box nppcrypt will now monitor all files you open and save with notepad++. for example: you specified the nppcrypt-file-extension "nbak" and now you save a file as "secret.nbak": the encryption dialog will automaticly open and you 
-can choose the encryption-method of your liking. the next time you open this file you will be automaticly asked for your password. #IMPORTANT#: nppcrypt does NOT monitor the auto-backup-feature of notepad++.
+can choose the encryption-method of your liking. the next time you open this file you will be automaticly asked for your password. #IMPORTANT#: nppcrypt does NOT monitor the auto-backup-feature of notepad++. also: "save as" does not work for nppcrypt-files!
 
 ##### <a name="faq_3"></a>3. What are good options for strong encryption?
 for example: aes/rijndael 256, gcm , 16-byte salt, scrypt (at least N=14, r=8, p=1, or better, see google), random iv
