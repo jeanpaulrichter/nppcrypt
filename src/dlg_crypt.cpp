@@ -939,12 +939,12 @@ bool DlgCrypt::prepareOptionsEasy()
     // ------- options
     if (operation == Operation::Encryption) {
         crypt->options = preferences.getDefaultEncryption();
+        // ------- no hmac
+        crypt->hmac.enable = false;
+        crypt->hmac.hash.key.clear();
+        crypt->hmac.hash.use_key = false;
+        crypt->hmac.keypreset_id = 0;
     }
-    // ------- no hmac
-    crypt->hmac.enable = false;
-    crypt->hmac.hash.key.clear();
-    crypt->hmac.hash.use_key = false;
-    crypt->hmac.keypreset_id = 0;
     // ------- password
     crypt->password.set(current.password.c_str(), current.password.size(), crypt::Encoding::ascii);
     // ------- modus
