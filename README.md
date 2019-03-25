@@ -100,6 +100,7 @@ cd nppcrypt
 make
 sudo make install
 (OR: sudo make install target=global to copy nppcrypt to /usr/bin instead of /usr/local/bin)
+make clean
 ```
 
 ##### <a name="faq_7"></a>7. the commandline tool

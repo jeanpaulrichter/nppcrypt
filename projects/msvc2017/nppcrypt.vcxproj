@@ -193,7 +193,7 @@
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <TargetName>nppcrypt</TargetName>
     <IntDir>$(SolutionDir)..\..\obj\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</IntDir>
-    <OutDir>..\..\..\..\..\..\..\..\Program Files\Notepad++\plugins\nppcrypt</OutDir>
+    <OutDir>$(SolutionDir)..\..\bin\$(ProjectName)\$(PlatformShortName)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

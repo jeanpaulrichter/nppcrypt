@@ -1,12 +1,12 @@
-// keccak.cpp - modified by Wei Dai from Ronny Van Keer's public domain
-//              sha3-simple.c. All modifications here are placed in the
-//              public domain by Wei Dai.
-//              Keccack core function moved to keccakc.cpp in AUG 2018
-//              by Jeffrey Walton. Separating the core file allows both
-//              SHA3 and Keccack to share the core implementation.
+// shake.cpp - modified by Wei Dai from Ronny Van Keer's public domain
+//             sha3-simple.c. All modifications here are placed in the
+//             public domain by Wei Dai.
+//             Keccack core function moved to keccakc.cpp in AUG 2018
+//             by Jeffrey Walton. Separating the core file allows both
+//             SHA3 and Keccack to share the core implementation.
 
 /*
-The Keccak sponge function, designed by Guido Bertoni, Joan Daemen,
+The SHAKE sponge function, designed by Guido Bertoni, Joan Daemen,
 Michael Peeters and Gilles Van Assche. For more information, feedback or
 questions, please refer to our website: http://keccak.noekeon.org/
 
@@ -18,14 +18,14 @@ http://creativecommons.org/publicdomain/zero/1.0/
 */
 
 #include "pch.h"
-#include "keccak.h"
+#include "shake.h"
 
 NAMESPACE_BEGIN(CryptoPP)
 
 // The Keccak core function
 extern void KeccakF1600(word64 *state);
 
-void Keccak::Update(const byte *input, size_t length)
+void SHAKE::Update(const byte *input, size_t length)
 {
     CRYPTOPP_ASSERT(!(input == NULLPTR && length != 0));
     if (length == 0) { return; }
@@ -46,21 +46,39 @@ void Keccak::Update(const byte *input, size_t length)
     m_counter += (unsigned int)length;
 }
 
-void Keccak::Restart()
+void SHAKE::Restart()
 {
     memset(m_state, 0, m_state.SizeInBytes());
     m_counter = 0;
 }
 
-void Keccak::TruncatedFinal(byte *hash, size_t size)
+void SHAKE::ThrowIfInvalidTruncatedSize(size_t size) const
+{
+	if (size > UINT_MAX)
+		throw InvalidArgument(std::string("HashTransformation: can't truncate a ") +
+		    IntToString(UINT_MAX) + " byte digest to " + IntToString(size) + " bytes");
+}
+
+void SHAKE::TruncatedFinal(byte *hash, size_t size)
 {
     CRYPTOPP_ASSERT(hash != NULLPTR);
     ThrowIfInvalidTruncatedSize(size);
 
-    m_state.BytePtr()[m_counter] ^= 0x01;
+    m_state.BytePtr()[m_counter] ^= 0x1F;
     m_state.BytePtr()[r()-1] ^= 0x80;
-    KeccakF1600(m_state);
-    std::memcpy(hash, m_state, size);
+
+    // FIPS 202, Algorithm 8, pp 18-19.
+    while (size > 0)
+    {
+        KeccakF1600(m_state);
+
+        const size_t segmentLen = STDMIN(size, (size_t)BlockSize());
+        std::memcpy(hash, m_state, segmentLen);
+
+        hash += segmentLen;
+        size -= segmentLen;
+    }
+
     Restart();
 }
 
