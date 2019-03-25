@@ -779,11 +779,12 @@ void hash(const crypt::byte* input, size_t input_length)
 
     if (opt.hash->count()) {
         check::hash(options);
-        crypt::hash(options, buffer, { { input, input_length } });
-        out << crypt::help::getString(options.algorithm) << "-" << options.digest_length * 8 << ": " << (const char*)buffer.c_str() << std::endl;
     } else {
-        throwInvalid(invalid_hash);
+        options.algorithm = crypt::Hash::md5;
+        options.digest_length = 16;
     }
+    crypt::hash(options, buffer, { { input, input_length } });
+    out << crypt::help::getString(options.algorithm) << "-" << options.digest_length * 8 << ": " << (const char*)buffer.c_str() << std::endl;
     
     if (opt.output->count()) {
         std::string temp = out.str();

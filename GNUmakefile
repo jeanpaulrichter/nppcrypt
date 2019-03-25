@@ -5,15 +5,16 @@ CXX := g++
 C := gcc
 CXXFLAGS := -std=c++11
 CFLAGS := 
-CRYPTOPP := bin/cryptopp/libcryptopp.a
-LDFLAGS := -lstdc++ $(CRYPTOPP)
+# cryptopp is built in src/cryptopp (instead of obj/cryptopp and bin/cryptopp) to avoid having to mess with the cryptopp makefile
+CRYPTOPP := src/cryptopp/libcryptopp.a
+LDFLAGS := -lstdc++ -Lsrc/cryptopp -lcryptopp
 PREFIX := /usr/local
 
 DEP_SRC := $(shell find $(SRCDIR)/bcrypt -type f -name *.cpp)
 DEP_SRC += $(shell find $(SRCDIR)/scrypt -type f -name *.c)
 DEP_SRC += $(shell find $(SRCDIR)/keccak -type f -name *.cpp)
 DEP_SRC += $(shell find $(SRCDIR)/tinyxml2 -type f -name *.cpp)
-MAIN_SRC := src/clihelp.cpp src/cmdline.cpp src/crypt.cpp src/exception.cpp src/cryptheader.cpp
+MAIN_SRC := src/clihelp.cpp src/crypt_help.cpp src/crypt.cpp src/cmdline.cpp src/exception.cpp src/cryptheader.cpp
 
 ifeq ($(mode),debug)
 	CFLAGS += -g3 -ggdb -O0 -Wall -Wextra -Wno-unused -DDEBUG
@@ -89,6 +90,9 @@ $(OBJDIR)/$(SUBDIR)/keccak/%.o: src/keccak/%.cpp
 $(OBJDIR)/$(SUBDIR)/tinyxml2/%.o: src/tinyxml2/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+$(OBJDIR)/$(SUBDIR)/crypt.o: src/crypt.cpp 
+	$(CXX) $(CXXFLAGS) -DCRYPTOPP_DISABLE_ASM -DCRYPTOPP_DISABLE_MIXED_ASM -c -o $@ $<
+
 $(OBJDIR)/$(SUBDIR)/%.o: src/%.cpp
-	$(CXX) $(CXXFLAGS) -I /src/cli11 -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
