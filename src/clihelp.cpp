@@ -85,7 +85,7 @@ bool setLocale()
     return ret;
 }
 
-void readLine(crypt::secure_string& out)
+void readLine(nppcrypt::secure_string& out)
 {
 #ifdef WIN32
     HANDLE hConsole = GetStdHandle(STD_INPUT_HANDLE);

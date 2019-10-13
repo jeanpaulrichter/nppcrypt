@@ -31,13 +31,13 @@ T ipow(T base, T exp)
     return result;
 }
 
-using namespace crypt;
+using namespace nppcrypt;
 
 // ----------------------------- PROPERTIES -------------------------------------------------------------------------------------------------------------------------------------------------------
 
 enum { B4 = 1, B8 = 2, B12 = 4, B16 = 8, B20 = 16, B24 = 32, B28 = 64, B32 = 128, B36 = 256, B40 = 512, B44 = 1024, B48 = 2048, B52 = 4096, B56 = 8192, B60 = 16384, B64 = 32768 };
 
-static const unsigned int cipher_properties[unsigned(crypt::Cipher::COUNT)] =
+static const unsigned int cipher_properties[unsigned(nppcrypt::Cipher::COUNT)] =
 {
     /* threeway         */ BLOCK | WEAK,
     /* aria             */ BLOCK | EAX | CCM | GCM,
@@ -87,7 +87,7 @@ static const unsigned int cipher_properties[unsigned(crypt::Cipher::COUNT)] =
 };
 
 /* { Start, Stepsize, Count } in Bytes */
-static const unsigned int cipher_keys[unsigned(crypt::Cipher::COUNT)][3] =
+static const unsigned int cipher_keys[unsigned(nppcrypt::Cipher::COUNT)][3] =
 {
     /* threeway         */ {12, 0, 1},
     /* aria             */ {16, 8, 3},
@@ -136,7 +136,7 @@ static const unsigned int cipher_keys[unsigned(crypt::Cipher::COUNT)][3] =
     /* xtea             */ {16, 0, 1}
 };
 
-static const unsigned int hash_properties[unsigned(crypt::Hash::COUNT)] =
+static const unsigned int hash_properties[unsigned(nppcrypt::Hash::COUNT)] =
 {
     /* adler32          */ WEAK,
     /* blake2b          */ KEY_SUPPORT,
@@ -158,7 +158,7 @@ static const unsigned int hash_properties[unsigned(crypt::Hash::COUNT)] =
     /* whirlpool        */ HMAC_SUPPORT
 };
 
-static const unsigned int hash_digests[unsigned(crypt::Hash::COUNT)] =
+static const unsigned int hash_digests[unsigned(nppcrypt::Hash::COUNT)] =
 {
     /* adler32          */ B4,
     /* blake2b          */ B16 | B28 | B32 | B48 | B64,
@@ -180,7 +180,7 @@ static const unsigned int hash_digests[unsigned(crypt::Hash::COUNT)] =
     /* whirlpool        */ B64,
 };
 
-/* { startindex , endindex } of crypt::Cipher */
+/* { startindex , endindex } of nppcrypt::Cipher */
 #define CIPHER_CAT_COUNT 4
 static const int cipher_categories[4][2] =
 {
@@ -251,52 +251,52 @@ int searchStringArray(const char* s, const char** a, size_t a_length)
     return -1;
 }
 
-const char* crypt::help::getString(crypt::Cipher cipher)
+const char* nppcrypt::help::getString(nppcrypt::Cipher cipher)
 {
     return Strings::cipher[static_cast<int>(cipher)];
 }
 
-const char* crypt::help::getString(crypt::Mode mode)
+const char* nppcrypt::help::getString(nppcrypt::Mode mode)
 {
     return Strings::mode[static_cast<int>(mode)];
 }
 
-const char*  crypt::help::getString(crypt::Encoding enc)
+const char*  nppcrypt::help::getString(nppcrypt::Encoding enc)
 {
     return Strings::encoding[static_cast<int>(enc)];
 }
 
-const char* crypt::help::getString(crypt::KeyDerivation k)
+const char* nppcrypt::help::getString(nppcrypt::KeyDerivation k)
 {
     return Strings::key_algo[static_cast<int>(k)];
 }
 
-const char* crypt::help::getString(crypt::IV iv)
+const char* nppcrypt::help::getString(nppcrypt::IV iv)
 {
     return Strings::iv[static_cast<int>(iv)];
 }
 
-const char* crypt::help::getString(crypt::Hash h)
+const char* nppcrypt::help::getString(nppcrypt::Hash h)
 {
     return Strings::hash[static_cast<int>(h)];
 }
 
-const char* crypt::help::getString(UserData::Restriction r)
+const char* nppcrypt::help::getString(UserData::Restriction r)
 {
     return Strings::random_restriction[static_cast<int>(r)];
 }
 
-const char* crypt::help::getString(crypt::EOL eol)
+const char* nppcrypt::help::getString(nppcrypt::EOL eol)
 {
     return Strings::eol[static_cast<int>(eol)];
 }
 
-const char* crypt::help::getString(bool v)
+const char* nppcrypt::help::getString(bool v)
 {
     return Strings::boolean[v ? 0 : 1];
 }
 
-bool crypt::help::getCipher(const char* s, crypt::Cipher& c)
+bool nppcrypt::help::getCipher(const char* s, nppcrypt::Cipher& c)
 {
     int index = searchStringArray(s, Strings::cipher, (size_t)Cipher::COUNT);
     if (index >= 0) {
@@ -307,7 +307,7 @@ bool crypt::help::getCipher(const char* s, crypt::Cipher& c)
     }
 }
 
-bool crypt::help::getCipherMode(const char* s, crypt::Mode& m)
+bool nppcrypt::help::getCipherMode(const char* s, nppcrypt::Mode& m)
 {
     int index = searchStringArray(s, Strings::mode, (size_t)Mode::COUNT);
     if (index >= 0) {
@@ -318,7 +318,7 @@ bool crypt::help::getCipherMode(const char* s, crypt::Mode& m)
     }
 }
 
-bool crypt::help::getKeyDerivation(const char*s, KeyDerivation& v)
+bool nppcrypt::help::getKeyDerivation(const char*s, KeyDerivation& v)
 {
     int index = searchStringArray(s, Strings::key_algo, (size_t)KeyDerivation::COUNT);
     if (index >= 0) {
@@ -329,7 +329,7 @@ bool crypt::help::getKeyDerivation(const char*s, KeyDerivation& v)
     }
 }
 
-bool crypt::help::getIVMode(const char* s, crypt::IV& iv)
+bool nppcrypt::help::getIVMode(const char* s, nppcrypt::IV& iv)
 {
     int index = searchStringArray(s, Strings::iv, (size_t)IV::COUNT);
     if (index >= 0) {
@@ -340,7 +340,7 @@ bool crypt::help::getIVMode(const char* s, crypt::IV& iv)
     }
 }
 
-bool crypt::help::getEncoding(const char* s, crypt::Encoding& e)
+bool nppcrypt::help::getEncoding(const char* s, nppcrypt::Encoding& e)
 {
     int index = searchStringArray(s, Strings::encoding, (size_t)Encoding::COUNT);
     if (index >= 0) {
@@ -351,7 +351,7 @@ bool crypt::help::getEncoding(const char* s, crypt::Encoding& e)
     }
 }
 
-bool crypt::help::getRandomRestriction(const char* s, UserData::Restriction& r)
+bool nppcrypt::help::getRandomRestriction(const char* s, UserData::Restriction& r)
 {
     int index = searchStringArray(s, Strings::random_restriction, (size_t)UserData::Restriction::COUNT);
     if (index >= 0) {
@@ -362,7 +362,7 @@ bool crypt::help::getRandomRestriction(const char* s, UserData::Restriction& r)
     }
 }
 
-bool crypt::help::getEOL(const char* s, crypt::EOL& eol)
+bool nppcrypt::help::getEOL(const char* s, nppcrypt::EOL& eol)
 {
     int index = searchStringArray(s, Strings::eol, (size_t)EOL::COUNT);
     if (index >= 0) {
@@ -373,7 +373,7 @@ bool crypt::help::getEOL(const char* s, crypt::EOL& eol)
     }
 }
 
-bool crypt::help::getHash(const char* s, Hash& h)
+bool nppcrypt::help::getHash(const char* s, Hash& h)
 {
     int index = searchStringArray(s, Strings::hash, (size_t)Hash::COUNT);
     if (index >= 0) {
@@ -384,7 +384,7 @@ bool crypt::help::getHash(const char* s, Hash& h)
     }
 }
 
-bool crypt::help::getUnsigned(const char* s, size_t& i)
+bool nppcrypt::help::getUnsigned(const char* s, size_t& i)
 {
     if (s && strlen(s) <= 10) {
         i = (size_t)std::atoi(s);
@@ -393,7 +393,7 @@ bool crypt::help::getUnsigned(const char* s, size_t& i)
     return false;
 }
 
-bool crypt::help::getInteger(const char* s, int& i, bool log2)
+bool nppcrypt::help::getInteger(const char* s, int& i, bool log2)
 {
     if (s && strlen(s) <= 10) {
         if (log2) {
@@ -410,7 +410,7 @@ bool crypt::help::getInteger(const char* s, int& i, bool log2)
     return false;
 }
 
-bool crypt::help::getBoolean(const char* s, bool& b)
+bool nppcrypt::help::getBoolean(const char* s, bool& b)
 {
     if (s) {
         size_t len = strlen(s);
@@ -425,7 +425,7 @@ bool crypt::help::getBoolean(const char* s, bool& b)
     return false;
 }
 
-void crypt::help::validate(Options::Crypt options, bool exceptions)
+void nppcrypt::help::validate(Options::Crypt options, bool exceptions)
 {
     // ---------- cipher mode
     if (!checkProperty(options.cipher, STREAM) && !checkCipherMode(options.cipher, options.mode)) {
@@ -451,7 +451,7 @@ void crypt::help::validate(Options::Crypt options, bool exceptions)
     switch (options.key.algorithm) {
     case KeyDerivation::pbkdf2:
     {
-        if (options.key.options[0] < 0 || options.key.options[0] >= (int)crypt::Hash::COUNT || !checkProperty((crypt::Hash)options.key.options[0], HMAC_SUPPORT)) {
+        if (options.key.options[0] < 0 || options.key.options[0] >= (int)nppcrypt::Hash::COUNT || !checkProperty((nppcrypt::Hash)options.key.options[0], HMAC_SUPPORT)) {
             if (exceptions) {
                 throwInvalid(invalid_pbkdf2);
             } else {
@@ -459,54 +459,54 @@ void crypt::help::validate(Options::Crypt options, bool exceptions)
                 options.key.options[1] = Constants::pbkdf2_default_hash_digest;
             }
         }
-        if (options.key.options[1] != 0 && !crypt::help::checkHashDigest((Hash)options.key.options[0], (unsigned int)options.key.options[1])) {
+        if (options.key.options[1] != 0 && !nppcrypt::help::checkHashDigest((Hash)options.key.options[0], (unsigned int)options.key.options[1])) {
             if (exceptions) {
                 throwInvalid(invalid_pbkdf2);
             } else {
                 options.key.options[1] = 0;
             }
         }
-        if (options.key.options[2] < crypt::Constants::pbkdf2_iter_min || options.key.options[2] > crypt::Constants::pbkdf2_iter_max) {
+        if (options.key.options[2] < nppcrypt::Constants::pbkdf2_iter_min || options.key.options[2] > nppcrypt::Constants::pbkdf2_iter_max) {
             if (exceptions) {
                 throwInvalid(invalid_pbkdf2);
             } else {
-                options.key.options[2] = crypt::Constants::pbkdf2_iter_default;
+                options.key.options[2] = nppcrypt::Constants::pbkdf2_iter_default;
             }
         }
         break;
     }
     case KeyDerivation::bcrypt:
     {
-        if (options.key.options[0] < crypt::Constants::bcrypt_iter_min || options.key.options[0] > crypt::Constants::bcrypt_iter_max) {
+        if (options.key.options[0] < nppcrypt::Constants::bcrypt_iter_min || options.key.options[0] > nppcrypt::Constants::bcrypt_iter_max) {
             if (exceptions) {
                 throwInvalid(invalid_bcrypt);
             } else {
-                options.key.options[0] = crypt::Constants::bcrypt_iter_default;
+                options.key.options[0] = nppcrypt::Constants::bcrypt_iter_default;
             }
         }
         break;
     }
     case KeyDerivation::scrypt:
     {
-        if (options.key.options[0] < crypt::Constants::scrypt_N_min || options.key.options[0] > crypt::Constants::scrypt_N_max) {
+        if (options.key.options[0] < nppcrypt::Constants::scrypt_N_min || options.key.options[0] > nppcrypt::Constants::scrypt_N_max) {
             if (exceptions) {
                 throwInvalid(invalid_scrypt);
             } else {
-                options.key.options[0] = crypt::Constants::scrypt_N_default;
+                options.key.options[0] = nppcrypt::Constants::scrypt_N_default;
             }
         }
-        if (options.key.options[1] < crypt::Constants::scrypt_r_min || options.key.options[1] > crypt::Constants::scrypt_r_max) {
+        if (options.key.options[1] < nppcrypt::Constants::scrypt_r_min || options.key.options[1] > nppcrypt::Constants::scrypt_r_max) {
             if (exceptions) {
                 throwInvalid(invalid_scrypt);
             } else {
-                options.key.options[1] = crypt::Constants::scrypt_r_default;
+                options.key.options[1] = nppcrypt::Constants::scrypt_r_default;
             }
         }
-        if (options.key.options[2] < crypt::Constants::scrypt_p_min || options.key.options[2] > crypt::Constants::scrypt_p_max) {
+        if (options.key.options[2] < nppcrypt::Constants::scrypt_p_min || options.key.options[2] > nppcrypt::Constants::scrypt_p_max) {
             if (exceptions) {
                 throwInvalid(invalid_scrypt);
             } else {
-                options.key.options[2] = crypt::Constants::scrypt_p_default;
+                options.key.options[2] = nppcrypt::Constants::scrypt_p_default;
             }
         }
         break;
@@ -537,7 +537,7 @@ void crypt::help::validate(Options::Crypt options, bool exceptions)
     }
 }
 
-void crypt::help::validate(Options::Hash options, bool exceptions)
+void nppcrypt::help::validate(Options::Hash options, bool exceptions)
 {
     if (!help::checkHashDigest(options.algorithm, (unsigned int)options.digest_length)) {
         if (exceptions) {
@@ -547,14 +547,14 @@ void crypt::help::validate(Options::Hash options, bool exceptions)
         }
     }
     if (options.use_key) {
-        if (!help::checkProperty(options.algorithm, crypt::HMAC_SUPPORT) && !help::checkProperty(options.algorithm, crypt::KEY_SUPPORT)) {
+        if (!help::checkProperty(options.algorithm, nppcrypt::HMAC_SUPPORT) && !help::checkProperty(options.algorithm, nppcrypt::KEY_SUPPORT)) {
             if (exceptions) {
                 throwInvalid(hash_without_keysupport);
             } else {
                 options.algorithm = Hash::sha3;
             }
         }
-    } else if (help::checkProperty(options.algorithm, crypt::KEY_REQUIRED)) {
+    } else if (help::checkProperty(options.algorithm, nppcrypt::KEY_REQUIRED)) {
         if (exceptions) {
             throwInvalid(hash_requires_key);
         } else {
@@ -563,7 +563,7 @@ void crypt::help::validate(Options::Hash options, bool exceptions)
     }
 }
 
-void crypt::help::validate(Options::Convert options, bool exceptions)
+void nppcrypt::help::validate(Options::Convert options, bool exceptions)
 {
     if (options.from == options.to) {
         if (exceptions) {
@@ -590,7 +590,7 @@ void crypt::help::validate(Options::Convert options, bool exceptions)
     }
 }
 
-crypt::Mode crypt::help::getModeByIndex(crypt::Cipher cipher, int index)
+nppcrypt::Mode nppcrypt::help::getModeByIndex(nppcrypt::Cipher cipher, int index)
 {
     if (index >= 0 && index < int(Mode::eax)) {
         return Mode(index);
@@ -610,7 +610,7 @@ crypt::Mode crypt::help::getModeByIndex(crypt::Cipher cipher, int index)
     return Mode::cbc;
 }
 
-int crypt::help::getModeIndex(crypt::Cipher cipher, crypt::Mode mode)
+int nppcrypt::help::getModeIndex(nppcrypt::Cipher cipher, nppcrypt::Mode mode)
 {
     if (mode == Mode::eax) {
         if ((cipher_properties[int(cipher)] & EAX) == EAX) {
@@ -630,7 +630,7 @@ int crypt::help::getModeIndex(crypt::Cipher cipher, crypt::Mode mode)
     return -1;
 }
 
-int crypt::help::getCipherCategory(Cipher cipher)
+int nppcrypt::help::getCipherCategory(Cipher cipher)
 {
     for (int i = CIPHER_CAT_COUNT - 1; i >= 0; i--) {
         if ((int)cipher >= cipher_categories[i][0]) {
@@ -640,16 +640,16 @@ int crypt::help::getCipherCategory(Cipher cipher)
     return -1;
 }
 
-crypt::Cipher crypt::help::getCipherByIndex(size_t category, size_t index)
+nppcrypt::Cipher nppcrypt::help::getCipherByIndex(size_t category, size_t index)
 {
-    if (category >= CIPHER_CAT_COUNT || cipher_categories[category][0] + index >= (size_t)crypt::Cipher::COUNT) {
+    if (category >= CIPHER_CAT_COUNT || cipher_categories[category][0] + index >= (size_t)nppcrypt::Cipher::COUNT) {
         return Cipher::rijndael;
     } else {
         return (Cipher)(cipher_categories[category][0] + index);
     }
 }
 
-int crypt::help::getCipherIndex(Cipher cipher)
+int nppcrypt::help::getCipherIndex(Cipher cipher)
 {
     for (int i = 0; i < CIPHER_CAT_COUNT; i++) {
         if ((int)cipher <= cipher_categories[i][1]) {
@@ -659,12 +659,12 @@ int crypt::help::getCipherIndex(Cipher cipher)
     return -1;
 }
 
-size_t crypt::help::getCipherKeylengthByIndex(Cipher cipher, size_t index)
+size_t nppcrypt::help::getCipherKeylengthByIndex(Cipher cipher, size_t index)
 {
     return cipher_keys[(int)cipher][0] + index * cipher_keys[(int)cipher][1];
 }
 
-Hash crypt::help::getHashByIndex(size_t index, int filter)
+Hash nppcrypt::help::getHashByIndex(size_t index, int filter)
 {
     size_t h = 0;
     for (int i = 0; i < (int)Hash::COUNT; i++) {
@@ -682,7 +682,7 @@ Hash crypt::help::getHashByIndex(size_t index, int filter)
     return Hash::sha3;
 }
 
-int crypt::help::getHashIndex(Hash h, int filter)
+int nppcrypt::help::getHashIndex(Hash h, int filter)
 {
     int ret = 0;
     for (int i = 0; i < (int)Hash::COUNT; i++) {
@@ -700,7 +700,7 @@ int crypt::help::getHashIndex(Hash h, int filter)
     return -1;
 }
 
-size_t crypt::help::getHashDigestByIndex(Hash h, unsigned int index)
+size_t nppcrypt::help::getHashDigestByIndex(Hash h, unsigned int index)
 {
     unsigned int ind = 0;
     unsigned int i = 0;
@@ -717,7 +717,7 @@ size_t crypt::help::getHashDigestByIndex(Hash h, unsigned int index)
     return 0;
 }
 
-int crypt::help::getHashDigestIndex(Hash h, unsigned int digest)
+int nppcrypt::help::getHashDigestIndex(Hash h, unsigned int digest)
 {
     unsigned int ind = 0;
     unsigned int i = 0;
@@ -734,7 +734,7 @@ int crypt::help::getHashDigestIndex(Hash h, unsigned int digest)
     return 0;
 }
 
-bool crypt::help::checkCipherMode(crypt::Cipher cipher, crypt::Mode mode)
+bool nppcrypt::help::checkCipherMode(nppcrypt::Cipher cipher, nppcrypt::Mode mode)
 {
     if (mode == Mode::eax) {
         if ((cipher_properties[int(cipher)] & EAX) == EAX) {
@@ -754,7 +754,7 @@ bool crypt::help::checkCipherMode(crypt::Cipher cipher, crypt::Mode mode)
     return false;
 }
 
-bool crypt::help::checkProperty(crypt::Cipher cipher, int filter)
+bool nppcrypt::help::checkProperty(nppcrypt::Cipher cipher, int filter)
 {
     if ((unsigned)cipher >= (unsigned)Cipher::COUNT) {
         return false;
@@ -762,7 +762,7 @@ bool crypt::help::checkProperty(crypt::Cipher cipher, int filter)
     return ((cipher_properties[(unsigned)cipher] & filter) == filter);
 }
 
-bool crypt::help::checkProperty(crypt::Hash h, int filter)
+bool nppcrypt::help::checkProperty(nppcrypt::Hash h, int filter)
 {
     if ((unsigned)h >= (unsigned)Hash::COUNT) {
         return false;
@@ -770,7 +770,7 @@ bool crypt::help::checkProperty(crypt::Hash h, int filter)
     return ((hash_properties[(unsigned)h] & filter) == filter);
 }
 
-bool crypt::help::checkHashDigest(Hash h, unsigned int digest)
+bool nppcrypt::help::checkHashDigest(Hash h, unsigned int digest)
 {
     if (digest < 4 || digest > 128) {
         return false;
@@ -779,7 +779,7 @@ bool crypt::help::checkHashDigest(Hash h, unsigned int digest)
     return ((hash_digests[(unsigned)h] & x) == x);
 }
 
-bool crypt::help::checkCipherKeylength(Cipher cipher, size_t keylength)
+bool nppcrypt::help::checkCipherKeylength(Cipher cipher, size_t keylength)
 {
     for (size_t i = 0; i < cipher_keys[(int)cipher][2]; i++) {
         if (keylength == cipher_keys[(int)cipher][0] + cipher_keys[(int)cipher][1] * i) {
@@ -789,71 +789,71 @@ bool crypt::help::checkCipherKeylength(Cipher cipher, size_t keylength)
     return false;
 }
 
-const char* crypt::help::getHelpURL(crypt::Encoding enc)
+const char* nppcrypt::help::getHelpURL(nppcrypt::Encoding enc)
 {
     strcpy(Strings::help_url_wikipedia + Strings::help_url_wikipedia_len, Strings::encoding_info_url[unsigned(enc)]);
     return Strings::help_url_wikipedia;
 }
 
-const char* crypt::help::getHelpURL(crypt::Cipher cipher)
+const char* nppcrypt::help::getHelpURL(nppcrypt::Cipher cipher)
 {
     strcpy(Strings::help_url_wikipedia + Strings::help_url_wikipedia_len, Strings::cipher_info_url[unsigned(cipher)]);
     return Strings::help_url_wikipedia;
 }
 
-const char* crypt::help::getHelpURL(crypt::Hash h)
+const char* nppcrypt::help::getHelpURL(nppcrypt::Hash h)
 {
     strcpy(Strings::help_url_wikipedia + Strings::help_url_wikipedia_len, Strings::hash_info_url[unsigned(h)]);
     return Strings::help_url_wikipedia;
 }
 
-const char* crypt::help::getHelpURL(crypt::KeyDerivation k)
+const char* nppcrypt::help::getHelpURL(nppcrypt::KeyDerivation k)
 {
     strcpy(Strings::help_url_wikipedia + Strings::help_url_wikipedia_len, Strings::key_algo_info_url[unsigned(k)]);
     return Strings::help_url_wikipedia;
 }
 
-const char* crypt::help::getHelpURL(crypt::Mode m)
+const char* nppcrypt::help::getHelpURL(nppcrypt::Mode m)
 {
     strcpy(Strings::help_url_wikipedia + Strings::help_url_wikipedia_len, Strings::mode_info_url[unsigned(m)]);
     return Strings::help_url_wikipedia;
 }
 
-const char* crypt::help::getInfo(crypt::Cipher c)
+const char* nppcrypt::help::getInfo(nppcrypt::Cipher c)
 {
     return Strings::cipher_info[unsigned(c)];
 }
 
-const char* crypt::help::getInfo(crypt::Mode m)
+const char* nppcrypt::help::getInfo(nppcrypt::Mode m)
 {
     return Strings::mode_info[unsigned(m)];
 }
 
-const char* crypt::help::getInfo(crypt::Hash h)
+const char* nppcrypt::help::getInfo(nppcrypt::Hash h)
 {
     return Strings::hash_info[unsigned(h)];
 }
 
-const char* crypt::help::getInfo(crypt::IV iv)
+const char* nppcrypt::help::getInfo(nppcrypt::IV iv)
 {
     return Strings::iv_help[unsigned(iv)];
 }
 
-const char* crypt::help::getInfo(crypt::KeyDerivation k)
+const char* nppcrypt::help::getInfo(nppcrypt::KeyDerivation k)
 {
     return Strings::key_algo_info[unsigned(k)];
 }
 
-const char* crypt::help::getInfo(crypt::Encoding e)
+const char* nppcrypt::help::getInfo(nppcrypt::Encoding e)
 {
     return Strings::encoding_info[unsigned(e)];
 }
 
-crypt::help::CipherCategories::CipherCategories() : i(0)
+nppcrypt::help::CipherCategories::CipherCategories() : i(0)
 {
 }
 
-const char* crypt::help::CipherCategories::operator*() const
+const char* nppcrypt::help::CipherCategories::operator*() const
 {
     if (i >= 0) {
         return Strings::cipher_categories[i];
@@ -862,7 +862,7 @@ const char* crypt::help::CipherCategories::operator*() const
     }
 }
 
-crypt::help::CipherCategories& crypt::help::CipherCategories::operator++()
+nppcrypt::help::CipherCategories& nppcrypt::help::CipherCategories::operator++()
 {
     if (i != -1) {
         ++i;
@@ -873,7 +873,7 @@ crypt::help::CipherCategories& crypt::help::CipherCategories::operator++()
     return *this;
 }
 
-crypt::help::CipherNames::CipherNames(int category) : c(category), i(0)
+nppcrypt::help::CipherNames::CipherNames(int category) : c(category), i(0)
 {
     if (c < 0 || c >= CIPHER_CAT_COUNT) {
         i = -1;
@@ -882,7 +882,7 @@ crypt::help::CipherNames::CipherNames(int category) : c(category), i(0)
     }
 }
 
-const char* crypt::help::CipherNames::operator*() const
+const char* nppcrypt::help::CipherNames::operator*() const
 {
     if (i >= 0) {
         return Strings::cipher_label[i];
@@ -891,7 +891,7 @@ const char* crypt::help::CipherNames::operator*() const
     }
 }
 
-crypt::help::CipherNames& crypt::help::CipherNames::operator++()
+nppcrypt::help::CipherNames& nppcrypt::help::CipherNames::operator++()
 {
     if (i != -1) {
         ++i;
@@ -902,14 +902,14 @@ crypt::help::CipherNames& crypt::help::CipherNames::operator++()
     return *this;
 }
 
-crypt::help::CipherModes::CipherModes(crypt::Cipher c) : cipher_index((size_t)c), i(0)
+nppcrypt::help::CipherModes::CipherModes(nppcrypt::Cipher c) : cipher_index((size_t)c), i(0)
 {
     if ((cipher_properties[cipher_index] & STREAM) == STREAM) {
         i = -1;
     }
 }
 
-const char* crypt::help::CipherModes::operator*() const
+const char* nppcrypt::help::CipherModes::operator*() const
 {
     if (i >= 0) {
         return Strings::mode[i];
@@ -918,7 +918,7 @@ const char* crypt::help::CipherModes::operator*() const
     }
 }
 
-crypt::help::CipherModes& crypt::help::CipherModes::operator++()
+nppcrypt::help::CipherModes& nppcrypt::help::CipherModes::operator++()
 {
     if (i != -1) {
         ++i;
@@ -938,11 +938,11 @@ crypt::help::CipherModes& crypt::help::CipherModes::operator++()
     return *this;
 }
 
-crypt::help::CipherKeys::CipherKeys(crypt::Cipher c) : cipher_index((size_t)c), i(0)
+nppcrypt::help::CipherKeys::CipherKeys(nppcrypt::Cipher c) : cipher_index((size_t)c), i(0)
 {
 }
 
-int crypt::help::CipherKeys::operator*() const
+int nppcrypt::help::CipherKeys::operator*() const
 {
     if (i >= 0) {
         return cipher_keys[cipher_index][0] + i * cipher_keys[cipher_index][1];
@@ -951,7 +951,7 @@ int crypt::help::CipherKeys::operator*() const
     }
 }
 
-crypt::help::CipherKeys& crypt::help::CipherKeys::operator++()
+nppcrypt::help::CipherKeys& nppcrypt::help::CipherKeys::operator++()
 {
     ++i;
     if (i >= (int)cipher_keys[cipher_index][2]) {
@@ -960,12 +960,12 @@ crypt::help::CipherKeys& crypt::help::CipherKeys::operator++()
     return *this;
 }
 
-crypt::help::Hashnames::Hashnames(int filter) : f(filter), i(0)
+nppcrypt::help::Hashnames::Hashnames(int filter) : f(filter), i(0)
 {
     checkfilter();
 }
 
-const char* crypt::help::Hashnames::operator*() const
+const char* nppcrypt::help::Hashnames::operator*() const
 {
     if (i >= 0) {
         return Strings::hash_label[i];
@@ -974,7 +974,7 @@ const char* crypt::help::Hashnames::operator*() const
     }
 }
 
-crypt::help::Hashnames& crypt::help::Hashnames::operator++()
+nppcrypt::help::Hashnames& nppcrypt::help::Hashnames::operator++()
 {
     if (i != -1) {
         ++i;
@@ -983,7 +983,7 @@ crypt::help::Hashnames& crypt::help::Hashnames::operator++()
     return *this;
 }
 
-void crypt::help::Hashnames::checkfilter()
+void nppcrypt::help::Hashnames::checkfilter()
 {
     while (i < (int)Hash::COUNT) {
         if (((f & WEAK) == WEAK && (hash_properties[i] & WEAK) != WEAK) ||
@@ -1000,12 +1000,12 @@ void crypt::help::Hashnames::checkfilter()
     }
 }
 
-crypt::help::HashDigests::HashDigests(crypt::Hash h) : hash_index((size_t)h), i(0)
+nppcrypt::help::HashDigests::HashDigests(nppcrypt::Hash h) : hash_index((size_t)h), i(0)
 {
     getLength();
 }
 
-int crypt::help::HashDigests::operator*() const
+int nppcrypt::help::HashDigests::operator*() const
 {
     if (i >= 0) {
         return cur_length;
@@ -1014,14 +1014,14 @@ int crypt::help::HashDigests::operator*() const
     }
 }
 
-crypt::help::HashDigests& crypt::help::HashDigests::operator++()
+nppcrypt::help::HashDigests& nppcrypt::help::HashDigests::operator++()
 {
     ++i;
     getLength();
     return *this;
 }
 
-void crypt::help::HashDigests::getLength()
+void nppcrypt::help::HashDigests::getLength()
 {
     while (i < 16) {
         unsigned int x = ipow<unsigned int>(2, i);

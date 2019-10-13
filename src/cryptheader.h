@@ -28,7 +28,7 @@ public:
 
         bool                    enable;
         int                     keypreset_id;
-        crypt::Options::Hash    hash;
+        nppcrypt::Options::Hash    hash;
     };
 
         CryptHeader(HMAC& h) : version(NPPC_VERSION), hmac(h) {};
@@ -39,7 +39,7 @@ protected:
     struct DataPointer {
         DataPointer() : start(NULL), length(0) {};
 
-        const crypt::byte* start;
+        const nppcrypt::byte* start;
         size_t             length;
     };
 
@@ -52,13 +52,13 @@ class CryptHeaderReader : public CryptHeader
 {
 public:
                         CryptHeaderReader(HMAC& hmac) : CryptHeader(hmac) {};
-    bool                parse(crypt::Options::Crypt& options, crypt::InitData& initdata, const crypt::byte* in, size_t in_len);
-    const crypt::byte*  getEncrypted() { return encrypted.start; };
+    bool                parse(nppcrypt::Options::Crypt& options, nppcrypt::InitData& initdata, const nppcrypt::byte* in, size_t in_len);
+    const nppcrypt::byte*  getEncrypted() { return encrypted.start; };
     size_t              getEncryptedLength() { return encrypted.length; };
     bool                checkHMAC();
 
 private:
-    crypt::UserData     hmac_digest;
+    nppcrypt::UserData     hmac_digest;
     DataPointer          encrypted;
 };
 
@@ -66,7 +66,7 @@ class CryptHeaderWriter : public CryptHeader
 {
 public:
                 CryptHeaderWriter(HMAC& hmac) : CryptHeader(hmac) {};
-    void        create(const crypt::Options::Crypt& options, const crypt::InitData& initdata, const crypt::byte* data, size_t data_length);
+    void        create(const nppcrypt::Options::Crypt& options, const nppcrypt::InitData& initdata, const nppcrypt::byte* data, size_t data_length);
     const char* c_str() { return buffer.c_str(); };
     size_t      size() { return buffer.size(); };
 

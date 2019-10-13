@@ -27,12 +27,12 @@ class DlgAuth: public ModalDialog
 public:    
                         DlgAuth() : ModalDialog() {};
     bool                doDialog(const TCHAR* filename=NULL);
-    crypt::UserData&    getInput();
+    nppcrypt::UserData&    getInput();
 
 private:
     INT_PTR CALLBACK    run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-    crypt::UserData     input;
+    nppcrypt::UserData     input;
     std::wstring        caption;
 };
 

@@ -24,7 +24,7 @@ GNU General Public License for more details.
 #include "crypt_help.h"
 #include "messagebox.h"
 
-DlgHash::DlgHash(crypt::Options::Hash& opt) : ModalDialog(), options(opt)
+DlgHash::DlgHash(nppcrypt::Options::Hash& opt) : ModalDialog(), options(opt)
 {
 }
 
@@ -48,17 +48,17 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
         invalid_key = false;
 
         if(!help::buffer::isCurrent8Bit()) {
-            if (options.encoding == crypt::Encoding::ascii) {
-                options.encoding = crypt::Encoding::base16;
+            if (options.encoding == nppcrypt::Encoding::ascii) {
+                options.encoding = nppcrypt::Encoding::base16;
                 ::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_ENC_ASCII), false);
             }
         }
-        ::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_SETCHECK, (options.encoding == crypt::Encoding::ascii), 0);
-        ::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_SETCHECK, (options.encoding == crypt::Encoding::base16), 0);
-        ::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_SETCHECK, (options.encoding == crypt::Encoding::base32), 0);
-        ::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE64, BM_SETCHECK, (options.encoding == crypt::Encoding::base64), 0);
+        ::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_SETCHECK, (options.encoding == nppcrypt::Encoding::ascii), 0);
+        ::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_SETCHECK, (options.encoding == nppcrypt::Encoding::base16), 0);
+        ::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_SETCHECK, (options.encoding == nppcrypt::Encoding::base32), 0);
+        ::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE64, BM_SETCHECK, (options.encoding == nppcrypt::Encoding::base64), 0);
 
-        for(crypt::help::Hashnames it; *it; ++it) {
+        for(nppcrypt::help::Hashnames it; *it; ++it) {
             ::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
         }
         ::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_SETCURSEL, (int)options.algorithm, 0);
@@ -75,7 +75,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 
         setupInputEncodingSelect(_hSelf, IDC_HASH_KEY_ENC);
 
-        help_hash.setup(_hInst, _hSelf, ::GetDlgItem(_hSelf, IDC_HASH_ALGO_HELP), crypt::help::checkProperty(options.algorithm, crypt::WEAK));
+        help_hash.setup(_hInst, _hSelf, ::GetDlgItem(_hSelf, IDC_HASH_ALGO_HELP), nppcrypt::help::checkProperty(options.algorithm, nppcrypt::WEAK));
         help_enc.setup(_hInst, _hSelf, ::GetDlgItem(_hSelf, IDC_HASH_ENC_HELP));
 
         updateEncodingControls(options.encoding);
@@ -108,7 +108,7 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
                         return TRUE;
                     }
                     help::scintilla::getSelection(&pdata, &data_length);
-                    crypt::hash(options, buffer, { { pdata, data_length} });
+                    nppcrypt::hash(options, buffer, { { pdata, data_length} });
                     if (LOWORD(wParam) == IDC_OK) {
                         help::scintilla::replaceSelection(buffer);
                     } else {
@@ -146,22 +146,22 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
             }
             case IDC_HASH_ENC_ASCII:
             {
-                updateEncodingControls(crypt::Encoding::ascii);
+                updateEncodingControls(nppcrypt::Encoding::ascii);
                 break;
             }
             case IDC_HASH_ENC_BASE16:
             {
-                updateEncodingControls(crypt::Encoding::base16);
+                updateEncodingControls(nppcrypt::Encoding::base16);
                 break;
             }
             case IDC_HASH_ENC_BASE32:
             {
-                updateEncodingControls(crypt::Encoding::base32);
+                updateEncodingControls(nppcrypt::Encoding::base32);
                 break;
             }
             case IDC_HASH_ENC_BASE64:
             {
-                updateEncodingControls(crypt::Encoding::base64);
+                updateEncodingControls(nppcrypt::Encoding::base64);
                 break;
             }
             }
@@ -211,20 +211,20 @@ INT_PTR CALLBACK DlgHash::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
 
 bool DlgHash::prepareOptions()
 {
-    options.algorithm = (crypt::Hash)::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
-    options.digest_length = crypt::help::getHashDigestByIndex(options.algorithm, (unsigned int)::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_GETCURSEL, 0, 0));
+    options.algorithm = (nppcrypt::Hash)::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
+    options.digest_length = nppcrypt::help::getHashDigestByIndex(options.algorithm, (unsigned int)::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_GETCURSEL, 0, 0));
 
     if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_ASCII, BM_GETCHECK, 0, 0)) {
-        options.encoding = crypt::Encoding::ascii;
+        options.encoding = nppcrypt::Encoding::ascii;
     } else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE16, BM_GETCHECK, 0, 0)) {
-        options.encoding = crypt::Encoding::base16;
+        options.encoding = nppcrypt::Encoding::base16;
     } else if (::SendDlgItemMessage(_hSelf, IDC_HASH_ENC_BASE32, BM_GETCHECK, 0, 0)) {
-        options.encoding = crypt::Encoding::base32;
+        options.encoding = nppcrypt::Encoding::base32;
     } else {
-        options.encoding = crypt::Encoding::base64;
+        options.encoding = nppcrypt::Encoding::base64;
     }
 
-    if (crypt::help::checkProperty(options.algorithm, crypt::HMAC_SUPPORT) || crypt::help::checkProperty(options.algorithm, crypt::KEY_SUPPORT)) {
+    if (nppcrypt::help::checkProperty(options.algorithm, nppcrypt::HMAC_SUPPORT) || nppcrypt::help::checkProperty(options.algorithm, nppcrypt::KEY_SUPPORT)) {
         options.use_key = !!::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_GETCHECK, 0, 0);
     } else {
         options.use_key = false;
@@ -252,11 +252,11 @@ bool DlgHash::checkKey(bool updatedata)
     if (len <= 0) {
         invalid_key = true;
     } else {
-        crypt::secure_string    temp;
-        crypt::UserData         data;
-        crypt::Encoding         enc;
+        nppcrypt::secure_string    temp;
+        nppcrypt::UserData         data;
+        nppcrypt::Encoding         enc;
 
-        enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_HASH_KEY_ENC, CB_GETCURSEL, 0, 0);
+        enc = (nppcrypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_HASH_KEY_ENC, CB_GETCURSEL, 0, 0);
         getText(IDC_HASH_KEY, temp);
         data.set(temp.c_str(), temp.size(), enc);
         invalid_key = (data.size() == 0 || (keylength > 0 && data.size() != keylength));
@@ -273,27 +273,27 @@ bool DlgHash::checkKey(bool updatedata)
 
 void DlgHash::onChangeAlgorithm(size_t digest)
 {
-    crypt::Hash cur_sel = (crypt::Hash)::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
+    nppcrypt::Hash cur_sel = (nppcrypt::Hash)::SendDlgItemMessage(_hSelf, IDC_HASH_ALGO, CB_GETCURSEL, 0, 0);
 
     // ----------------------------- Update Digests ----------------------------------------------------------------
     std::wstring temp_str;
     ::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_RESETCONTENT, 0, 0);
 
-    for (crypt::help::HashDigests it(cur_sel); *it; ++it) {
+    for (nppcrypt::help::HashDigests it(cur_sel); *it; ++it) {
         temp_str = std::to_wstring(*it * 8);
         temp_str.append(TEXT(" Bits"));
         ::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_ADDSTRING, 0, (LPARAM)temp_str.c_str());
     }
-    ::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_SETCURSEL, crypt::help::getHashDigestIndex(cur_sel, (unsigned int)digest), 0);
+    ::SendDlgItemMessage(_hSelf, IDC_HASH_DIGESTS, CB_SETCURSEL, nppcrypt::help::getHashDigestIndex(cur_sel, (unsigned int)digest), 0);
 
     // ----------------------------- Key Options -------------------------------------------------------------------
-    if (crypt::help::checkProperty(cur_sel, crypt::HMAC_SUPPORT) || crypt::help::checkProperty(cur_sel, crypt::KEY_SUPPORT)) {
-        if (crypt::help::checkProperty(cur_sel, crypt::HMAC_SUPPORT)) {
+    if (nppcrypt::help::checkProperty(cur_sel, nppcrypt::HMAC_SUPPORT) || nppcrypt::help::checkProperty(cur_sel, nppcrypt::KEY_SUPPORT)) {
+        if (nppcrypt::help::checkProperty(cur_sel, nppcrypt::HMAC_SUPPORT)) {
             ::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("HMAC:"));
         } else {
             ::SetDlgItemText(_hSelf, IDC_HASH_USE_KEY, TEXT("use key:"));
         }
-        if (crypt::help::checkProperty(cur_sel, crypt::KEY_REQUIRED)) {
+        if (nppcrypt::help::checkProperty(cur_sel, nppcrypt::KEY_REQUIRED)) {
             ::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_SETCHECK, true, 0);
             ::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
             updateKeyControls(true);
@@ -303,15 +303,15 @@ void DlgHash::onChangeAlgorithm(size_t digest)
             updateKeyControls(use_key);
         }
         size_t digest_len;
-        crypt::getHashInfo(cur_sel, digest_len, keylength);
+        nppcrypt::getHashInfo(cur_sel, digest_len, keylength);
     } else {
         updateKeyControls(false);
         ::SendDlgItemMessage(_hSelf, IDC_HASH_USE_KEY, BM_SETCHECK, false, 0);
         ::EnableWindow(::GetDlgItem(_hSelf, IDC_HASH_USE_KEY), false);
     }
-    help_hash.setURL(crypt::help::getHelpURL(cur_sel));
-    help_hash.setTooltip(crypt::help::getInfo(cur_sel));
-    help_hash.setWarning(crypt::help::checkProperty(cur_sel, crypt::WEAK));
+    help_hash.setURL(nppcrypt::help::getHelpURL(cur_sel));
+    help_hash.setTooltip(nppcrypt::help::getInfo(cur_sel));
+    help_hash.setWarning(nppcrypt::help::checkProperty(cur_sel, nppcrypt::WEAK));
 }
 
 void DlgHash::updateKeyControls(bool enable)
@@ -337,14 +337,14 @@ void DlgHash::updateKeyControls(bool enable)
     }
 }
 
-void DlgHash::updateEncodingControls(crypt::Encoding enc)
+void DlgHash::updateEncodingControls(nppcrypt::Encoding enc)
 {
-    help_enc.setURL(crypt::help::getHelpURL(enc));
-    if (enc == crypt::Encoding::ascii) {
+    help_enc.setURL(nppcrypt::help::getHelpURL(enc));
+    if (enc == nppcrypt::Encoding::ascii) {
         help_enc.setWarning(true);
-        help_enc.setTooltip(crypt::help::getInfo(crypt::Encoding::ascii));
+        help_enc.setTooltip(nppcrypt::help::getInfo(nppcrypt::Encoding::ascii));
     } else {
         help_enc.setWarning(false);
-        help_enc.setTooltip(crypt::help::getInfo(enc));
+        help_enc.setTooltip(nppcrypt::help::getInfo(enc));
     }
 }

@@ -203,7 +203,7 @@ void help::windows::wchar_to_utf8(const wchar_t* i, int i_len, std::string& o)
     }
 }
 
-void help::windows::wchar_to_utf8(const wchar_t* i, int i_len, crypt::secure_string& o)
+void help::windows::wchar_to_utf8(const wchar_t* i, int i_len, nppcrypt::secure_string& o)
 {
     if (i_len < -1) {
         i_len = -1;
@@ -239,7 +239,7 @@ void help::windows::utf8_to_wchar(const char* i, int i_len, std::wstring& o)
     }
 }
 
-void help::windows::utf8_to_wchar(const char* i, int i_len, crypt::secure_wstring& o)
+void help::windows::utf8_to_wchar(const char* i, int i_len, nppcrypt::secure_wstring& o)
 {
     if (i_len < -1) {
         i_len = -1;

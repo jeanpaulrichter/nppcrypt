@@ -54,10 +54,10 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
         {
         case IDC_OK:
         {
-            crypt::secure_string temp;
+            nppcrypt::secure_string temp;
             getText(IDC_AUTH_KEY, temp);
             if (temp.size()) {
-                crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_GETCURSEL, 0, 0);
+                nppcrypt::Encoding enc = (nppcrypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_AUTH_KEY_ENC, CB_GETCURSEL, 0, 0);
                 input.set(temp.c_str(), temp.size(), enc);
             } else {
                 input.clear();
@@ -90,7 +90,7 @@ INT_PTR CALLBACK DlgAuth::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam
     return FALSE;
 }
 
-crypt::UserData& DlgAuth::getInput()
+nppcrypt::UserData& DlgAuth::getInput()
 {
     return input;
 }

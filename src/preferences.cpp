@@ -83,8 +83,8 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
         /* ----- files ----- */
         tinyxml2::XMLElement* xml_files = xml_nppcrypt->FirstChildElement("files");
         if (xml_files) {
-            crypt::help::getBoolean(xml_files->Attribute("enabled"), files.enable);
-            crypt::help::getBoolean(xml_files->Attribute("askonsave"), files.askonsave);
+            nppcrypt::help::getBoolean(xml_files->Attribute("enabled"), files.enable);
+            nppcrypt::help::getBoolean(xml_files->Attribute("askonsave"), files.askonsave);
             const char* pExt = xml_files->Attribute("extension");
             if (pExt && strlen(pExt) <= NPPC_FILE_EXT_MAXLENGTH) {
                 try {
@@ -102,41 +102,41 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
             tinyxml2::XMLElement* xml_temp = xml_current->FirstChildElement("encryption");
             if (xml_temp) {
                 bool advanced = false;
-                crypt::help::getBoolean(xml_temp->Attribute("advanced"), advanced);
+                nppcrypt::help::getBoolean(xml_temp->Attribute("advanced"), advanced);
                 current.crypt.modus = advanced ? CryptInfo::Modus::advanced : CryptInfo::Modus::easy;
                 parseCryptOptions(xml_temp, current.crypt.options);
                 tinyxml2::XMLElement* xml_hmac = xml_temp->FirstChildElement("hmac");
                 if (xml_hmac) {
-                    crypt::help::getBoolean(xml_hmac->Attribute("enabled"), current.crypt.hmac.enable);
-                    crypt::help::getHash(xml_hmac->Attribute("hash"), current.crypt.hmac.hash.algorithm);
-                    crypt::help::getUnsigned(xml_hmac->Attribute("digest-length"), current.crypt.hmac.hash.digest_length);
-                    crypt::help::getInteger(xml_hmac->Attribute("keypreset-id"), current.crypt.hmac.keypreset_id);
+                    nppcrypt::help::getBoolean(xml_hmac->Attribute("enabled"), current.crypt.hmac.enable);
+                    nppcrypt::help::getHash(xml_hmac->Attribute("hash"), current.crypt.hmac.hash.algorithm);
+                    nppcrypt::help::getUnsigned(xml_hmac->Attribute("digest-length"), current.crypt.hmac.hash.digest_length);
+                    nppcrypt::help::getInteger(xml_hmac->Attribute("keypreset-id"), current.crypt.hmac.keypreset_id);
                 }
             }
             // hash
             xml_temp = xml_current->FirstChildElement("hash");
             if (xml_temp) {
-                crypt::help::getHash(xml_temp->Attribute("algorithm"), current.hash.algorithm);
-                crypt::help::getUnsigned(xml_temp->Attribute("digest-length"), current.hash.digest_length);
-                crypt::help::getEncoding(xml_temp->Attribute("encoding"), current.hash.encoding);
-                crypt::help::getBoolean(xml_temp->Attribute("usekey"), current.hash.use_key);
+                nppcrypt::help::getHash(xml_temp->Attribute("algorithm"), current.hash.algorithm);
+                nppcrypt::help::getUnsigned(xml_temp->Attribute("digest-length"), current.hash.digest_length);
+                nppcrypt::help::getEncoding(xml_temp->Attribute("encoding"), current.hash.encoding);
+                nppcrypt::help::getBoolean(xml_temp->Attribute("usekey"), current.hash.use_key);
             }
             // random
             xml_temp = xml_current->FirstChildElement("random");
             if (xml_temp) {
-                crypt::help::getRandomRestriction(xml_temp->Attribute("restriction"), current.random.restriction);
-                crypt::help::getEncoding(xml_temp->Attribute("encoding"), current.random.encoding);
-                crypt::help::getUnsigned(xml_temp->Attribute("length"), current.random.length);
+                nppcrypt::help::getRandomRestriction(xml_temp->Attribute("restriction"), current.random.restriction);
+                nppcrypt::help::getEncoding(xml_temp->Attribute("encoding"), current.random.encoding);
+                nppcrypt::help::getUnsigned(xml_temp->Attribute("length"), current.random.length);
             }
             // convert
             xml_temp = xml_current->FirstChildElement("convert");
             if (xml_temp) {
-                crypt::help::getEncoding(xml_temp->Attribute("source-enc"), current.convert.from);
-                crypt::help::getEncoding(xml_temp->Attribute("target-enc"), current.convert.to);
-                crypt::help::getEOL(xml_temp->Attribute("eol"), current.convert.eol);
-                crypt::help::getBoolean(xml_temp->Attribute("linebreaks"), current.convert.linebreaks);
-                crypt::help::getUnsigned(xml_temp->Attribute("linelength"), current.convert.linelength);
-                crypt::help::getBoolean(xml_temp->Attribute("uppercase"), current.convert.uppercase);
+                nppcrypt::help::getEncoding(xml_temp->Attribute("source-enc"), current.convert.from);
+                nppcrypt::help::getEncoding(xml_temp->Attribute("target-enc"), current.convert.to);
+                nppcrypt::help::getEOL(xml_temp->Attribute("eol"), current.convert.eol);
+                nppcrypt::help::getBoolean(xml_temp->Attribute("linebreaks"), current.convert.linebreaks);
+                nppcrypt::help::getUnsigned(xml_temp->Attribute("linelength"), current.convert.linelength);
+                nppcrypt::help::getBoolean(xml_temp->Attribute("uppercase"), current.convert.uppercase);
             }
         }
         /* ----- default encryption ----- */
@@ -147,10 +147,10 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
         /* ----- encoding alphabets ----- */
         tinyxml2::XMLElement* xml_base32 = xml_nppcrypt->FirstChildElement("base32");
         if (xml_base32) {
-            crypt::byte padding = 0;
+            nppcrypt::byte padding = 0;
             const char* pPadding = xml_base32->Attribute("padding");
             if (pPadding) {
-                padding = (crypt::byte)*pPadding;
+                padding = (nppcrypt::byte)*pPadding;
             }
             const char* pAlphabet = xml_base32->Attribute("alphabet");
             if (pAlphabet && strlen(pAlphabet) == 32) {
@@ -159,10 +159,10 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
         }
         tinyxml2::XMLElement* xml_base64 = xml_nppcrypt->FirstChildElement("base64");
         if (xml_base64) {
-            crypt::byte padding = 0;
+            nppcrypt::byte padding = 0;
             const char* pPadding = xml_base64->Attribute("padding");
             if (pPadding) {
-                padding = (crypt::byte)*pPadding;
+                padding = (nppcrypt::byte)*pPadding;
             }
             const char* pAlphabet = xml_base64->Attribute("alphabet");
             if (pAlphabet && strlen(pAlphabet) == 64) {
@@ -204,14 +204,14 @@ void CPreferences::load(const std::wstring& path, CurrentOptions& current)
         if (current.crypt.hmac.keypreset_id < -1 || current.crypt.hmac.keypreset_id >= (int)keys.size()) {
             current.crypt.hmac.keypreset_id = 0;
         }
-        if (current.random.length > crypt::Constants::rand_char_max) {
+        if (current.random.length > nppcrypt::Constants::rand_char_max) {
             current.random.length = 32;
         }
-        crypt::help::validate(default_crypt, false);
-        crypt::help::validate(current.crypt.options, false);
-        crypt::help::validate(current.crypt.hmac.hash, false);
-        crypt::help::validate(current.hash, false);
-        crypt::help::validate(current.convert, false);
+        nppcrypt::help::validate(default_crypt, false);
+        nppcrypt::help::validate(current.crypt.options, false);
+        nppcrypt::help::validate(current.crypt.hmac.hash, false);
+        nppcrypt::help::validate(current.hash, false);
+        nppcrypt::help::validate(current.convert, false);
 
         file_loaded = true;
     } catch(...) {
@@ -227,14 +227,14 @@ void CPreferences::save(CurrentOptions& current)
             throw std::exception();
         }
         fout.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        using namespace crypt::help;
+        using namespace nppcrypt::help;
 
         std::string eol = "\r\n";
-        const crypt::Options::Crypt& crypt = current.crypt.options;
+        const nppcrypt::Options::Crypt& crypt = current.crypt.options;
         const CryptHeader::HMAC& hmac = current.crypt.hmac;
-        const crypt::Options::Hash& hash = current.hash;
+        const nppcrypt::Options::Hash& hash = current.hash;
         const RandomOptions& random = current.random;
-        const crypt::Options::Convert& convert = current.convert;
+        const nppcrypt::Options::Convert& convert = current.convert;
         std::string file_extension;
         try {
             help::windows::wchar_to_utf8(files.extension.c_str(), (int)files.extension.size(), file_extension);
@@ -332,26 +332,26 @@ const unsigned char* CPreferences::getKey(size_t i) const
     }
 }
 
-void CPreferences::writeCryptOptions(std::ofstream& f, const crypt::Options::Crypt& opt, const std::string& indent, const std::string& eol)
+void CPreferences::writeCryptOptions(std::ofstream& f, const nppcrypt::Options::Crypt& opt, const std::string& indent, const std::string& eol)
 {
-    using namespace crypt::help;
+    using namespace nppcrypt::help;
 
     f << indent << "<basic cipher=\"" << getString(opt.cipher) << "\" key-length=\"" << opt.key.length << "\" mode=\"" << getString(opt.mode) << "\" aad=\"" << getString(opt.aad) << "\" iv=\"" << getString(opt.iv) << "\" />" << eol;
     f << indent << "<encoding enc=\"" << getString(opt.encoding.enc) << "\" eol=\"" << getString(opt.encoding.eol) << "\" linebreaks=\"" << getString(opt.encoding.linebreaks) << "\" line-length=\"" << opt.encoding.linelength << "\" uppercase=\"" << getString(opt.encoding.uppercase) << "\" />" << eol;
     f << indent << "<key saltbytes=\"" << opt.key.salt_bytes << "\" algorithm=\"" << getString(opt.key.algorithm);
     switch (opt.key.algorithm)
     {
-    case crypt::KeyDerivation::pbkdf2:
+    case nppcrypt::KeyDerivation::pbkdf2:
     {
-        f << "\" hash=\"" << crypt::help::getString((crypt::Hash)opt.key.options[0]) << "\" digest-length=\"" << opt.key.options[1] << "\" iterations=\"" << opt.key.options[2];
+        f << "\" hash=\"" << nppcrypt::help::getString((nppcrypt::Hash)opt.key.options[0]) << "\" digest-length=\"" << opt.key.options[1] << "\" iterations=\"" << opt.key.options[2];
         break;
     }
-    case crypt::KeyDerivation::bcrypt:
+    case nppcrypt::KeyDerivation::bcrypt:
     {
         f << "\" iterations=\"" << static_cast<size_t>(std::pow(2, opt.key.options[0]));
         break;
     }
-    case crypt::KeyDerivation::scrypt:
+    case nppcrypt::KeyDerivation::scrypt:
     {
         f << "\" N=\"" << static_cast<size_t>(std::pow(2, opt.key.options[0])) << "\" r=\"" << opt.key.options[1] << "\" p=\"" << opt.key.options[2];
         break;
@@ -360,49 +360,49 @@ void CPreferences::writeCryptOptions(std::ofstream& f, const crypt::Options::Cry
     f << "\" />" << eol;
 }
 
-void CPreferences::parseCryptOptions(tinyxml2::XMLElement* parent, crypt::Options::Crypt& opt)
+void CPreferences::parseCryptOptions(tinyxml2::XMLElement* parent, nppcrypt::Options::Crypt& opt)
 {
     tinyxml2::XMLElement* xml_temp = parent->FirstChildElement("basic");
     if (xml_temp) {
-        crypt::help::getCipher(xml_temp->Attribute("cipher"), opt.cipher);
-        crypt::help::getUnsigned(xml_temp->Attribute("key-length"), opt.key.length);
-        crypt::help::getCipherMode(xml_temp->Attribute("mode"), opt.mode);
-        crypt::help::getBoolean(xml_temp->Attribute("aad"), opt.aad);
-        crypt::help::getIVMode(xml_temp->Attribute("iv"), opt.iv);
+        nppcrypt::help::getCipher(xml_temp->Attribute("cipher"), opt.cipher);
+        nppcrypt::help::getUnsigned(xml_temp->Attribute("key-length"), opt.key.length);
+        nppcrypt::help::getCipherMode(xml_temp->Attribute("mode"), opt.mode);
+        nppcrypt::help::getBoolean(xml_temp->Attribute("aad"), opt.aad);
+        nppcrypt::help::getIVMode(xml_temp->Attribute("iv"), opt.iv);
     }
     xml_temp = parent->FirstChildElement("encoding");
     if (xml_temp) {
-        crypt::help::getEncoding(xml_temp->Attribute("enc"), opt.encoding.enc);
-        crypt::help::getEOL(xml_temp->Attribute("eol"), opt.encoding.eol);
-        crypt::help::getBoolean(xml_temp->Attribute("linebreaks"), opt.encoding.linebreaks);
-        crypt::help::getUnsigned(xml_temp->Attribute("linelength"), opt.encoding.linelength);
-        crypt::help::getBoolean(xml_temp->Attribute("uppercase"), opt.encoding.uppercase);
+        nppcrypt::help::getEncoding(xml_temp->Attribute("enc"), opt.encoding.enc);
+        nppcrypt::help::getEOL(xml_temp->Attribute("eol"), opt.encoding.eol);
+        nppcrypt::help::getBoolean(xml_temp->Attribute("linebreaks"), opt.encoding.linebreaks);
+        nppcrypt::help::getUnsigned(xml_temp->Attribute("linelength"), opt.encoding.linelength);
+        nppcrypt::help::getBoolean(xml_temp->Attribute("uppercase"), opt.encoding.uppercase);
     }
     xml_temp = parent->FirstChildElement("key");
     if (xml_temp) {
-        crypt::help::getUnsigned(xml_temp->Attribute("saltbytes"), opt.key.salt_bytes);
-        if (crypt::help::getKeyDerivation(xml_temp->Attribute("algorithm"), opt.key.algorithm)) {
+        nppcrypt::help::getUnsigned(xml_temp->Attribute("saltbytes"), opt.key.salt_bytes);
+        if (nppcrypt::help::getKeyDerivation(xml_temp->Attribute("algorithm"), opt.key.algorithm)) {
             switch (opt.key.algorithm) {
-            case crypt::KeyDerivation::pbkdf2:
+            case nppcrypt::KeyDerivation::pbkdf2:
             {
-                crypt::Hash thash;
-                if (crypt::help::getHash(xml_temp->Attribute("hash"), thash)) {
+                nppcrypt::Hash thash;
+                if (nppcrypt::help::getHash(xml_temp->Attribute("hash"), thash)) {
                     opt.key.options[0] = static_cast<int>(thash);
                 }
-                crypt::help::getInteger(xml_temp->Attribute("digest-length"), opt.key.options[1]);
-                crypt::help::getInteger(xml_temp->Attribute("iterations"), opt.key.options[2]);
+                nppcrypt::help::getInteger(xml_temp->Attribute("digest-length"), opt.key.options[1]);
+                nppcrypt::help::getInteger(xml_temp->Attribute("iterations"), opt.key.options[2]);
                 break;
             }
-            case crypt::KeyDerivation::bcrypt:
+            case nppcrypt::KeyDerivation::bcrypt:
             {
-                crypt::help::getInteger(xml_temp->Attribute("iterations"), opt.key.options[0], true);
+                nppcrypt::help::getInteger(xml_temp->Attribute("iterations"), opt.key.options[0], true);
                 break;
             }
-            case crypt::KeyDerivation::scrypt:
+            case nppcrypt::KeyDerivation::scrypt:
             {
-                crypt::help::getInteger(xml_temp->Attribute("N"), opt.key.options[0], true);
-                crypt::help::getInteger(xml_temp->Attribute("r"), opt.key.options[1]);
-                crypt::help::getInteger(xml_temp->Attribute("p"), opt.key.options[2]);
+                nppcrypt::help::getInteger(xml_temp->Attribute("N"), opt.key.options[0], true);
+                nppcrypt::help::getInteger(xml_temp->Attribute("r"), opt.key.options[1]);
+                nppcrypt::help::getInteger(xml_temp->Attribute("p"), opt.key.options[2]);
                 break;
             }
             }
