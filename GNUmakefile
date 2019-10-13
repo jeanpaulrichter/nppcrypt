@@ -9,6 +9,7 @@ CFLAGS :=
 CRYPTOPP := src/cryptopp/libcryptopp.a
 LDFLAGS := -lstdc++ -Lsrc/cryptopp -lcryptopp
 PREFIX := /usr/local
+unexport LDFLAGS
 
 DEP_SRC := $(shell find $(SRCDIR)/bcrypt -type f -name *.cpp)
 DEP_SRC += $(shell find $(SRCDIR)/scrypt -type f -name *.c)
