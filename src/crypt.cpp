@@ -87,7 +87,7 @@ extern "C" {
 #include "cryptopp/crc.h"
 #include "cryptopp/siphash.h"
 
-using namespace crypt;
+using namespace nppcrypt;
 
 template<typename T>
 T ipow(T base, T exp)
@@ -108,16 +108,16 @@ namespace Strings
     static const std::string eol[3] = { "\r\n", "\n", "\r" };
 };
 
-crypt::ExceptionError::ExceptionError(const std::string &m, const char* func, int ln) noexcept : line(ln)
+nppcrypt::ExceptionError::ExceptionError(const std::string &m, const char* func, int ln) noexcept : line(ln)
 {
     std::ostringstream o;
     o << "[" << func << ":" << line << "] " << m;
     msg.assign(o.str());
 }
 
-#define throwInfo(arg) throw crypt::ExceptionInfo(arg);
-#define throwInvalid(arg) throw crypt::ExceptionArguments(arg);
-#define throwError(arg) throw crypt::ExceptionError(arg, __func__, __LINE__);
+#define throwInfo(arg) throw nppcrypt::ExceptionInfo(arg);
+#define throwInvalid(arg) throw nppcrypt::ExceptionArguments(arg);
+#define throwError(arg) throw nppcrypt::ExceptionError(arg, __func__, __LINE__);
 
 // ===========================================================================================================================================================================================
 // TODO: maybe the factory should be used ... ( cryptopp/factory.h )
@@ -797,7 +797,7 @@ namespace intern
         return NULL;
     }
 
-    CryptoPP::HashTransformation* getHashTransformation(crypt::Options::Hash options)
+    CryptoPP::HashTransformation* getHashTransformation(nppcrypt::Options::Hash options)
     {
         using namespace CryptoPP;
 
@@ -1079,7 +1079,7 @@ namespace intern
         return NULL;
     }
 
-    void calcKey(CryptoPP::SecByteBlock& key, const UserData& password, const UserData& salt, const crypt::Options::Crypt::Key& opt)
+    void calcKey(CryptoPP::SecByteBlock& key, const UserData& password, const UserData& salt, const nppcrypt::Options::Crypt::Key& opt)
     {
         using namespace CryptoPP;
         switch (opt.algorithm)
@@ -1133,7 +1133,7 @@ namespace intern
 
 // ===========================================================================================================================================================================================
 
-bool crypt::EncodingAlphabet::setup(const char* alphabet, byte padding)
+bool nppcrypt::EncodingAlphabet::setup(const char* alphabet, byte padding)
 {
     size_t length = strlen(alphabet);
     if (length == 32) {
@@ -1157,15 +1157,15 @@ bool crypt::EncodingAlphabet::setup(const char* alphabet, byte padding)
 
 // ===========================================================================================================================================================================================
 
-crypt::UserData::UserData()
+nppcrypt::UserData::UserData()
 {
 }
 
-crypt::UserData::UserData(const char* s, Encoding enc)
+nppcrypt::UserData::UserData(const char* s, Encoding enc)
 {
     set(s, strlen(s), enc);
 }
-const byte* crypt::UserData::BytePtr() const
+const byte* nppcrypt::UserData::BytePtr() const
 {
     if (data.size()) {
         return data.BytePtr();
@@ -1174,18 +1174,18 @@ const byte* crypt::UserData::BytePtr() const
     }
 }
 
-size_t crypt::UserData::size() const
+size_t nppcrypt::UserData::size() const
 {
     return data.size();
 }
 
-size_t crypt::UserData::set(const UserData& s)
+size_t nppcrypt::UserData::set(const UserData& s)
 {
     data.Assign(s.BytePtr(), s.size());
     return data.size();
 }
 
-size_t crypt::UserData::set(std::string& s, Encoding enc)
+size_t nppcrypt::UserData::set(std::string& s, Encoding enc)
 {
     if(enc == Encoding::ascii) {
         data.Assign((const byte*)s.c_str(), s.size());
@@ -1209,7 +1209,7 @@ size_t crypt::UserData::set(std::string& s, Encoding enc)
     return data.size();
 }
 
-size_t crypt::UserData::set(const char* s, size_t length, Encoding enc)
+size_t nppcrypt::UserData::set(const char* s, size_t length, Encoding enc)
 {
     if (enc == Encoding::ascii) {
         data.Assign((const byte*)s, length);
@@ -1233,7 +1233,7 @@ size_t crypt::UserData::set(const char* s, size_t length, Encoding enc)
     return data.size();
 }
 
-size_t crypt::UserData::set(const byte* s, size_t length)
+size_t nppcrypt::UserData::set(const byte* s, size_t length)
 {
     if (s && length) {
         data.Assign(s, length);
@@ -1243,7 +1243,7 @@ size_t crypt::UserData::set(const byte* s, size_t length)
 
 
 
-bool crypt::UserData::random(size_t length, Restriction k, bool blocking)
+bool nppcrypt::UserData::random(size_t length, Restriction k, bool blocking)
 {
     if (length > 0 && length <= Constants::rand_char_max) {
         data.resize(length);
@@ -1316,7 +1316,7 @@ bool crypt::UserData::random(size_t length, Restriction k, bool blocking)
     return false;
 }
 
-bool crypt::UserData::zero(size_t length)
+bool nppcrypt::UserData::zero(size_t length)
 {
     if (length > 0 && length <= 4096) {
         data.Assign(length, 0);
@@ -1325,7 +1325,7 @@ bool crypt::UserData::zero(size_t length)
     return false;
 }
 
-void crypt::UserData::get(std::string& s, Encoding enc) const
+void nppcrypt::UserData::get(std::string& s, Encoding enc) const
 {
     if (data.size()) {
         if (enc == Encoding::ascii) {
@@ -1354,7 +1354,7 @@ void crypt::UserData::get(std::string& s, Encoding enc) const
     }
 }
 
-void crypt::UserData::get(secure_string& s, Encoding enc) const
+void nppcrypt::UserData::get(secure_string& s, Encoding enc) const
 {
     if (data.size()) {
         if (enc == Encoding::ascii) {
@@ -1383,14 +1383,14 @@ void crypt::UserData::get(secure_string& s, Encoding enc) const
     }
 }
 
-void crypt::UserData::clear()
+void nppcrypt::UserData::clear()
 {
     data.New(0);
 }
 
 // ===========================================================================================================================================================================================
 
-bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, size_t& key_length, size_t& iv_length, size_t& block_size)
+bool nppcrypt::getCipherInfo(nppcrypt::Cipher cipher, nppcrypt::Mode mode, size_t& key_length, size_t& iv_length, size_t& block_size)
 {
     using namespace CryptoPP;
     switch (cipher)
@@ -1592,7 +1592,7 @@ bool crypt::getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, size_t& key_le
     return true;
 }
 
-bool crypt::getHashInfo(Hash h, size_t& length, size_t& keylength)
+bool nppcrypt::getHashInfo(Hash h, size_t& length, size_t& keylength)
 {
     using namespace CryptoPP;
     keylength = 0;
@@ -1676,7 +1676,7 @@ bool crypt::getHashInfo(Hash h, size_t& length, size_t& keylength)
     return true;
 }
 
-void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const UserData& password, InitData& init)
+void nppcrypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const UserData& password, InitData& init)
 {
     using namespace CryptoPP;
 
@@ -1701,7 +1701,7 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
         ptSalt = init.salt.BytePtr();
     }
     // --------------------------- prepare iv & key vector
-    if (options.iv == crypt::IV::keyderivation) {
+    if (options.iv == nppcrypt::IV::keyderivation) {
         tKey.resize(key_len + iv_len);
     } else {
         tKey.resize(key_len);
@@ -1833,20 +1833,20 @@ void crypt::encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
         }
     } catch (CryptoPP::Exception& exc) {
         throwError(exc.GetWhat());
-    } catch (crypt::Exception& exc) {
+    } catch (nppcrypt::Exception& exc) {
         throw exc;
     } catch (...) {
         throwError("encrypt: unexpected error.");
     }
  }
 
-void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const UserData& password, InitData& init)
+void nppcrypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const UserData& password, InitData& init)
 {
     if (!in || !in_len) {
         throwInvalid("decrypt: invalid input.");
     }
 
-    using namespace crypt;
+    using namespace nppcrypt;
     using namespace CryptoPP;
 
     SecByteBlock        tKey;
@@ -1859,7 +1859,7 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
 
     // --------------------------- prepare salt vector:
     if (options.key.salt_bytes > 0) {
-        if (options.key.algorithm == crypt::KeyDerivation::bcrypt && (options.key.salt_bytes != 16 || init.salt.size() != 16)) {
+        if (options.key.algorithm == nppcrypt::KeyDerivation::bcrypt && (options.key.salt_bytes != 16 || init.salt.size() != 16)) {
             throwInvalid("decrypt: bcrypt needs 16 byte salt!");
         }
         ptSalt = init.salt.BytePtr();
@@ -2000,14 +2000,14 @@ void crypt::decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buff
         } else {
             throwError(exc.GetWhat());
         }
-    } catch (crypt::Exception& exc) {
+    } catch (nppcrypt::Exception& exc) {
         throw exc;
     } catch (...) {
         throwError("decrypt: unexpected error.");
     }
 }
 
-void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, std::initializer_list<std::pair<const byte*, size_t>> in)
+void nppcrypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, std::initializer_list<std::pair<const byte*, size_t>> in)
 {
     try {
         using namespace CryptoPP;
@@ -2035,22 +2035,22 @@ void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, std::i
         buffer.clear();
         switch (options.encoding)
         {
-        case crypt::Encoding::ascii:
+        case nppcrypt::Encoding::ascii:
         {
             buffer.assign(digest.begin(), digest.end());
             break;
         }
-        case crypt::Encoding::base16:
+        case nppcrypt::Encoding::base16:
         {
             StringSource(&digest[0], digest.size(), true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
             break;
         }
-        case crypt::Encoding::base32:
+        case nppcrypt::Encoding::base32:
         {
             StringSource(&digest[0], digest.size(), true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
             break;
         }
-        case crypt::Encoding::base64:
+        case nppcrypt::Encoding::base64:
         {
             StringSource(&digest[0], digest.size(), true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
             break;
@@ -2061,7 +2061,7 @@ void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, std::i
     }
 }
 
-void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, const std::string& path)
+void nppcrypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, const std::string& path)
 {
     try {
         using namespace CryptoPP;
@@ -2079,22 +2079,22 @@ void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, const 
         buffer.clear();
         switch (options.encoding)
         {
-        case crypt::Encoding::ascii:
+        case nppcrypt::Encoding::ascii:
         {
             buffer.assign(digest.begin(), digest.end());
             break;
         }
-        case crypt::Encoding::base16:
+        case nppcrypt::Encoding::base16:
         {
             StringSource(&digest[0], digest.size(), true, new HexEncoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
             break;
         }
-        case crypt::Encoding::base32:
+        case nppcrypt::Encoding::base32:
         {
             StringSource(&digest[0], digest.size(), true, new Base32Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
             break;
         }
-        case crypt::Encoding::base64:
+        case nppcrypt::Encoding::base64:
         {
             StringSource(&digest[0], digest.size(), true, new Base64Encoder(new StringSinkTemplate<std::basic_string<byte>>(buffer)));
             break;
@@ -2105,7 +2105,7 @@ void crypt::hash(Options::Hash& options, std::basic_string<byte>& buffer, const 
     }
 }
 
-void crypt::shake128(const byte* in, size_t in_len, byte* out, size_t out_len)
+void nppcrypt::shake128(const byte* in, size_t in_len, byte* out, size_t out_len)
 {
     Keccak_HashInstance keccak_inst;
     if (Keccak_HashInitialize_SHAKE128(&keccak_inst) != 0) {
@@ -2122,10 +2122,10 @@ void crypt::shake128(const byte* in, size_t in_len, byte* out, size_t out_len)
     }
 }
 
-void crypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options, const EncodingAlphabet* base32_alphabet, const EncodingAlphabet* base64_alphabet)
+void nppcrypt::convert(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Convert& options, const EncodingAlphabet* base32_alphabet, const EncodingAlphabet* base64_alphabet)
 {
     using namespace CryptoPP;
-    using namespace crypt;
+    using namespace nppcrypt;
 
     const std::string& s_eol = Strings::eol[(unsigned)options.eol];
     int linelength = options.linebreaks ? (int)options.linelength : 0;

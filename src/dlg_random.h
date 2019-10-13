@@ -30,7 +30,7 @@ public:
 
 private:
     INT_PTR CALLBACK    run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
-    void                updateEncodingControls(crypt::Encoding enc);
+    void                updateEncodingControls(nppcrypt::Encoding enc);
 
     RandomOptions&      options;
     HelpCtrl            help_enc;

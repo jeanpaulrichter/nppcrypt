@@ -275,25 +275,25 @@ namespace help
         }
     }
 
-    bool setUserData(const char* s, size_t len, crypt::UserData& d, crypt::Encoding default_enc)
+    bool setUserData(const char* s, size_t len, nppcrypt::UserData& d, nppcrypt::Encoding default_enc)
     {
         if (cmpchars(s, len, "hex:", 4)) {
-            d.set(s + 4, len - 4, crypt::Encoding::base16);
+            d.set(s + 4, len - 4, nppcrypt::Encoding::base16);
         } else if (cmpchars(s, len, "base32:", 7)) {
-            d.set(s + 7, len - 7, crypt::Encoding::base32);
+            d.set(s + 7, len - 7, nppcrypt::Encoding::base32);
         } else if (cmpchars(s, len, "base64:", 7)) {
-            d.set(s + 7, len - 7, crypt::Encoding::base64);
+            d.set(s + 7, len - 7, nppcrypt::Encoding::base64);
         } else if (cmpchars(s, len, "utf8:", 5)) {
-            d.set(s, len, crypt::Encoding::ascii);
+            d.set(s, len, nppcrypt::Encoding::ascii);
         } else {
             d.set(s, len, default_enc);
         }
         return (d.size() > 0);
     }
 
-    bool getUserInput(const char* msg, crypt::UserData& data, crypt::Encoding default_enc, size_t trys, bool repeat, bool echo)
+    bool getUserInput(const char* msg, nppcrypt::UserData& data, nppcrypt::Encoding default_enc, size_t trys, bool repeat, bool echo)
     {
-        crypt::secure_string input1, input2;
+        nppcrypt::secure_string input1, input2;
         size_t counter = 0;
         setEcho(echo);
         while (true) {
@@ -329,10 +329,10 @@ namespace help
 namespace check
 {
     /* -p --password , default encoding: utf8 */
-    void password(crypt::UserData& password)
+    void password(nppcrypt::UserData& password)
     {
         if (opt.password->count()) {
-            help::setUserData(args.password.c_str(), args.password.size(), password, crypt::Encoding::ascii);
+            help::setUserData(args.password.c_str(), args.password.size(), password, nppcrypt::Encoding::ascii);
             for (size_t i = 0; i < args.password.size(); i++) {
                 args.password[i] = 0;
             }
@@ -341,34 +341,34 @@ namespace check
             if (*opt.nointeraction) {
                 throwInvalid(missing_password);
             }
-            if (!help::getUserInput("enter password", password, crypt::Encoding::ascii, 3, true, false)) {
+            if (!help::getUserInput("enter password", password, nppcrypt::Encoding::ascii, 3, true, false)) {
                 throwInvalid(missing_password);
             }
         }
     }
 
     /* -c --cipher , i.e.: -c aria:32:gcm */
-    void cipher(crypt::Options::Crypt& options)
+    void cipher(nppcrypt::Options::Crypt& options)
     {
         if (opt.cipher->count()) {
             std::vector<size_t> pos;
             help::splitArgument(args.cipher, pos, ':');
 
-            if (!crypt::help::getCipher(args.cipher.c_str(), options.cipher)) {
+            if (!nppcrypt::help::getCipher(args.cipher.c_str(), options.cipher)) {
                 throwInvalid(invalid_cipher);
             }
             if (pos.size() > 1) {
                 options.key.length = std::atoi(&args.cipher[pos[1]]) / 8;
                 if (pos.size() > 2) {
-                    if (!crypt::help::getCipherMode(&args.cipher[pos[2]], options.mode)) {
+                    if (!nppcrypt::help::getCipherMode(&args.cipher[pos[2]], options.mode)) {
                         throwInvalid(invalid_mode);
                     }
                 } else {
-                    if (!crypt::help::checkProperty(options.cipher, crypt::STREAM)) {
-                        if (crypt::help::checkCipherMode(options.cipher, crypt::Mode::gcm)) {
-                            options.mode = crypt::Mode::gcm;
+                    if (!nppcrypt::help::checkProperty(options.cipher, nppcrypt::STREAM)) {
+                        if (nppcrypt::help::checkCipherMode(options.cipher, nppcrypt::Mode::gcm)) {
+                            options.mode = nppcrypt::Mode::gcm;
                         } else {
-                            options.mode = crypt::Mode::cbc;
+                            options.mode = nppcrypt::Mode::cbc;
                         }
                     }
                 }
@@ -377,16 +377,16 @@ namespace check
     }
 
     /* -e --encoding, i.e. -e base16:unix:96:true [encoding:eol:linelength:uppercase] */
-    void encoding(crypt::Options::Crypt& options)
+    void encoding(nppcrypt::Options::Crypt& options)
     {
         if (opt.encoding->count()) {
             std::vector<size_t> pos;
             help::splitArgument(args.encoding, pos, ':');
-            if (!crypt::help::getEncoding(args.encoding.c_str(), options.encoding.enc)) {
+            if (!nppcrypt::help::getEncoding(args.encoding.c_str(), options.encoding.enc)) {
                 throwInvalid(invalid_encoding);
             }
             if (pos.size() > 1) {
-                if (!crypt::help::getEOL(&args.encoding[pos[1]], options.encoding.eol)) {
+                if (!nppcrypt::help::getEOL(&args.encoding[pos[1]], options.encoding.eol)) {
                     throwInvalid(invalid_eol);
                 }
                 if (pos.size() > 2) {
@@ -411,20 +411,20 @@ namespace check
             -k pbkdf2:sha3:256:1000 [pbkdf2 with sha3-256 and 1000 iterations]
             -k bcrypt:7 [bcrypt with 2^7 iterations]
     */
-    void keyderivation(crypt::Options::Crypt& options)
+    void keyderivation(nppcrypt::Options::Crypt& options)
     {
         if (opt.keyderivation->count()) {
             std::vector<size_t> pos;
             help::splitArgument(args.keyderivation, pos, ':');
-            if (!crypt::help::getKeyDerivation(args.keyderivation.c_str(), options.key.algorithm)) {
+            if (!nppcrypt::help::getKeyDerivation(args.keyderivation.c_str(), options.key.algorithm)) {
                 throwInvalid(invalid_keyderivation);
             }
             switch (options.key.algorithm) {
-            case crypt::KeyDerivation::pbkdf2:
+            case nppcrypt::KeyDerivation::pbkdf2:
             {
                 if (pos.size() > 1) {
-                    crypt::Hash thash;
-                    if (!crypt::help::getHash(&args.keyderivation[pos[1]], thash)) {
+                    nppcrypt::Hash thash;
+                    if (!nppcrypt::help::getHash(&args.keyderivation[pos[1]], thash)) {
                         throwInvalid(invalid_pbkdf2);
                     }
                     options.key.options[0] = static_cast<int>(thash);
@@ -433,30 +433,30 @@ namespace check
                         if (pos.size() > 3) {
                             options.key.options[2] = std::atoi(&args.keyderivation[pos[3]]);
                         } else {
-                            options.key.options[2] = crypt::Constants::pbkdf2_iter_default;
+                            options.key.options[2] = nppcrypt::Constants::pbkdf2_iter_default;
                         }
                     } else {
                         options.key.options[1] = 0;
-                        options.key.options[2] = crypt::Constants::pbkdf2_iter_default;
+                        options.key.options[2] = nppcrypt::Constants::pbkdf2_iter_default;
                     }
                 } else {
-                    options.key.options[0] = static_cast<int>(crypt::Constants::pbkdf2_default_hash);
-                    options.key.options[1] = static_cast<int>(crypt::Constants::pbkdf2_default_hash_digest);
-                    options.key.options[2] = crypt::Constants::pbkdf2_iter_default;
+                    options.key.options[0] = static_cast<int>(nppcrypt::Constants::pbkdf2_default_hash);
+                    options.key.options[1] = static_cast<int>(nppcrypt::Constants::pbkdf2_default_hash_digest);
+                    options.key.options[2] = nppcrypt::Constants::pbkdf2_iter_default;
                 }
 
                 break;
             }
-            case crypt::KeyDerivation::bcrypt:
+            case nppcrypt::KeyDerivation::bcrypt:
             {
                 if (pos.size() > 1) {
                     options.key.options[0] = std::atoi(&args.keyderivation[pos[1]]);
                 } else {
-                    options.key.options[0] = crypt::Constants::bcrypt_iter_default;
+                    options.key.options[0] = nppcrypt::Constants::bcrypt_iter_default;
                 }
                 break;
             }
-            case crypt::KeyDerivation::scrypt:
+            case nppcrypt::KeyDerivation::scrypt:
             {
                 if (pos.size() > 1) {
                     options.key.options[0] = std::atoi(&args.keyderivation[pos[1]]);
@@ -465,13 +465,13 @@ namespace check
                         if (pos.size() > 3) {
                             options.key.options[2] = std::atoi(&args.keyderivation[pos[3]]);
                         } else {
-                            options.key.options[2] = crypt::Constants::scrypt_p_default;
+                            options.key.options[2] = nppcrypt::Constants::scrypt_p_default;
                         }
                     } else {
-                        options.key.options[1] = crypt::Constants::scrypt_r_default;
+                        options.key.options[1] = nppcrypt::Constants::scrypt_r_default;
                     }
                 } else {
-                    options.key.options[0] = crypt::Constants::scrypt_N_default;
+                    options.key.options[0] = nppcrypt::Constants::scrypt_N_default;
                 }
                 break;
             }
@@ -486,12 +486,12 @@ namespace check
             std::vector<size_t> pos;
             help::splitArgument(args.hmac, pos, ':');
 
-            if (!crypt::help::getHash(args.hmac.c_str(), hmac.hash.algorithm) || !crypt::help::checkProperty(hmac.hash.algorithm, crypt::HMAC_SUPPORT)) {
+            if (!nppcrypt::help::getHash(args.hmac.c_str(), hmac.hash.algorithm) || !nppcrypt::help::checkProperty(hmac.hash.algorithm, nppcrypt::HMAC_SUPPORT)) {
                 throwInvalid(invalid_hmac_hash);
             }
             if (pos.size() > 1) {
                 hmac.hash.digest_length = (size_t)std::atoi(&args.hmac[pos[1]]) / 8;
-                if (!crypt::help::checkHashDigest(hmac.hash.algorithm, hmac.hash.digest_length)) {
+                if (!nppcrypt::help::checkHashDigest(hmac.hash.algorithm, hmac.hash.digest_length)) {
                     throwInvalid(invalid_hmac_hash);
                 }
             }
@@ -500,13 +500,13 @@ namespace check
         }
         if (hmac.enable) {
             if (opt.hash_key->count()) {
-                help::setUserData(args.hash_key.c_str(), args.hash_key.size(), hmac.hash.key, crypt::Encoding::ascii);
+                help::setUserData(args.hash_key.c_str(), args.hash_key.size(), hmac.hash.key, nppcrypt::Encoding::ascii);
             }
             if (!hmac.hash.key.size()) {
                 if (*opt.nointeraction) {
                     throwInvalid(missing_hmac_key);
                 }
-                if (!help::getUserInput("enter HMAC key", hmac.hash.key, crypt::Encoding::ascii, 2, true, false)) {
+                if (!help::getUserInput("enter HMAC key", hmac.hash.key, nppcrypt::Encoding::ascii, 2, true, false)) {
                     throwInvalid(missing_hmac_key);
                 }
             }
@@ -514,16 +514,16 @@ namespace check
     }
 
     /* -t --tag , default-encoding: base64 [decryption] */
-    void tag(const crypt::Options::Crypt& options, crypt::UserData& tag)
+    void tag(const nppcrypt::Options::Crypt& options, nppcrypt::UserData& tag)
     {
         if (opt.tag->count()) {
-            help::setUserData(args.tag.c_str(), args.tag.size(), tag, crypt::Encoding::base64);
+            help::setUserData(args.tag.c_str(), args.tag.size(), tag, nppcrypt::Encoding::base64);
         }
-        if (!crypt::help::checkProperty(options.cipher, crypt::STREAM) && (options.mode == crypt::Mode::ccm || options.mode == crypt::Mode::gcm || options.mode == crypt::Mode::eax) && !tag.size()) {
+        if (!nppcrypt::help::checkProperty(options.cipher, nppcrypt::STREAM) && (options.mode == nppcrypt::Mode::ccm || options.mode == nppcrypt::Mode::gcm || options.mode == nppcrypt::Mode::eax) && !tag.size()) {
             if (*opt.nointeraction) {
                 throwInvalid(invalid_tag);
             }
-            if (!help::getUserInput("please specify tag", tag, crypt::Encoding::base64, 2, false, true)) {
+            if (!help::getUserInput("please specify tag", tag, nppcrypt::Encoding::base64, 2, false, true)) {
                 throwInvalid(invalid_tag);
             }
         }
@@ -533,51 +533,51 @@ namespace check
             -v random [default]
             -v YXNkZmFzZGZhc2RmYXNkZg== [custom iv, default-encoding: base64]
             -v base16:01A2C1... */
-    void iv(crypt::Options::Crypt& options, crypt::UserData& iv, bool decryption)
+    void iv(nppcrypt::Options::Crypt& options, nppcrypt::UserData& iv, bool decryption)
     {
         if (opt.iv->count()) {
             if (args.iv.size() == 6 && args.iv.compare("random") == 0) {
-                options.iv = crypt::IV::random;
+                options.iv = nppcrypt::IV::random;
             } else if (args.iv.size() == 4 && args.iv.compare("zero") == 0) {
-                options.iv = crypt::IV::zero;
+                options.iv = nppcrypt::IV::zero;
             } else if (args.iv.size() == 13 && args.iv.compare("keyderivation") == 0) {
-                options.iv = crypt::IV::keyderivation;
+                options.iv = nppcrypt::IV::keyderivation;
             } else {
-                options.iv = crypt::IV::custom;
-                if (!help::setUserData(args.iv.c_str(), args.iv.size(), iv, crypt::Encoding::base64)) {
+                options.iv = nppcrypt::IV::custom;
+                if (!help::setUserData(args.iv.c_str(), args.iv.size(), iv, nppcrypt::Encoding::base64)) {
                     throwInvalid(missing_iv);
                 }
             }
         }
-        if (decryption && (options.iv != crypt::IV::zero && options.iv != crypt::IV::keyderivation) && !iv.size()) {
+        if (decryption && (options.iv != nppcrypt::IV::zero && options.iv != nppcrypt::IV::keyderivation) && !iv.size()) {
             if (*opt.nointeraction) {
                 throwInvalid(missing_iv);
             }
-            if (!help::getUserInput("IV data missing. please specify", iv, crypt::Encoding::base64, 2, false, true)) {
+            if (!help::getUserInput("IV data missing. please specify", iv, nppcrypt::Encoding::base64, 2, false, true)) {
                 throwInvalid(missing_iv);
             }
         }
     }
 
     /* -s --salt [decryption] */
-    void salt(crypt::Options::Crypt& options, crypt::UserData& salt)
+    void salt(nppcrypt::Options::Crypt& options, nppcrypt::UserData& salt)
     {
         if (opt.salt->count()) {
-            help::setUserData(args.salt.c_str(), args.salt.size(), salt, crypt::Encoding::base64);
+            help::setUserData(args.salt.c_str(), args.salt.size(), salt, nppcrypt::Encoding::base64);
             options.key.salt_bytes = salt.size();
         }
         if (options.key.salt_bytes > 0 && !salt.size()) {
             if (*opt.nointeraction) {
                 throwInvalid(missing_salt);
             }
-            if (!help::getUserInput("salt data missing. please specify", salt, crypt::Encoding::base64, 2, false, true)) {
+            if (!help::getUserInput("salt data missing. please specify", salt, nppcrypt::Encoding::base64, 2, false, true)) {
                 throwInvalid(missing_salt);
             }
         }
     }
 
     /* -s --salt [encryption] */
-    void salt(crypt::Options::Crypt& options)
+    void salt(nppcrypt::Options::Crypt& options)
     {
         if (opt.salt->count()) {
             options.key.salt_bytes = std::atoi(args.salt.c_str());
@@ -597,17 +597,17 @@ namespace check
     }
 
     /* -h --hash */
-    void hash(crypt::Options::Hash& options)
+    void hash(nppcrypt::Options::Hash& options)
     {
         std::vector<size_t> pos;
         help::splitArgument(args.hash, pos, ':');
 
-        if (!crypt::help::getHash(args.hash.c_str(), options.algorithm)) {
+        if (!nppcrypt::help::getHash(args.hash.c_str(), options.algorithm)) {
             throwInvalid(invalid_hash);
         }
         if (pos.size() > 1) {
             options.digest_length = std::atoi(&args.hash[pos[1]]) / 8;
-            if (!crypt::help::checkHashDigest(options.algorithm, options.digest_length)) {
+            if (!nppcrypt::help::checkHashDigest(options.algorithm, options.digest_length)) {
                 throwInvalid(invalid_hash);
             }
         } else {
@@ -615,32 +615,32 @@ namespace check
         }
 
         if (opt.hash_key->count()) {
-            if (!help::setUserData(args.hash_key.c_str(), args.hash_key.size(), options.key, crypt::Encoding::ascii)) {
+            if (!help::setUserData(args.hash_key.c_str(), args.hash_key.size(), options.key, nppcrypt::Encoding::ascii)) {
                 if (*opt.nointeraction) {
                     throwInvalid(invalid_hash_key);
                 }
-                if (!help::getUserInput("enter key", options.key, crypt::Encoding::ascii, 2, true, false)) {
+                if (!help::getUserInput("enter key", options.key, nppcrypt::Encoding::ascii, 2, true, false)) {
                     throwInvalid(invalid_hash_key);
                 }
             }
             options.use_key = true;
         }
         if (options.use_key) {
-            if (!crypt::help::checkProperty(options.algorithm, crypt::KEY_SUPPORT)) {
-                if (crypt::help::checkProperty(options.algorithm, crypt::HMAC_SUPPORT)) {
+            if (!nppcrypt::help::checkProperty(options.algorithm, nppcrypt::KEY_SUPPORT)) {
+                if (nppcrypt::help::checkProperty(options.algorithm, nppcrypt::HMAC_SUPPORT)) {
                     if (!*opt.silent) {
-                        std::cout << crypt::help::getString(options.algorithm) << " does not support key input. using HMAC ..." << std::endl;
+                        std::cout << nppcrypt::help::getString(options.algorithm) << " does not support key input. using HMAC ..." << std::endl;
                     }
                 } else {
                     if (!*opt.silent) {
-                        std::cout << crypt::help::getString(options.algorithm) << " does not support key input. ignoring --hash-key ..." << std::endl;
+                        std::cout << nppcrypt::help::getString(options.algorithm) << " does not support key input. ignoring --hash-key ..." << std::endl;
                     }
                     options.use_key = false;
                 }
             }
         }
 
-        if (crypt::help::checkProperty(options.algorithm, crypt::KEY_REQUIRED) && !options.use_key) {
+        if (nppcrypt::help::checkProperty(options.algorithm, nppcrypt::KEY_REQUIRED) && !options.use_key) {
             throwInvalid(hash_requires_key);
         }
     }
@@ -648,51 +648,51 @@ namespace check
 
 namespace print
 {
-    void options(const crypt::Options::Crypt& options)
+    void options(const nppcrypt::Options::Crypt& options)
     {
         size_t c_keylen = options.key.length;
         size_t c_ivlen, c_blocksize;
         getCipherInfo(options.cipher, options.mode, c_keylen, c_ivlen, c_blocksize);
 
-        std::cout << "options: " << crypt::help::getString(options.cipher) << "-" << c_keylen * 8;
-        if (!crypt::help::checkProperty(options.cipher, crypt::STREAM)) {
-            std::cout << "-" << crypt::help::getString(options.mode);
+        std::cout << "options: " << nppcrypt::help::getString(options.cipher) << "-" << c_keylen * 8;
+        if (!nppcrypt::help::checkProperty(options.cipher, nppcrypt::STREAM)) {
+            std::cout << "-" << nppcrypt::help::getString(options.mode);
         }
-        std::cout << ", iv: " << c_ivlen << " bytes (" << crypt::help::getString(options.iv) << "), " << crypt::help::getString(options.key.algorithm);;
+        std::cout << ", iv: " << c_ivlen << " bytes (" << nppcrypt::help::getString(options.iv) << "), " << nppcrypt::help::getString(options.key.algorithm);;
 
         switch (options.key.algorithm) {
-        case crypt::KeyDerivation::pbkdf2:
+        case nppcrypt::KeyDerivation::pbkdf2:
         {
-            std::cout << " (" << crypt::help::getString(crypt::Hash(options.key.options[0])) << "-" << options.key.options[1] * 8 << ", " << options.key.options[2] << " iterations)";
+            std::cout << " (" << nppcrypt::help::getString(nppcrypt::Hash(options.key.options[0])) << "-" << options.key.options[1] * 8 << ", " << options.key.options[2] << " iterations)";
             break;
         }
-        case crypt::KeyDerivation::bcrypt:
+        case nppcrypt::KeyDerivation::bcrypt:
         {
             std::cout << " (2^" << options.key.options[0] << " iterations)";
             break;
         }
-        case crypt::KeyDerivation::scrypt:
+        case nppcrypt::KeyDerivation::scrypt:
         {
             std::cout << " (N:2^" << options.key.options[0] << ", r:" << options.key.options[1] << ", p:" << options.key.options[2] << ")";
         }
         }
-        std::cout << ", encoding: " << crypt::help::getString(options.encoding.enc) << std::endl;
+        std::cout << ", encoding: " << nppcrypt::help::getString(options.encoding.enc) << std::endl;
     }
 
-    void initdata(const crypt::Options::Crypt& options, const crypt::InitData& initdata)
+    void initdata(const nppcrypt::Options::Crypt& options, const nppcrypt::InitData& initdata)
     {
-        using namespace crypt;
+        using namespace nppcrypt;
         secure_string tstr;
         if (options.key.salt_bytes && initdata.salt.size()) {
-            initdata.salt.get(tstr, crypt::Encoding::base64);
+            initdata.salt.get(tstr, nppcrypt::Encoding::base64);
             std::cout << "Salt: " << tstr << std::endl;;
         }
         if ((options.mode == Mode::gcm || options.mode == Mode::ccm || options.mode == Mode::eax) && initdata.tag.size()) {
-            initdata.tag.get(tstr, crypt::Encoding::base64);
+            initdata.tag.get(tstr, nppcrypt::Encoding::base64);
             std::cout << "Tag: " << tstr << std::endl;
         }
         if (options.iv == IV::random && initdata.iv.size()) {
-            initdata.iv.get(tstr, crypt::Encoding::base64);
+            initdata.iv.get(tstr, nppcrypt::Encoding::base64);
             std::cout << "IV: " << tstr << std::endl;
         }
     }
@@ -707,36 +707,36 @@ namespace print
 
 void hash(const std::string& filename)
 {
-    std::basic_string<crypt::byte>    buffer;
+    std::basic_string<nppcrypt::byte>    buffer;
     std::vector<std::string>          digests;
-    crypt::Options::Hash              options;
+    nppcrypt::Options::Hash              options;
     std::ostringstream                out;
     /* default algorithms */
-    static const crypt::Hash    thashes[5] = { crypt::Hash::crc32, crypt::Hash::md5, crypt::Hash::sha1, crypt::Hash::sha2, crypt::Hash::sha3 };
+    static const nppcrypt::Hash    thashes[5] = { nppcrypt::Hash::crc32, nppcrypt::Hash::md5, nppcrypt::Hash::sha1, nppcrypt::Hash::sha2, nppcrypt::Hash::sha3 };
     static const size_t         thashes_digests[5] = { 4, 16, 20, 32, 32 };
 
-    if (opt.encoding->count() && !crypt::help::getEncoding(args.encoding.c_str(), options.encoding)) {
+    if (opt.encoding->count() && !nppcrypt::help::getEncoding(args.encoding.c_str(), options.encoding)) {
         throwInvalid(invalid_encoding);
     }
 
     if (opt.hash->count()) {
         check::hash(options);
-        crypt::hash(options, buffer, filename);
+        nppcrypt::hash(options, buffer, filename);
         digests.push_back(std::string(buffer.begin(), buffer.end()));
-        out << crypt::help::getString(options.algorithm) << "-" << options.digest_length * 8 << ": " << (const char*)buffer.c_str() << std::endl;
+        out << nppcrypt::help::getString(options.algorithm) << "-" << options.digest_length * 8 << ": " << (const char*)buffer.c_str() << std::endl;
     } else {
         for (size_t i = 0; i < 5; i++) {
             options.algorithm = thashes[i];
             options.digest_length = thashes_digests[i];
-            crypt::hash(options, buffer, filename);
-            out << crypt::help::getString(options.algorithm) << ": " << (const char*)buffer.c_str() << std::endl;
+            nppcrypt::hash(options, buffer, filename);
+            out << nppcrypt::help::getString(options.algorithm) << ": " << (const char*)buffer.c_str() << std::endl;
         }
     }
 
     if (opt.output->count()) {
         std::string temp = out.str();
         FileWriter fout(args.output);
-        if (!fout.write((const crypt::byte*)temp.c_str(), temp.size())) {
+        if (!fout.write((const nppcrypt::byte*)temp.c_str(), temp.size())) {
             throwError(failed_to_write_file);
         }
     } else {
@@ -757,9 +757,9 @@ void hash(const std::string& filename)
                     std::cout << "no match." << std::endl;
                 } else {
                     if (opt.hash->count()) {
-                        std::cout << crypt::help::getString(options.algorithm) << " matches." << std::endl;
+                        std::cout << nppcrypt::help::getString(options.algorithm) << " matches." << std::endl;
                     } else {
-                        std::cout << crypt::help::getString(thashes[i]) << " matches." << std::endl;
+                        std::cout << nppcrypt::help::getString(thashes[i]) << " matches." << std::endl;
                     }
                 }
             }
@@ -767,29 +767,29 @@ void hash(const std::string& filename)
     }
 }
 
-void hash(const crypt::byte* input, size_t input_length)
+void hash(const nppcrypt::byte* input, size_t input_length)
 {
-    std::basic_string<crypt::byte>  buffer;
-    crypt::Options::Hash            options;
+    std::basic_string<nppcrypt::byte>  buffer;
+    nppcrypt::Options::Hash            options;
     std::ostringstream              out;
 
-    if (opt.encoding->count() && !crypt::help::getEncoding(args.encoding.c_str(), options.encoding)) {
+    if (opt.encoding->count() && !nppcrypt::help::getEncoding(args.encoding.c_str(), options.encoding)) {
         throwInvalid(invalid_encoding);
     }
 
     if (opt.hash->count()) {
         check::hash(options);
     } else {
-        options.algorithm = crypt::Hash::md5;
+        options.algorithm = nppcrypt::Hash::md5;
         options.digest_length = 16;
     }
-    crypt::hash(options, buffer, { { input, input_length } });
-    out << crypt::help::getString(options.algorithm) << "-" << options.digest_length * 8 << ": " << (const char*)buffer.c_str() << std::endl;
+    nppcrypt::hash(options, buffer, { { input, input_length } });
+    out << nppcrypt::help::getString(options.algorithm) << "-" << options.digest_length * 8 << ": " << (const char*)buffer.c_str() << std::endl;
     
     if (opt.output->count()) {
         std::string temp = out.str();
         FileWriter fout(args.output);
-        if (!fout.write((const crypt::byte*)temp.c_str(), temp.size())) {
+        if (!fout.write((const nppcrypt::byte*)temp.c_str(), temp.size())) {
             throwError(failed_to_write_file);
         }
     } else {
@@ -797,14 +797,14 @@ void hash(const crypt::byte* input, size_t input_length)
     }
 }
 
-void decrypt(const crypt::byte* input, size_t input_length, File::BOM bom)
+void decrypt(const nppcrypt::byte* input, size_t input_length, File::BOM bom)
 {
-    std::basic_string<crypt::byte>  outputData;
-    crypt::Options::Crypt           options;
-    crypt::UserData                 password;
+    std::basic_string<nppcrypt::byte>  outputData;
+    nppcrypt::Options::Crypt           options;
+    nppcrypt::UserData                 password;
     CryptHeader::HMAC               hmac;
     CryptHeaderReader               header(hmac);
-    crypt::InitData                   init;
+    nppcrypt::InitData                   init;
 
     if (bom != File::BOM::utf8 && bom != File::BOM::none) {
         throwInvalid(cmdline_only_utf8);
@@ -824,7 +824,7 @@ void decrypt(const crypt::byte* input, size_t input_length, File::BOM bom)
     check::outputfile();
     check::hmac(hmac);
 
-    crypt::help::validate(options);
+    nppcrypt::help::validate(options);
 
     if (verbose) {
         print::outputfile();
@@ -840,9 +840,9 @@ void decrypt(const crypt::byte* input, size_t input_length, File::BOM bom)
                 throwInfo(hmac_auth_failed);
             }
         }
-        crypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), outputData, options, password, init);
+        nppcrypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), outputData, options, password, init);
     } else {
-        crypt::decrypt(input, input_length, outputData, options, password, init);
+        nppcrypt::decrypt(input, input_length, outputData, options, password, init);
     }
     if (opt.output->count()) {
         FileWriter fout(args.output, bom);
@@ -854,14 +854,14 @@ void decrypt(const crypt::byte* input, size_t input_length, File::BOM bom)
     }
 }
 
-void encrypt(const crypt::byte* input, size_t input_length)
+void encrypt(const nppcrypt::byte* input, size_t input_length)
 {
-    std::basic_string<crypt::byte>  outputData;
-    crypt::Options::Crypt           options;
-    crypt::UserData                 password;
+    std::basic_string<nppcrypt::byte>  outputData;
+    nppcrypt::Options::Crypt           options;
+    nppcrypt::UserData                 password;
     CryptHeader::HMAC               hmac;
     CryptHeaderWriter               header(hmac);
-    crypt::InitData                 init;
+    nppcrypt::InitData                 init;
 
     bool verbose = !*opt.silent;
     bool create_header = !*opt.noheader;
@@ -876,14 +876,14 @@ void encrypt(const crypt::byte* input, size_t input_length)
     check::hmac(hmac);
     check::outputfile();
 
-    crypt::help::validate(options);
+    nppcrypt::help::validate(options);
 
     if (verbose) {
         print::outputfile();
         print::options(options);
     }
     
-    crypt::encrypt(input, input_length, outputData, options, password, init);
+    nppcrypt::encrypt(input, input_length, outputData, options, password, init);
 
     if (create_header) {
         header.create(options, init, outputData.c_str(), outputData.size());
@@ -952,7 +952,7 @@ int main(int argc, char** argv)
             }
         }
         
-        std::basic_string<crypt::byte> inputData;
+        std::basic_string<nppcrypt::byte> inputData;
         File::BOM bom = File::BOM::none;
 
         if (File::exists(args.input)) {

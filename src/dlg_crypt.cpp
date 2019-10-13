@@ -54,7 +54,7 @@ void DlgCrypt::destroy()
     ModalDialog::destroy();
 };
 
-bool DlgCrypt::encryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename)
+bool DlgCrypt::encryptDialog(CryptInfo* crypt, nppcrypt::UserData* iv, const std::wstring* filename)
 {
     if (!setup(crypt, iv, filename)) {
         return false;
@@ -64,7 +64,7 @@ bool DlgCrypt::encryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::w
     return ModalDialog::doDialog();
 }
 
-bool DlgCrypt::decryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename, bool disable_easymode)
+bool DlgCrypt::decryptDialog(CryptInfo* crypt, nppcrypt::UserData* iv, const std::wstring* filename, bool disable_easymode)
 {
     if (!setup(crypt, iv, filename)) {
         return false;
@@ -74,7 +74,7 @@ bool DlgCrypt::decryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::w
     return ModalDialog::doDialog();
 }
 
-bool DlgCrypt::setup(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename)
+bool DlgCrypt::setup(CryptInfo* crypt, nppcrypt::UserData* iv, const std::wstring* filename)
 {
     if (!crypt || !iv) {
         return false;
@@ -163,22 +163,22 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
             }
             case IDC_CRYPT_ENC_ASCII:
             {
-                updateEncodingControls(crypt::Encoding::ascii);
+                updateEncodingControls(nppcrypt::Encoding::ascii);
                 break;
             }
             case IDC_CRYPT_ENC_BASE16:
             {
-                updateEncodingControls(crypt::Encoding::base16);
+                updateEncodingControls(nppcrypt::Encoding::base16);
                 break;
             }
             case IDC_CRYPT_ENC_BASE32:
             {
-                updateEncodingControls(crypt::Encoding::base32);
+                updateEncodingControls(nppcrypt::Encoding::base32);
                 break;
             }
             case IDC_CRYPT_ENC_BASE64:
             {
-                updateEncodingControls(crypt::Encoding::base64);
+                updateEncodingControls(nppcrypt::Encoding::base64);
                 break;
             }
             case IDC_CRYPT_ENC_LINEBREAK:
@@ -194,18 +194,18 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
             case IDC_CRYPT_KEY_PBKDF2: case IDC_CRYPT_KEY_BCRYPT: case IDC_CRYPT_KEY_SCRYPT:
             {
                 if (!!::SendDlgItemMessage(tab.key, IDC_CRYPT_KEY_PBKDF2, BM_GETCHECK, 0, 0)) {
-                    current.key_derivation = crypt::KeyDerivation::pbkdf2;
+                    current.key_derivation = nppcrypt::KeyDerivation::pbkdf2;
                 } else if (!!::SendDlgItemMessage(tab.key, IDC_CRYPT_KEY_BCRYPT, BM_GETCHECK, 0, 0)) {
-                    current.key_derivation = crypt::KeyDerivation::bcrypt;
+                    current.key_derivation = nppcrypt::KeyDerivation::bcrypt;
                 } else {
-                    current.key_derivation = crypt::KeyDerivation::scrypt;
+                    current.key_derivation = nppcrypt::KeyDerivation::scrypt;
                 }
                 updateKeyDerivationControls();
                 break;
             }
             case IDC_CRYPT_SALT:
             {
-                if (current.key_derivation != crypt::KeyDerivation::bcrypt) {
+                if (current.key_derivation != nppcrypt::KeyDerivation::bcrypt) {
                     bool c = ::SendDlgItemMessage(tab.key, IDC_CRYPT_SALT, BM_GETCHECK, 0, 0) ? true : false;
                     ::EnableWindow(::GetDlgItem(tab.key, IDC_CRYPT_SALT_BYTES), c);
                     ::EnableWindow(::GetDlgItem(tab.key, IDC_CRYPT_SALT_SPIN), c);
@@ -284,7 +284,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
             {
                 int category = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER_TYPE, CB_GETCURSEL, 0, 0);
                 ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_RESETCONTENT, 0, 0);
-                for (crypt::help::CipherNames it(category); *it; ++it) {
+                for (nppcrypt::help::CipherNames it(category); *it; ++it) {
                     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
                 }
                 ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_SETCURSEL, 0, 0);
@@ -298,7 +298,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
             }
             case IDC_CRYPT_MODE:
             {
-                current.mode = crypt::help::getModeByIndex(current.cipher, (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0));
+                current.mode = nppcrypt::help::getModeByIndex(current.cipher, (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0));
                 updateCipherInfo();
                 PostMessage(tab.basic, WM_NEXTDLGCTL, (WPARAM)::GetDlgItem(tab.basic, IDC_CRYPT_PASSWORD_ADVANCED), TRUE);
                 break;
@@ -310,21 +310,21 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
             }
             case IDC_CRYPT_PASSWORD_ENC:
             {
-                crypt::secure_string temp;
+                nppcrypt::secure_string temp;
                 checkPassword(temp, false);
                 ::SetFocus(::GetDlgItem(tab.basic, IDC_CRYPT_PASSWORD_ADVANCED));
                 break;
             }
             case IDC_CRYPT_PBKDF2_HASH:
             {
-                crypt::Hash cur_sel = crypt::help::getHashByIndex(::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_GETCURSEL, 0, 0), crypt::HMAC_SUPPORT);
+                nppcrypt::Hash cur_sel = nppcrypt::help::getHashByIndex(::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_GETCURSEL, 0, 0), nppcrypt::HMAC_SUPPORT);
                 updateHashDigestControl(cur_sel, tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH);
                 ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH, CB_SETCURSEL, 0, 0);
                 break;
             }
             case IDC_CRYPT_IV_ENC:
             {
-                crypt::UserData ivdata;
+                nppcrypt::UserData ivdata;
                 invalid.iv = !checkCustomIV(ivdata, true);
                 InvalidateRect(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
                 ::SetFocus(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT));
@@ -332,7 +332,7 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
             }
             case IDC_CRYPT_AUTH_HASH:
             {
-                crypt::Hash cur_sel = crypt::help::getHashByIndex(::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_GETCURSEL, 0, 0), crypt::HMAC_SUPPORT);
+                nppcrypt::Hash cur_sel = nppcrypt::help::getHashByIndex(::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_GETCURSEL, 0, 0), nppcrypt::HMAC_SUPPORT);
                 updateHashDigestControl(cur_sel, tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH);
                 ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH, CB_SETCURSEL, 0, 0);
                 if (!!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
@@ -374,14 +374,14 @@ INT_PTR CALLBACK DlgCrypt::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPara
         {
             checkSpinControlValue(LOWORD(wParam));
             if (LOWORD(wParam) == IDC_CRYPT_IV_INPUT) {
-                crypt::UserData ivdata;
+                nppcrypt::UserData ivdata;
                 invalid.iv = !checkCustomIV(ivdata, false);
                 InvalidateRect(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
             } else if (LOWORD(wParam) == IDC_CRYPT_AUTH_PW_VALUE) {
                 invalid.hmac_key = !checkHMACKey(crypt->hmac.hash.key, false);
                 InvalidateRect(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), NULL, NULL);
             } else if (LOWORD(wParam) == IDC_CRYPT_PASSWORD_ADVANCED || LOWORD(wParam) == IDC_CRYPT_PASSWORD_EASY) {
-                crypt::secure_string temp;
+                nppcrypt::secure_string temp;
                 checkPassword(temp, false);
             }
             break;
@@ -465,17 +465,17 @@ void DlgCrypt::setupDialog()
     current.cipher = crypt->options.cipher;
     current.key_length = crypt->options.key.length;
     current.mode = crypt->options.mode;
-    int category = crypt::help::getCipherCategory(current.cipher);
+    int category = nppcrypt::help::getCipherCategory(current.cipher);
 
-    for (crypt::help::CipherCategories it; *it; ++it) {
+    for (nppcrypt::help::CipherCategories it; *it; ++it) {
         ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER_TYPE, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
     }
     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER_TYPE, CB_SETCURSEL, category, 0);
     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_RESETCONTENT, 0, 0);
-    for (crypt::help::CipherNames it(category); *it; ++it) {
+    for (nppcrypt::help::CipherNames it(category); *it; ++it) {
         ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
     }
-    ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_SETCURSEL, crypt::help::getCipherIndex(current.cipher), 0);
+    ::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_SETCURSEL, nppcrypt::help::getCipherIndex(current.cipher), 0);
 
     // ------- Cipher Modes ------------------------------------------------------
 
@@ -497,19 +497,19 @@ void DlgCrypt::setupDialog()
     // ------- Encoding
     // no binary output if buffer is 16 bit
     if (operation == Operation::Encryption && !help::buffer::isCurrent8Bit()) {
-        if (crypt->options.encoding.enc == crypt::Encoding::ascii) {
-            crypt->options.encoding.enc = crypt::Encoding::base16;
+        if (crypt->options.encoding.enc == nppcrypt::Encoding::ascii) {
+            crypt->options.encoding.enc = nppcrypt::Encoding::base16;
         }
         ::EnableWindow(::GetDlgItem(tab.encoding, IDC_CRYPT_ENC_ASCII), false);
     }
-    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_ASCII, BM_SETCHECK, (crypt->options.encoding.enc == crypt::Encoding::ascii), 0);
-    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_BASE16, BM_SETCHECK, (crypt->options.encoding.enc == crypt::Encoding::base16), 0);
-    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_BASE32, BM_SETCHECK, (crypt->options.encoding.enc == crypt::Encoding::base32), 0);
-    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_BASE64, BM_SETCHECK, (crypt->options.encoding.enc == crypt::Encoding::base64), 0);
+    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_ASCII, BM_SETCHECK, (crypt->options.encoding.enc == nppcrypt::Encoding::ascii), 0);
+    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_BASE16, BM_SETCHECK, (crypt->options.encoding.enc == nppcrypt::Encoding::base16), 0);
+    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_BASE32, BM_SETCHECK, (crypt->options.encoding.enc == nppcrypt::Encoding::base32), 0);
+    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_BASE64, BM_SETCHECK, (crypt->options.encoding.enc == nppcrypt::Encoding::base64), 0);
 
     ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_LINEBREAK, BM_SETCHECK, crypt->options.encoding.linebreaks, 0);
-    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_LB_WIN, BM_SETCHECK, (crypt->options.encoding.eol == crypt::EOL::windows), 0);
-    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_LB_UNIX, BM_SETCHECK, (crypt->options.encoding.eol != crypt::EOL::windows), 0);
+    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_LB_WIN, BM_SETCHECK, (crypt->options.encoding.eol == nppcrypt::EOL::windows), 0);
+    ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_LB_UNIX, BM_SETCHECK, (crypt->options.encoding.eol != nppcrypt::EOL::windows), 0);
     ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_UPPERCASE, BM_SETCHECK, crypt->options.encoding.uppercase, 0);
 
     ::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_LINELEN_SPIN, UDM_SETRANGE32, 1, NPPC_MAX_LINE_LENGTH);
@@ -530,55 +530,55 @@ void DlgCrypt::setupDialog()
     }
 
     // ------- Key-Derivation
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SALT_SPIN, UDM_SETRANGE32, 1, crypt::Constants::salt_max);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SALT_SPIN, UDM_SETRANGE32, 1, nppcrypt::Constants::salt_max);
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_SALT_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(tab.key, IDC_CRYPT_SALT_BYTES), 0);
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_SALT_SPIN, UDM_SETPOS32, 0, crypt->options.key.salt_bytes);
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_SALT, BM_SETCHECK, (crypt->options.key.salt_bytes > 0), 0);
 
-    for (crypt::help::Hashnames it(crypt::HMAC_SUPPORT); *it; ++it) {
+    for (nppcrypt::help::Hashnames it(nppcrypt::HMAC_SUPPORT); *it; ++it) {
         ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
     }
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETRANGE32, crypt::Constants::pbkdf2_iter_min, crypt::Constants::pbkdf2_iter_max);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETRANGE32, nppcrypt::Constants::pbkdf2_iter_min, nppcrypt::Constants::pbkdf2_iter_max);
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(tab.key, IDC_CRYPT_PBKDF2_ITER), 0);
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_SETRANGE32, crypt::Constants::bcrypt_iter_min, crypt::Constants::bcrypt_iter_max);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_SETRANGE32, nppcrypt::Constants::bcrypt_iter_min, nppcrypt::Constants::bcrypt_iter_max);
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(tab.key, IDC_CRYPT_BCRYPT_ITER), 0);
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_SETRANGE32, crypt::Constants::scrypt_N_min, crypt::Constants::scrypt_N_max);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_SETRANGE32, nppcrypt::Constants::scrypt_N_min, nppcrypt::Constants::scrypt_N_max);
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(tab.key, IDC_CRYPT_SCRYPT_N), 0);
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_SETRANGE32, crypt::Constants::scrypt_r_min, crypt::Constants::scrypt_r_max);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_SETRANGE32, nppcrypt::Constants::scrypt_r_min, nppcrypt::Constants::scrypt_r_max);
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(tab.key, IDC_CRYPT_SCRYPT_R), 0);
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_SETRANGE32, crypt::Constants::scrypt_p_min, crypt::Constants::scrypt_p_max);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_SETRANGE32, nppcrypt::Constants::scrypt_p_min, nppcrypt::Constants::scrypt_p_max);
     ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(tab.key, IDC_CRYPT_SCRYPT_P), 0);
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_SETCURSEL, crypt::help::getHashIndex(crypt::Constants::pbkdf2_default_hash, crypt::HMAC_SUPPORT), 0);
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETPOS32, 0, crypt::Constants::pbkdf2_iter_default);
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_SETPOS32, 0, crypt::Constants::bcrypt_iter_default);
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_SETPOS32, 0, crypt::Constants::scrypt_N_default);
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_SETPOS32, 0, crypt::Constants::scrypt_r_default);
-    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_SETPOS32, 0, crypt::Constants::scrypt_p_default);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_SETCURSEL, nppcrypt::help::getHashIndex(nppcrypt::Constants::pbkdf2_default_hash, nppcrypt::HMAC_SUPPORT), 0);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETPOS32, 0, nppcrypt::Constants::pbkdf2_iter_default);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_SETPOS32, 0, nppcrypt::Constants::bcrypt_iter_default);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_SETPOS32, 0, nppcrypt::Constants::scrypt_N_default);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_SETPOS32, 0, nppcrypt::Constants::scrypt_r_default);
+    ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_SETPOS32, 0, nppcrypt::Constants::scrypt_p_default);
 
     current.key_derivation = crypt->options.key.algorithm;
     switch (crypt->options.key.algorithm) {
-    case crypt::KeyDerivation::pbkdf2:
+    case nppcrypt::KeyDerivation::pbkdf2:
         ::SendDlgItemMessage(tab.key, IDC_CRYPT_KEY_PBKDF2, BM_SETCHECK, true, 0);
-        ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_SETCURSEL, crypt::help::getHashIndex((crypt::Hash)crypt->options.key.options[0],crypt::HMAC_SUPPORT), 0);
+        ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_SETCURSEL, nppcrypt::help::getHashIndex((nppcrypt::Hash)crypt->options.key.options[0],nppcrypt::HMAC_SUPPORT), 0);
         ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_SETPOS32, 0, crypt->options.key.options[2]);
         break;
-    case crypt::KeyDerivation::bcrypt:
+    case nppcrypt::KeyDerivation::bcrypt:
         ::SendDlgItemMessage(tab.key, IDC_CRYPT_KEY_BCRYPT, BM_SETCHECK, true, 0);
         ::SendDlgItemMessage(tab.key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_SETPOS32, 0, crypt->options.key.options[0]);
         break;
-    case crypt::KeyDerivation::scrypt:
+    case nppcrypt::KeyDerivation::scrypt:
         ::SendDlgItemMessage(tab.key, IDC_CRYPT_KEY_SCRYPT, BM_SETCHECK, true, 0);
         ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_SETPOS32, 0, crypt->options.key.options[0]);
         ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_SETPOS32, 0, crypt->options.key.options[1]);
         ::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_SETPOS32, 0, crypt->options.key.options[2]);
         break;
     }
-    crypt::Hash cur_sel = crypt::help::getHashByIndex(::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_GETCURSEL, 0, 0), crypt::HMAC_SUPPORT);
+    nppcrypt::Hash cur_sel = nppcrypt::help::getHashByIndex(::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_GETCURSEL, 0, 0), nppcrypt::HMAC_SUPPORT);
     updateHashDigestControl(cur_sel, tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH);
-    if (crypt->options.key.algorithm == crypt::KeyDerivation::pbkdf2) {
-        ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH, CB_SETCURSEL, crypt::help::getHashDigestIndex(cur_sel, crypt->options.key.options[1]), 0);
+    if (crypt->options.key.algorithm == nppcrypt::KeyDerivation::pbkdf2) {
+        ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH, CB_SETCURSEL, nppcrypt::help::getHashDigestIndex(cur_sel, crypt->options.key.options[1]), 0);
     } else {
-        ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH, CB_SETCURSEL, crypt::help::getHashDigestIndex(cur_sel, crypt::Constants::pbkdf2_default_hash_digest), 0);
+        ::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH, CB_SETCURSEL, nppcrypt::help::getHashDigestIndex(cur_sel, nppcrypt::Constants::pbkdf2_default_hash_digest), 0);
     }
 
     help.salt.setup(_hInst, tab.key, ::GetDlgItem(tab.key, IDC_CRYPT_HELP_SALT));
@@ -595,17 +595,17 @@ void DlgCrypt::setupDialog()
     setupInputEncodingSelect(tab.iv, IDC_CRYPT_IV_ENC);
 
     if (operation == Operation::Encryption) {
-        if (filename != NULL && crypt->options.iv == crypt::IV::custom) {
+        if (filename != NULL && crypt->options.iv == nppcrypt::IV::custom) {
             // nppcrypt-file: no encryption with custom IV
             ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, true, 0);
             ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_SETCHECK, false, 0);
             ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_SETCHECK, false, 0);
             ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, false, 0);
         } else {
-            ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, (crypt->options.iv == crypt::IV::random), 0);
-            ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_SETCHECK, (crypt->options.iv == crypt::IV::keyderivation), 0);
-            ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_SETCHECK, (crypt->options.iv == crypt::IV::zero), 0);
-            ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, (crypt->options.iv == crypt::IV::custom), 0);
+            ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, (crypt->options.iv == nppcrypt::IV::random), 0);
+            ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_SETCHECK, (crypt->options.iv == nppcrypt::IV::keyderivation), 0);
+            ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_SETCHECK, (crypt->options.iv == nppcrypt::IV::zero), 0);
+            ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, (crypt->options.iv == nppcrypt::IV::custom), 0);
         }
     } else {
         ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_SETCHECK, false, 0);
@@ -613,21 +613,21 @@ void DlgCrypt::setupDialog()
         ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_SETCHECK, false, 0);
         ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_SETCHECK, true, 0);
         if (ivdata->size() > 0) {
-            crypt::secure_string temp;
-            ivdata->get(temp, crypt::Encoding::base64);
-            ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ENC, CB_SETCURSEL, (int)crypt::Encoding::base64, 0);
+            nppcrypt::secure_string temp;
+            ivdata->get(temp, nppcrypt::Encoding::base64);
+            ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ENC, CB_SETCURSEL, (int)nppcrypt::Encoding::base64, 0);
             setText(IDC_CRYPT_IV_INPUT, temp, tab.iv);
         }
     }
 
     // ------- Auth
     ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_SETCHECK, crypt->hmac.enable, 0);
-    for(crypt::help::Hashnames it(crypt::HMAC_SUPPORT); *it; ++it) {
+    for(nppcrypt::help::Hashnames it(nppcrypt::HMAC_SUPPORT); *it; ++it) {
         ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
     }
-    ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_SETCURSEL, crypt::help::getHashIndex(crypt->hmac.hash.algorithm, crypt::HMAC_SUPPORT), 0);
+    ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_SETCURSEL, nppcrypt::help::getHashIndex(crypt->hmac.hash.algorithm, nppcrypt::HMAC_SUPPORT), 0);
     updateHashDigestControl(crypt->hmac.hash.algorithm, tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH);
-    ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH, CB_SETCURSEL, crypt::help::getHashDigestIndex(crypt->hmac.hash.algorithm, (unsigned int)crypt->hmac.hash.digest_length), 0);
+    ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH, CB_SETCURSEL, nppcrypt::help::getHashDigestIndex(crypt->hmac.hash.algorithm, (unsigned int)crypt->hmac.hash.digest_length), 0);
     for (size_t i = 0; i < preferences.getKeyNum(); i++) {
         ::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_LIST, CB_ADDSTRING, 0, (LPARAM)preferences.getKeyLabel(i));
     }
@@ -678,7 +678,7 @@ void DlgCrypt::setupDialog()
     // -------
     updateCipherControls();
     if (current.iv_length > 0 && !!::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
-        crypt::UserData ivdata;
+        nppcrypt::UserData ivdata;
         invalid.iv = !checkCustomIV(ivdata, true);
         if (invalid.iv) {
             InvalidateRect(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
@@ -698,7 +698,7 @@ void DlgCrypt::changeActiveTab(int id)
 {
     if (id == 3) {
         if (::IsWindowEnabled(::GetDlgItem(tab.iv, IDC_CRYPT_IV_CUSTOM)) && ::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
-            crypt::UserData ivdata;
+            nppcrypt::UserData ivdata;
             invalid.iv = !checkCustomIV(ivdata, true);
             if (invalid.iv) {
                 InvalidateRect(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), NULL, NULL);
@@ -707,7 +707,7 @@ void DlgCrypt::changeActiveTab(int id)
     } else if (operation == Operation::Encryption && id == 4) {
         if (!!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_GETCHECK, 0, 0) &&
             !!::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_CUSTOM, BM_GETCHECK, 0, 0)) {
-            crypt::UserData tempkey;
+            nppcrypt::UserData tempkey;
             invalid.hmac_key = !checkHMACKey(tempkey, true);
             if (invalid.hmac_key) {
                 InvalidateRect(::GetDlgItem(tab.auth, IDC_CRYPT_AUTH_PW_VALUE), NULL, NULL);
@@ -816,29 +816,29 @@ bool DlgCrypt::prepareOptionsAdvanced()
         int cipher_index = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_GETCURSEL, 0, 0);
         int cipher_cat = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER_TYPE, CB_GETCURSEL, 0, 0);
         int cipher_keylength = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_KEYLENGTH, CB_GETCURSEL, 0, 0);
-        crypt->options.cipher = crypt::help::getCipherByIndex(cipher_cat, cipher_index);
-        crypt->options.key.length = crypt::help::getCipherKeylengthByIndex(crypt->options.cipher, cipher_keylength);
+        crypt->options.cipher = nppcrypt::help::getCipherByIndex(cipher_cat, cipher_index);
+        crypt->options.key.length = nppcrypt::help::getCipherKeylengthByIndex(crypt->options.cipher, cipher_keylength);
         int t_mode = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_GETCURSEL, 0, 0);
-        crypt->options.mode = (t_mode >= 0) ? crypt::help::getModeByIndex(crypt->options.cipher, t_mode) : crypt::Mode::cbc;
+        crypt->options.mode = (t_mode >= 0) ? nppcrypt::help::getModeByIndex(crypt->options.cipher, t_mode) : nppcrypt::Mode::cbc;
 
-        if ((crypt->options.mode == crypt::Mode::gcm || crypt->options.mode == crypt::Mode::ccm || crypt->options.mode == crypt::Mode::eax) &&
-            crypt::help::checkProperty(crypt->options.cipher, crypt::BLOCK)) {
+        if ((crypt->options.mode == nppcrypt::Mode::gcm || crypt->options.mode == nppcrypt::Mode::ccm || crypt->options.mode == nppcrypt::Mode::eax) &&
+            nppcrypt::help::checkProperty(crypt->options.cipher, nppcrypt::BLOCK)) {
             crypt->options.aad = !!::SendDlgItemMessage(tab.basic, IDC_CRYPT_AUTH_IVSALT, BM_GETCHECK, 0, 0);
         }
 
         // ------- encoding
         if (::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_ASCII, BM_GETCHECK, 0, 0)) {
-            crypt->options.encoding.enc = crypt::Encoding::ascii;
+            crypt->options.encoding.enc = nppcrypt::Encoding::ascii;
         } else if (::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_BASE16, BM_GETCHECK, 0, 0)) {
-            crypt->options.encoding.enc = crypt::Encoding::base16;
+            crypt->options.encoding.enc = nppcrypt::Encoding::base16;
         } else if (::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_BASE32, BM_GETCHECK, 0, 0)) {
-            crypt->options.encoding.enc = crypt::Encoding::base32;
+            crypt->options.encoding.enc = nppcrypt::Encoding::base32;
         } else {
-            crypt->options.encoding.enc = crypt::Encoding::base64;
+            crypt->options.encoding.enc = nppcrypt::Encoding::base64;
         }
         crypt->options.encoding.linebreaks = !!::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_LINEBREAK, BM_GETCHECK, 0, 0);
         crypt->options.encoding.uppercase = !!::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_UPPERCASE, BM_GETCHECK, 0, 0);
-        crypt->options.encoding.eol = !!::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_LB_WIN, BM_GETCHECK, 0, 0) ? crypt::EOL::windows : crypt::EOL::unix;
+        crypt->options.encoding.eol = !!::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_LB_WIN, BM_GETCHECK, 0, 0) ? nppcrypt::EOL::windows : nppcrypt::EOL::unix;
         crypt->options.encoding.linelength = (int)::SendDlgItemMessage(tab.encoding, IDC_CRYPT_ENC_LINELEN_SPIN, UDM_GETPOS32, 0, 0);
 
         // ------- salt
@@ -850,18 +850,18 @@ bool DlgCrypt::prepareOptionsAdvanced()
 
         // ------- key derivation
         if (::SendDlgItemMessage(tab.key, IDC_CRYPT_KEY_PBKDF2, BM_GETCHECK, 0, 0)) {
-            crypt->options.key.algorithm = crypt::KeyDerivation::pbkdf2;
-            crypt::Hash h = crypt::help::getHashByIndex(::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_GETCURSEL, 0, 0), crypt::HMAC_SUPPORT);
+            crypt->options.key.algorithm = nppcrypt::KeyDerivation::pbkdf2;
+            nppcrypt::Hash h = nppcrypt::help::getHashByIndex(::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH, CB_GETCURSEL, 0, 0), nppcrypt::HMAC_SUPPORT);
             crypt->options.key.options[0] = (int)h;
-            crypt->options.key.options[1] = (int)crypt::help::getHashDigestByIndex(h, (unsigned int)::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH, CB_GETCURSEL, 0, 0));
+            crypt->options.key.options[1] = (int)nppcrypt::help::getHashDigestByIndex(h, (unsigned int)::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH, CB_GETCURSEL, 0, 0));
             crypt->options.key.options[2] = (int)::SendDlgItemMessage(tab.key, IDC_CRYPT_PBKDF2_ITER_SPIN, UDM_GETPOS32, 0, 0);
         } else if (::SendDlgItemMessage(tab.key, IDC_CRYPT_KEY_BCRYPT, BM_GETCHECK, 0, 0)) {
-            crypt->options.key.algorithm = crypt::KeyDerivation::bcrypt;
+            crypt->options.key.algorithm = nppcrypt::KeyDerivation::bcrypt;
             crypt->options.key.options[0] = (int)::SendDlgItemMessage(tab.key, IDC_CRYPT_BCRYPT_ITER_SPIN, UDM_GETPOS32, 0, 0);
             crypt->options.key.options[1] = 0;
             crypt->options.key.options[2] = 0;
         } else {
-            crypt->options.key.algorithm = crypt::KeyDerivation::scrypt;
+            crypt->options.key.algorithm = nppcrypt::KeyDerivation::scrypt;
             crypt->options.key.options[0] = (int)::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_N_SPIN, UDM_GETPOS32, 0, 0);
             crypt->options.key.options[1] = (int)::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_R_SPIN, UDM_GETPOS32, 0, 0);
             crypt->options.key.options[2] = (int)::SendDlgItemMessage(tab.key, IDC_CRYPT_SCRYPT_P_SPIN, UDM_GETPOS32, 0, 0);
@@ -870,18 +870,18 @@ bool DlgCrypt::prepareOptionsAdvanced()
         // ------- iv
         if (operation == Operation::Encryption) {
             if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_RANDOM, BM_GETCHECK, 0, 0)) {
-                crypt->options.iv = crypt::IV::random;
+                crypt->options.iv = nppcrypt::IV::random;
             } else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0)) {
-                crypt->options.iv = crypt::IV::keyderivation;
+                crypt->options.iv = nppcrypt::IV::keyderivation;
             } else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
-                crypt->options.iv = crypt::IV::zero;
+                crypt->options.iv = nppcrypt::IV::zero;
             } else {
-                crypt->options.iv = crypt::IV::custom;
+                crypt->options.iv = nppcrypt::IV::custom;
             }
         }
 
-        if (current.iv_length > 0 && (operation == Operation::Decryption || crypt->options.iv == crypt::IV::custom)) {
-            crypt::UserData data;
+        if (current.iv_length > 0 && (operation == Operation::Decryption || crypt->options.iv == nppcrypt::IV::custom)) {
+            nppcrypt::UserData data;
             if (!checkCustomIV(data, true)) {
                 throwInvalid(invalid_iv);
             } else {
@@ -893,9 +893,9 @@ bool DlgCrypt::prepareOptionsAdvanced()
         if (operation == Operation::Encryption) {
             crypt->hmac.enable = (::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_ENABLE, BM_GETCHECK, 0, 0) ? true : false);
             if (crypt->hmac.enable) {
-                crypt->hmac.hash.algorithm = crypt::help::getHashByIndex(::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_GETCURSEL, 0, 0), crypt::HMAC_SUPPORT);
-                crypt->hmac.hash.digest_length = crypt::help::getHashDigestByIndex(crypt->hmac.hash.algorithm, (unsigned int)::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH, CB_GETCURSEL, 0, 0));
-                crypt->hmac.hash.encoding = crypt::Encoding::base64;
+                crypt->hmac.hash.algorithm = nppcrypt::help::getHashByIndex(::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH, CB_GETCURSEL, 0, 0), nppcrypt::HMAC_SUPPORT);
+                crypt->hmac.hash.digest_length = nppcrypt::help::getHashDigestByIndex(crypt->hmac.hash.algorithm, (unsigned int)::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_HASH_LENGTH, CB_GETCURSEL, 0, 0));
+                crypt->hmac.hash.encoding = nppcrypt::Encoding::base64;
                 crypt->hmac.hash.use_key = true;
                 if (::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_PRESET, BM_GETCHECK, 0, 0)) {
                     crypt->hmac.keypreset_id = (int)::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_KEY_LIST, CB_GETCURSEL, 0, 0);
@@ -912,7 +912,7 @@ bool DlgCrypt::prepareOptionsAdvanced()
         }
 
         // ------- password
-        crypt::Encoding pw_encoding = (crypt::Encoding)::SendDlgItemMessage(tab.basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
+        nppcrypt::Encoding pw_encoding = (nppcrypt::Encoding)::SendDlgItemMessage(tab.basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
         crypt->password.set(current.password.c_str(), current.password.size(), pw_encoding);
 
         // ------- modus
@@ -946,7 +946,7 @@ bool DlgCrypt::prepareOptionsEasy()
         crypt->hmac.keypreset_id = 0;
     }
     // ------- password
-    crypt->password.set(current.password.c_str(), current.password.size(), crypt::Encoding::ascii);
+    crypt->password.set(current.password.c_str(), current.password.size(), nppcrypt::Encoding::ascii);
     // ------- modus
     crypt->modus = CryptInfo::Modus::easy;
     // ------- cleanup
@@ -964,7 +964,7 @@ bool DlgCrypt::OnClickOKAdvanced()
     if (((operation == Operation::Encryption && !confirm_password) || operation == Operation::Decryption)
         && ::IsWindowEnabled(::GetDlgItem(tab.iv, IDC_CRYPT_IV_CUSTOM))
         && !!::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
-        crypt::UserData ivdata;
+        nppcrypt::UserData ivdata;
         invalid.iv = !checkCustomIV(ivdata, true);
         if (invalid.iv) {
             TabCtrl_SetCurSel(::GetDlgItem(_hSelf, IDC_CRYPT_TAB), 3);
@@ -988,8 +988,8 @@ bool DlgCrypt::OnClickOKAdvanced()
     }
 
     // get password
-    crypt::secure_string temp_pw_str;
-    crypt::Encoding password_enc = (crypt::Encoding)::SendDlgItemMessage(tab.basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
+    nppcrypt::secure_string temp_pw_str;
+    nppcrypt::Encoding password_enc = (nppcrypt::Encoding)::SendDlgItemMessage(tab.basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
     if (!checkPassword(temp_pw_str, true)) {
         ::SetFocus(::GetDlgItem(tab.basic, IDC_CRYPT_PASSWORD_ADVANCED));
         return false;
@@ -999,7 +999,7 @@ bool DlgCrypt::OnClickOKAdvanced()
         // confirmation needed
         current.password.assign(temp_pw_str);
         ::SetDlgItemText(tab.basic, IDC_CRYPT_PW_ADVANCED_CAPTION, TEXT("confirm:"));
-        if (password_enc == crypt::Encoding::ascii) {
+        if (password_enc == nppcrypt::Encoding::ascii) {
             // no password encoding: user has to reenter password for confirmation
             ::SetDlgItemText(tab.basic, IDC_CRYPT_PASSWORD_ADVANCED, TEXT(""));
             ::EnableWindow(::GetDlgItem(tab.basic, IDC_CRYPT_PASSWORD_ENC), false);
@@ -1041,7 +1041,7 @@ bool DlgCrypt::OnClickOKAdvanced()
 bool DlgCrypt::OnClickOKEasy()
 {
     // get password
-    crypt::secure_string temp_pw_str;
+    nppcrypt::secure_string temp_pw_str;
     if (!checkPassword(temp_pw_str, true)) {
         ::SetFocus(::GetDlgItem(dialogs.easy, IDC_CRYPT_PASSWORD_EASY));
         return false;
@@ -1098,42 +1098,42 @@ void DlgCrypt::checkSpinControlValue(int ctrlID)
     case IDC_CRYPT_SALT_BYTES:
     {
         edit_id = IDC_CRYPT_SALT_BYTES; spin_id = IDC_CRYPT_SALT_SPIN;
-        vmin = 1; vmax = crypt::Constants::salt_max;
+        vmin = 1; vmax = nppcrypt::Constants::salt_max;
         hwnd = tab.key;
         break;
     }
     case IDC_CRYPT_PBKDF2_ITER:
     {
         edit_id = IDC_CRYPT_PBKDF2_ITER; spin_id = IDC_CRYPT_PBKDF2_ITER_SPIN;
-        vmin = crypt::Constants::pbkdf2_iter_min; vmax = crypt::Constants::pbkdf2_iter_max;
+        vmin = nppcrypt::Constants::pbkdf2_iter_min; vmax = nppcrypt::Constants::pbkdf2_iter_max;
         hwnd = tab.key;
         break;
     }
     case IDC_CRYPT_BCRYPT_ITER:
     {
         edit_id = IDC_CRYPT_BCRYPT_ITER; spin_id = IDC_CRYPT_BCRYPT_ITER_SPIN;
-        vmin = crypt::Constants::bcrypt_iter_min; vmax = crypt::Constants::bcrypt_iter_max;
+        vmin = nppcrypt::Constants::bcrypt_iter_min; vmax = nppcrypt::Constants::bcrypt_iter_max;
         hwnd = tab.key;
         break;
     }
     case IDC_CRYPT_SCRYPT_N:
     {
         edit_id = IDC_CRYPT_SCRYPT_N; spin_id = IDC_CRYPT_SCRYPT_N_SPIN;
-        vmin = crypt::Constants::scrypt_N_min; vmax = crypt::Constants::scrypt_N_max;
+        vmin = nppcrypt::Constants::scrypt_N_min; vmax = nppcrypt::Constants::scrypt_N_max;
         hwnd = tab.key;
         break;
     }
     case IDC_CRYPT_SCRYPT_R:
     {
         edit_id = IDC_CRYPT_SCRYPT_R; spin_id = IDC_CRYPT_SCRYPT_R_SPIN;
-        vmin = crypt::Constants::scrypt_r_min; vmax = crypt::Constants::scrypt_r_max;
+        vmin = nppcrypt::Constants::scrypt_r_min; vmax = nppcrypt::Constants::scrypt_r_max;
         hwnd = tab.key;
         break;
     }
     case IDC_CRYPT_SCRYPT_P:
     {
         edit_id = IDC_CRYPT_SCRYPT_P; spin_id = IDC_CRYPT_SCRYPT_P_SPIN;
-        vmin = crypt::Constants::scrypt_p_min; vmax = crypt::Constants::scrypt_p_max;
+        vmin = nppcrypt::Constants::scrypt_p_min; vmax = nppcrypt::Constants::scrypt_p_max;
         hwnd = tab.key;
         break;
     }
@@ -1159,7 +1159,7 @@ void DlgCrypt::checkSpinControlValue(int ctrlID)
     }
 }
 
-bool DlgCrypt::checkPassword(crypt::secure_string& s, bool strict)
+bool DlgCrypt::checkPassword(nppcrypt::secure_string& s, bool strict)
 {
     if (current.modus == CryptInfo::Modus::easy) {
         getText(IDC_CRYPT_PASSWORD_EASY, s, dialogs.easy);
@@ -1172,9 +1172,9 @@ bool DlgCrypt::checkPassword(crypt::secure_string& s, bool strict)
     } else {
         getText(IDC_CRYPT_PASSWORD_ADVANCED, s, tab.basic);
         size_t slen = s.size();
-        crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(tab.basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
-        if (enc != crypt::Encoding::ascii) {
-            crypt::UserData data(s.c_str(), enc);
+        nppcrypt::Encoding enc = (nppcrypt::Encoding)::SendDlgItemMessage(tab.basic, IDC_CRYPT_PASSWORD_ENC, CB_GETCURSEL, 0, 0);
+        if (enc != nppcrypt::Encoding::ascii) {
+            nppcrypt::UserData data(s.c_str(), enc);
             data.get(s, enc);
         }
         if (s.size() > 0 || (slen == 0 && !strict)) {
@@ -1187,13 +1187,13 @@ bool DlgCrypt::checkPassword(crypt::secure_string& s, bool strict)
     return !invalid.password;
 }
 
-bool DlgCrypt::checkCustomIV(crypt::UserData& data, bool reencode)
+bool DlgCrypt::checkCustomIV(nppcrypt::UserData& data, bool reencode)
 {
-    crypt::secure_string temp;
+    nppcrypt::secure_string temp;
     getText(IDC_CRYPT_IV_INPUT, temp, tab.iv);
     if (temp.size()) {
-        crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ENC, CB_GETCURSEL, 0, 0);
-        if (enc != crypt::Encoding::ascii) {
+        nppcrypt::Encoding enc = (nppcrypt::Encoding)::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ENC, CB_GETCURSEL, 0, 0);
+        if (enc != nppcrypt::Encoding::ascii) {
             data.set(temp.c_str(), temp.size(), enc);
             if (reencode && data.size() == current.iv_length) {
                 data.get(temp, enc);
@@ -1208,13 +1208,13 @@ bool DlgCrypt::checkCustomIV(crypt::UserData& data, bool reencode)
     return (data.size() == current.iv_length);
 }
 
-bool DlgCrypt::checkHMACKey(crypt::UserData& data, bool reencode)
+bool DlgCrypt::checkHMACKey(nppcrypt::UserData& data, bool reencode)
 {
-    crypt::secure_string temp;
+    nppcrypt::secure_string temp;
     getText(IDC_CRYPT_AUTH_PW_VALUE, temp, tab.auth);
     if (temp.size()) {
-        crypt::Encoding enc = (crypt::Encoding)::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_PW_ENC, CB_GETCURSEL, 0, 0);
-        if (enc != crypt::Encoding::ascii) {
+        nppcrypt::Encoding enc = (nppcrypt::Encoding)::SendDlgItemMessage(tab.auth, IDC_CRYPT_AUTH_PW_ENC, CB_GETCURSEL, 0, 0);
+        if (enc != nppcrypt::Encoding::ascii) {
             data.set(temp.c_str(), temp.size(), enc);
             if (reencode && data.size() > 0) {
                 data.get(temp, enc);
@@ -1233,22 +1233,22 @@ bool DlgCrypt::checkHMACKey(crypt::UserData& data, bool reencode)
 /* ----------------------------------------------------------------------------------------------------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------------------------------------------------------------------------------------------------- */
 
-void DlgCrypt::updateEncodingControls(crypt::Encoding enc)
+void DlgCrypt::updateEncodingControls(nppcrypt::Encoding enc)
 {
-    help.encoding.setURL(crypt::help::getHelpURL(enc));
-    if (enc == crypt::Encoding::ascii) {
+    help.encoding.setURL(nppcrypt::help::getHelpURL(enc));
+    if (enc == nppcrypt::Encoding::ascii) {
         help.encoding.setWarning(true);
-        help.encoding.setTooltip(crypt::help::getInfo(crypt::Encoding::ascii));
+        help.encoding.setTooltip(nppcrypt::help::getInfo(nppcrypt::Encoding::ascii));
     } else {
         help.encoding.setWarning(false);
-        help.encoding.setTooltip(crypt::help::getInfo(enc));
+        help.encoding.setTooltip(nppcrypt::help::getInfo(enc));
     }
 
     if (operation != Operation::Encryption) {
         return;
     }
 
-    using namespace crypt;
+    using namespace nppcrypt;
     switch (enc)
     {
     case Encoding::ascii:
@@ -1277,11 +1277,11 @@ void DlgCrypt::updateEncodingControls(crypt::Encoding enc)
     }
 }
 
-void DlgCrypt::updateHashDigestControl(crypt::Hash h, HWND hwnd, int id)
+void DlgCrypt::updateHashDigestControl(nppcrypt::Hash h, HWND hwnd, int id)
 {
     std::wstring temp_str;
     ::SendDlgItemMessage(hwnd, id, CB_RESETCONTENT, 0, 0);
-    for (crypt::help::HashDigests it(h); *it; ++it) {
+    for (nppcrypt::help::HashDigests it(h); *it; ++it) {
         temp_str = std::to_wstring(*it * 8);
         temp_str.append(TEXT(" Bits"));
         ::SendDlgItemMessage(hwnd, id, CB_ADDSTRING, 0, (LPARAM)temp_str.c_str());
@@ -1292,7 +1292,7 @@ void DlgCrypt::updateKeyDerivationControls()
 {
     switch (current.key_derivation)
     {
-    case crypt::KeyDerivation::pbkdf2:
+    case nppcrypt::KeyDerivation::pbkdf2:
     {
         ::EnableWindow(::GetDlgItem(tab.key, IDC_CRYPT_PBKDF2_HASH), true);
         ::EnableWindow(::GetDlgItem(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH), true);
@@ -1321,7 +1321,7 @@ void DlgCrypt::updateKeyDerivationControls()
         ::EnableWindow(::GetDlgItem(tab.key, IDC_CRYPT_SALT_STATIC), c);
         break;
     }
-    case crypt::KeyDerivation::bcrypt:
+    case nppcrypt::KeyDerivation::bcrypt:
     {
         ::EnableWindow(::GetDlgItem(tab.key, IDC_CRYPT_PBKDF2_HASH), false);
         ::EnableWindow(::GetDlgItem(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH), false);
@@ -1351,7 +1351,7 @@ void DlgCrypt::updateKeyDerivationControls()
         ::EnableWindow(::GetDlgItem(tab.key, IDC_CRYPT_SALT_STATIC), false);
         break;
     }
-    case crypt::KeyDerivation::scrypt:
+    case nppcrypt::KeyDerivation::scrypt:
     {
         ::EnableWindow(::GetDlgItem(tab.key, IDC_CRYPT_PBKDF2_HASH), false);
         ::EnableWindow(::GetDlgItem(tab.key, IDC_CRYPT_PBKDF2_HASH_LENGTH), false);
@@ -1384,8 +1384,8 @@ void DlgCrypt::updateKeyDerivationControls()
         break;
     }
     }
-    help.keyalgorithm.setURL(crypt::help::getHelpURL(current.key_derivation));
-    help.keyalgorithm.setTooltip(crypt::help::getInfo(current.key_derivation));
+    help.keyalgorithm.setURL(nppcrypt::help::getHelpURL(current.key_derivation));
+    help.keyalgorithm.setTooltip(nppcrypt::help::getInfo(current.key_derivation));
 }
 
 void DlgCrypt::updateCipherControls()
@@ -1394,13 +1394,13 @@ void DlgCrypt::updateCipherControls()
     int cipher_cat = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER_TYPE, CB_GETCURSEL, 0, 0);
     int cipher_index = (int)::SendDlgItemMessage(tab.basic, IDC_CRYPT_CIPHER, CB_GETCURSEL, 0, 0);
 
-    current.cipher = crypt::help::getCipherByIndex(cipher_cat, cipher_index);
+    current.cipher = nppcrypt::help::getCipherByIndex(cipher_cat, cipher_index);
 
     // refill combobox with the keylengths available for the current cipher:
     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_KEYLENGTH, CB_RESETCONTENT, 0, 0);
     int keylength_index = 0;
     int i = 0;
-    for (crypt::help::CipherKeys it(current.cipher); *it; ++it, i++) {
+    for (nppcrypt::help::CipherKeys it(current.cipher); *it; ++it, i++) {
         if (current.key_length == (size_t)*it) {
             keylength_index = i;
         }
@@ -1409,11 +1409,11 @@ void DlgCrypt::updateCipherControls()
         ::SendDlgItemMessage(tab.basic, IDC_CRYPT_KEYLENGTH, CB_ADDSTRING, 0, (LPARAM)temp_str.c_str());
     }
     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_KEYLENGTH, CB_SETCURSEL, keylength_index, 0);
-    current.key_length = crypt::help::getCipherKeylengthByIndex(current.cipher, keylength_index);
+    current.key_length = nppcrypt::help::getCipherKeylengthByIndex(current.cipher, keylength_index);
 
     // refill combobox with the modes available for the current cipher:
     ::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_RESETCONTENT, 0, 0);
-    for (crypt::help::CipherModes it(current.cipher); *it; ++it) {
+    for (nppcrypt::help::CipherModes it(current.cipher); *it; ++it) {
         ::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_ADDSTRING, 0, (LPARAM)help::windows::ToWCHAR(*it).c_str());
     }
 
@@ -1425,18 +1425,18 @@ void DlgCrypt::updateCipherControls()
         ::EnableWindow(::GetDlgItem(tab.basic, IDC_CRYPT_MODE), true);
         help.mode.display(true);
         // check if the current cipher supports the old mode:
-        int i = crypt::help::getModeIndex(current.cipher, current.mode);
+        int i = nppcrypt::help::getModeIndex(current.cipher, current.mode);
         if (i != -1) {
             ::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_SETCURSEL, i, 0);
         } else {
-            current.mode = crypt::help::getModeByIndex(current.cipher, 0);
+            current.mode = nppcrypt::help::getModeByIndex(current.cipher, 0);
             ::SendDlgItemMessage(tab.basic, IDC_CRYPT_MODE, CB_SETCURSEL, 0, 0);
         }
     }
 
-    help.cipher.setURL(crypt::help::getHelpURL(current.cipher));
-    help.cipher.setTooltip(crypt::help::getInfo(current.cipher));
-    if (crypt::help::checkProperty(current.cipher, crypt::WEAK)) {
+    help.cipher.setURL(nppcrypt::help::getHelpURL(current.cipher));
+    help.cipher.setTooltip(nppcrypt::help::getInfo(current.cipher));
+    if (nppcrypt::help::checkProperty(current.cipher, nppcrypt::WEAK)) {
         help.cipher.setWarning(true);
     } else {
         help.cipher.setWarning(false);
@@ -1468,7 +1468,7 @@ void DlgCrypt::updateHMACKeyControls()
 void DlgCrypt::updateCipherInfo()
 {
     size_t key_length, block_size;
-    crypt::getCipherInfo(current.cipher, current.mode, key_length, current.iv_length, block_size);
+    nppcrypt::getCipherInfo(current.cipher, current.mode, key_length, current.iv_length, block_size);
 
     // update CipherInfo Editbox
     std::wostringstream s1;
@@ -1479,13 +1479,13 @@ void DlgCrypt::updateCipherInfo()
     }
     ::SetDlgItemText(tab.basic, IDC_CRYPT_CIPHER_INFO, s1.str().c_str());
 
-    help.mode.setURL(crypt::help::getHelpURL(current.mode));
-    help.mode.setTooltip(crypt::help::getInfo(current.mode));
-    help.mode.setWarning((current.mode == crypt::Mode::ecb));
+    help.mode.setURL(nppcrypt::help::getHelpURL(current.mode));
+    help.mode.setTooltip(nppcrypt::help::getInfo(current.mode));
+    help.mode.setWarning((current.mode == nppcrypt::Mode::ecb));
 
     // update auth Salt/IV control
-    if ((current.mode == crypt::Mode::gcm || current.mode == crypt::Mode::ccm || current.mode == crypt::Mode::eax) &&
-        crypt::help::checkProperty(current.cipher, crypt::BLOCK)) {
+    if ((current.mode == nppcrypt::Mode::gcm || current.mode == nppcrypt::Mode::ccm || current.mode == nppcrypt::Mode::eax) &&
+        nppcrypt::help::checkProperty(current.cipher, nppcrypt::BLOCK)) {
         help.auth_ivsalt.display(true);
         ::ShowWindow(::GetDlgItem(tab.basic, IDC_CRYPT_AUTH_IVSALT), SW_SHOW);
     } else {
@@ -1527,13 +1527,13 @@ void DlgCrypt::updateIVControls()
     bool enableInput = false;
     if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_CUSTOM, BM_GETCHECK, 0, 0)) {
         enableInput = true;
-        help.iv.setTooltip(crypt::help::getInfo(crypt::IV::custom));
+        help.iv.setTooltip(nppcrypt::help::getInfo(nppcrypt::IV::custom));
     } else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_ZERO, BM_GETCHECK, 0, 0)) {
-        help.iv.setTooltip(crypt::help::getInfo(crypt::IV::zero));
+        help.iv.setTooltip(nppcrypt::help::getInfo(nppcrypt::IV::zero));
     } else if (::SendDlgItemMessage(tab.iv, IDC_CRYPT_IV_KEY, BM_GETCHECK, 0, 0)) {
-        help.iv.setTooltip(crypt::help::getInfo(crypt::IV::keyderivation));
+        help.iv.setTooltip(nppcrypt::help::getInfo(nppcrypt::IV::keyderivation));
     } else {
-        help.iv.setTooltip(crypt::help::getInfo(crypt::IV::random));
+        help.iv.setTooltip(nppcrypt::help::getInfo(nppcrypt::IV::random));
     }
     ::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_INPUT), enableInput);
     ::EnableWindow(::GetDlgItem(tab.iv, IDC_CRYPT_IV_ENC), enableInput);

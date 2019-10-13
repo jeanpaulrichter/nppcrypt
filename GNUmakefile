@@ -9,6 +9,7 @@ CFLAGS :=
 CRYPTOPP := src/cryptopp/libcryptopp.a
 LDFLAGS := -lstdc++ -Lsrc/cryptopp -lcryptopp
 PREFIX := /usr/local
+unexport LDFLAGS
 
 DEP_SRC := $(shell find $(SRCDIR)/bcrypt -type f -name *.cpp)
 DEP_SRC += $(shell find $(SRCDIR)/scrypt -type f -name *.c)
@@ -31,7 +32,11 @@ DEP_OBJ := $(patsubst $(SRCDIR)/%,$(OBJDIR)/$(SUBDIR)/%,$(patsubst %.cpp,%.o,$(p
 MAIN_OBJ := $(patsubst $(SRCDIR)/%,$(OBJDIR)/$(SUBDIR)/%,$(MAIN_SRC:.cpp=.o))
 
 .PHONY: all
-all: info directories $(CRYPTOPP) bin/$(SUBDIR)/$(TARGET)
+all:
+	$(MAKE) info
+	$(MAKE) directories
+	$(MAKE) $(CRYPTOPP)
+	$(MAKE) bin/$(SUBDIR)/$(TARGET)
 
 .PHONY: info
 info:
@@ -73,7 +78,7 @@ else
 endif
 
 $(CRYPTOPP):
-	@make -C src/cryptopp
+	$(MAKE) -C src/cryptopp
 
 bin/$(SUBDIR)/$(TARGET): $(MAIN_OBJ) $(DEP_OBJ)
 	$(CXX) $(CXXFLAGS) -o bin/$(SUBDIR)/$(TARGET) $^ $(LDFLAGS)

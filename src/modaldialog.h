@@ -33,8 +33,8 @@ public:
 
 protected:
     void                        goToCenter();
-    void                        getText(int id, crypt::secure_string& str, HWND hwnd = NULL);
-    void                        setText(int id, const crypt::secure_string& str, HWND hwnd = NULL);
+    void                        getText(int id, nppcrypt::secure_string& str, HWND hwnd = NULL);
+    void                        setText(int id, const nppcrypt::secure_string& str, HWND hwnd = NULL);
     void                        setupInputEncodingSelect(HWND hwnd, int id);
     static INT_PTR CALLBACK     dlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
     virtual INT_PTR CALLBACK    run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam) = 0;

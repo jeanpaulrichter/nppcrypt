@@ -35,8 +35,8 @@ class DlgCrypt : public ModalDialog
 public:
          DlgCrypt();
     void destroy();
-    bool encryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename = NULL);
-    bool decryptDialog(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename = NULL, bool disable_easymode = false);
+    bool encryptDialog(CryptInfo* crypt, nppcrypt::UserData* iv, const std::wstring* filename = NULL);
+    bool decryptDialog(CryptInfo* crypt, nppcrypt::UserData* iv, const std::wstring* filename = NULL, bool disable_easymode = false);
 
 private:
     enum class Operation { Encryption, Decryption };
@@ -44,7 +44,7 @@ private:
     /* global message callback */
     INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
-    bool setup(CryptInfo* crypt, crypt::UserData* iv, const std::wstring* filename);
+    bool setup(CryptInfo* crypt, nppcrypt::UserData* iv, const std::wstring* filename);
     void setupDialog();
     void changeActiveTab(int id);
     void setModus(CryptInfo::Modus modus);
@@ -56,13 +56,13 @@ private:
 
     /* methods to validate user-input: */
     void checkSpinControlValue(int ctrlID);
-    bool checkPassword(crypt::secure_string& s, bool strict);
-    bool checkCustomIV(crypt::UserData& data, bool reencode);
-    bool checkHMACKey(crypt::UserData& data, bool reencode);
+    bool checkPassword(nppcrypt::secure_string& s, bool strict);
+    bool checkCustomIV(nppcrypt::UserData& data, bool reencode);
+    bool checkHMACKey(nppcrypt::UserData& data, bool reencode);
 
     /* methods to change controls based on current selection */
-    void updateEncodingControls(crypt::Encoding enc);
-    void updateHashDigestControl(crypt::Hash h, HWND hwnd, int ctrlID);
+    void updateEncodingControls(nppcrypt::Encoding enc);
+    void updateHashDigestControl(nppcrypt::Hash h, HWND hwnd, int ctrlID);
     void updateKeyDerivationControls();
     void updateCipherControls();
     void updateHMACKeyControls();
@@ -72,7 +72,7 @@ private:
     Operation               operation;
     const std::wstring*     filename;
     CryptInfo*              crypt;
-    crypt::UserData*        ivdata;
+    nppcrypt::UserData*        ivdata;
     bool                    confirm_password;
     bool                    no_easymode;
 
@@ -81,10 +81,10 @@ private:
         CurStatus() : tab(-1), iv_length(0), key_length(0) {};
 
         CryptInfo::Modus        modus;
-        crypt::Cipher           cipher;
-        crypt::Mode             mode;
-        crypt::KeyDerivation    key_derivation;
-        crypt::secure_string    password;
+        nppcrypt::Cipher           cipher;
+        nppcrypt::Mode             mode;
+        nppcrypt::KeyDerivation    key_derivation;
+        nppcrypt::secure_string    password;
         int                     tab;
         size_t                  iv_length;
         size_t                  key_length;

@@ -177,7 +177,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
                 }
 
                 CryptInfo               crypt;
-                crypt::InitData         initdata;
+                nppcrypt::InitData         initdata;
                 CryptHeaderReader       header(crypt.hmac);
 
                 if (!header.parse(crypt.options, initdata, pData, data_length)) {
@@ -207,7 +207,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
                 if (dlg_crypt.decryptDialog(&crypt, &initdata.iv, &filename)) {
                     std::basic_string<byte> buffer;
-                    crypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, crypt.options, crypt.password, initdata);
+                    nppcrypt::decrypt(header.getEncrypted(), header.getEncryptedLength(), buffer, crypt.options, crypt.password, initdata);
 
                     ::SendMessage(hCurScintilla, SCI_CLEARALL, 0, 0);
                     ::SendMessage(hCurScintilla, SCI_APPENDTEXT, buffer.size(), (LPARAM)&buffer[0]);
@@ -292,7 +292,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
                     throwError(no_scintilla_pointer);
                 }
 
-                crypt::InitData         initdata;
+                nppcrypt::InitData         initdata;
                 CryptHeaderWriter       header(crypt.hmac);
                 std::basic_string<byte> buffer;
                 bool                    autoencrypt = false;
@@ -328,7 +328,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
                     }
                 }
 
-                crypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
+                nppcrypt::encrypt(pData, data_length, buffer, crypt.options, crypt.password, initdata);
                 header.create(crypt.options, initdata, &buffer[0], buffer.size());
                 if (!old_encryption_available) {
                     crypt_files.insert(std::pair<std::wstring, CryptInfo>(path, crypt));
@@ -376,12 +376,12 @@ void EncryptDlg()
             throwInfo(no_text_selected);
         }
 
-        crypt::InitData             initdata;
+        nppcrypt::InitData             initdata;
 
         if(dlg_crypt.encryptDialog(&current.crypt, &initdata.iv)) {
 
             std::basic_string<byte>     buffer;
-            crypt::encrypt(pData, data_length, buffer, current.crypt.options, current.crypt.password, initdata);
+            nppcrypt::encrypt(pData, data_length, buffer, current.crypt.options, current.crypt.password, initdata);
 
             CryptHeaderWriter header(current.crypt.hmac);
             header.create(current.crypt.options, initdata, &buffer[0], buffer.size());
@@ -419,7 +419,7 @@ void DecryptDlg()
             throwInfo(no_text_selected);
         }
 
-        crypt::InitData     initdata;
+        nppcrypt::InitData     initdata;
         CryptHeaderReader   header(current.crypt.hmac);
 
         /* parse header and check hmac if present */
@@ -452,13 +452,13 @@ void DecryptDlg()
             /* check if salt or tag data is mising */
             size_t need_salt_len = (current.crypt.options.key.salt_bytes > 0 && initdata.salt.size() != current.crypt.options.key.salt_bytes) ? current.crypt.options.key.salt_bytes : 0;
             size_t need_tag_len = 0;
-            if (crypt::help::checkProperty(current.crypt.options.cipher, crypt::BLOCK)) {
-                if (current.crypt.options.mode == crypt::Mode::gcm && initdata.tag.size() != crypt::Constants::gcm_tag_size) {
-                    need_tag_len = crypt::Constants::gcm_tag_size;
-                } else if (current.crypt.options.mode == crypt::Mode::ccm && initdata.tag.size() != crypt::Constants::ccm_tag_size) {
-                    need_tag_len = crypt::Constants::ccm_tag_size;
-                } else if (current.crypt.options.mode == crypt::Mode::eax && initdata.tag.size() != crypt::Constants::eax_tag_size) {
-                    need_tag_len = crypt::Constants::eax_tag_size;
+            if (nppcrypt::help::checkProperty(current.crypt.options.cipher, nppcrypt::BLOCK)) {
+                if (current.crypt.options.mode == nppcrypt::Mode::gcm && initdata.tag.size() != nppcrypt::Constants::gcm_tag_size) {
+                    need_tag_len = nppcrypt::Constants::gcm_tag_size;
+                } else if (current.crypt.options.mode == nppcrypt::Mode::ccm && initdata.tag.size() != nppcrypt::Constants::ccm_tag_size) {
+                    need_tag_len = nppcrypt::Constants::ccm_tag_size;
+                } else if (current.crypt.options.mode == nppcrypt::Mode::eax && initdata.tag.size() != nppcrypt::Constants::eax_tag_size) {
+                    need_tag_len = nppcrypt::Constants::eax_tag_size;
                 }
             }
             if (need_salt_len > 0 || need_tag_len > 0) {

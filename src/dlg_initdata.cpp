@@ -32,7 +32,7 @@ void DlgInitdata::destroy()
     ModalDialog::destroy();
 };
 
-bool DlgInitdata::doDialog(crypt::InitData* data, size_t saltlen, size_t taglen)
+bool DlgInitdata::doDialog(nppcrypt::InitData* data, size_t saltlen, size_t taglen)
 {
     pdata = data;
     saltlength = saltlen;
@@ -168,15 +168,15 @@ INT_PTR CALLBACK DlgInitdata::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 
 bool DlgInitdata::checkTag(bool updatedata)
 {
-    crypt::secure_string    temp;
+    nppcrypt::secure_string    temp;
     getText(IDC_INITDATA_TAG, temp);
     if (!temp.size()) {
         invalid_tag = true;
     } else {
-        crypt::UserData         data;
-        crypt::Encoding         enc;
+        nppcrypt::UserData         data;
+        nppcrypt::Encoding         enc;
 
-        enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_GETCURSEL, 0, 0);
+        enc = (nppcrypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_INITDATA_TAG_ENC, CB_GETCURSEL, 0, 0);
         data.set(temp.c_str(), temp.size(), enc);
         invalid_tag = (data.size() != taglength);
         if (!invalid_salt && updatedata) {
@@ -188,15 +188,15 @@ bool DlgInitdata::checkTag(bool updatedata)
 
 bool DlgInitdata::checkSalt(bool updatedata)
 {
-    crypt::secure_string    temp;
+    nppcrypt::secure_string    temp;
     getText(IDC_INITDATA_SALT, temp);
     if (!temp.size()) {
         invalid_salt = true;
     } else {
-        crypt::UserData         data;
-        crypt::Encoding         enc;
+        nppcrypt::UserData         data;
+        nppcrypt::Encoding         enc;
 
-        enc = (crypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_GETCURSEL, 0, 0);
+        enc = (nppcrypt::Encoding)::SendDlgItemMessage(_hSelf, IDC_INITDATA_SALT_ENC, CB_GETCURSEL, 0, 0);
         data.set(temp.c_str(), temp.size(), enc);
         invalid_salt = (data.size() != saltlength);
         if (!invalid_salt && updatedata) {

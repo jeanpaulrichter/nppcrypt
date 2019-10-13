@@ -47,9 +47,9 @@ namespace help
         void            copyToClipboard(const unsigned char* s, size_t len);
         void            copyToClipboard(const std::basic_string<byte>& buffer);
         void            wchar_to_utf8(const wchar_t* i, int i_len, std::string& o);
-        void            wchar_to_utf8(const wchar_t* i, int i_len, crypt::secure_string& o);
+        void            wchar_to_utf8(const wchar_t* i, int i_len, nppcrypt::secure_string& o);
         void            utf8_to_wchar(const char* i, int i_len, std::wstring& o);
-        void            utf8_to_wchar(const char* i, int i_len, crypt::secure_wstring& o);
+        void            utf8_to_wchar(const char* i, int i_len, nppcrypt::secure_wstring& o);
         void            error(HWND hwnd, const char* msg);
 
         class ToWCHAR

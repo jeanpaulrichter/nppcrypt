@@ -73,7 +73,7 @@ void ModalDialog::goToCenter()
     ::SetWindowPos(_hSelf, HWND_TOP, x, y, _rc.right - _rc.left, _rc.bottom - _rc.top, SWP_SHOWWINDOW);
 }
 
-void ModalDialog::getText(int id, crypt::secure_string& str, HWND hwnd)
+void ModalDialog::getText(int id, nppcrypt::secure_string& str, HWND hwnd)
 {
     if (hwnd == NULL) {
         hwnd = _hSelf;
@@ -83,7 +83,7 @@ void ModalDialog::getText(int id, crypt::secure_string& str, HWND hwnd)
         str.clear();
     } else {
         try {
-            crypt::secure_wstring temp;
+            nppcrypt::secure_wstring temp;
             temp.resize((size_t)length + 1);
             ::GetDlgItemText(hwnd, id, &temp[0], length + 1);
             help::windows::wchar_to_utf8(temp.c_str(), length, str);
@@ -93,7 +93,7 @@ void ModalDialog::getText(int id, crypt::secure_string& str, HWND hwnd)
     }
 }
 
-void ModalDialog::setText(int id, const crypt::secure_string& str, HWND hwnd)
+void ModalDialog::setText(int id, const nppcrypt::secure_string& str, HWND hwnd)
 {
     if (hwnd == NULL) {
         hwnd = _hSelf;
@@ -102,7 +102,7 @@ void ModalDialog::setText(int id, const crypt::secure_string& str, HWND hwnd)
         ::SetDlgItemText(hwnd, id, TEXT(""));
     } else {
         try {
-            crypt::secure_wstring temp;
+            nppcrypt::secure_wstring temp;
             help::windows::utf8_to_wchar(str.c_str(), (int)str.size(), temp);
             ::SetDlgItemText(hwnd, id, temp.c_str());
         } catch (std::exception& exc) {

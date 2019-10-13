@@ -26,7 +26,7 @@ GNU General Public License for more details.
 #include "preferences.h"
 #include "messagebox.h"
 
-DlgConvert::DlgConvert(crypt::Options::Convert& opt) : ModalDialog(), options(opt)
+DlgConvert::DlgConvert(nppcrypt::Options::Convert& opt) : ModalDialog(), options(opt)
 {
 }
 
@@ -36,7 +36,7 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
     {
     case WM_INITDIALOG:
     {
-        using namespace crypt;
+        using namespace nppcrypt;
 
         ::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_ASCII, BM_SETCHECK, (options.from == Encoding::ascii), 0);
         ::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE16, BM_SETCHECK, (options.from == Encoding::base16), 0);
@@ -53,8 +53,8 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
         ::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_SETRANGE32, 1, NPPC_MAX_LINE_LENGTH);
         ::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf, IDC_CONVERT_LINELENGTH), 0);
         ::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_SETPOS32, 0, options.linelength);
-        ::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_WINDOWS, BM_SETCHECK, (options.eol == crypt::EOL::windows), 0);
-        ::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_UNIX, BM_SETCHECK, !(options.eol == crypt::EOL::windows), 0);
+        ::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_WINDOWS, BM_SETCHECK, (options.eol == nppcrypt::EOL::windows), 0);
+        ::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_UNIX, BM_SETCHECK, !(options.eol == nppcrypt::EOL::windows), 0);
 
         enableOptions((options.to != Encoding::ascii));
         goToCenter();
@@ -83,7 +83,7 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
                         return TRUE;
                     }
 
-                    crypt::convert(pdata, data_length, buffer, options, preferences.getBase32Alphabet(), preferences.getBase64Alphabet());
+                    nppcrypt::convert(pdata, data_length, buffer, options, preferences.getBase32Alphabet(), preferences.getBase64Alphabet());
                     if (LOWORD(wParam) == IDC_OK) {
                         help::scintilla::replaceSelection(buffer);
                     } else {
@@ -104,45 +104,45 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
             }
             case IDC_CONVERT_FROM_ASCII:
             {
-                OnSourceChanged(crypt::Encoding::ascii);
+                OnSourceChanged(nppcrypt::Encoding::ascii);
                 break;
             }
             case IDC_CONVERT_FROM_BASE16:
             {
-                OnSourceChanged(crypt::Encoding::base16);
+                OnSourceChanged(nppcrypt::Encoding::base16);
                 break;
             }
             case IDC_CONVERT_FROM_BASE32:
             {
-                OnSourceChanged(crypt::Encoding::base32);
+                OnSourceChanged(nppcrypt::Encoding::base32);
                 break;
             }
             case IDC_CONVERT_FROM_BASE64:
             {
-                OnSourceChanged(crypt::Encoding::base64);
+                OnSourceChanged(nppcrypt::Encoding::base64);
                 break;
             }
             case IDC_CONVERT_TO_ASCII:
             {
-                OnTargetChanged(crypt::Encoding::ascii);
+                OnTargetChanged(nppcrypt::Encoding::ascii);
                 enableOptions(false);
                 break;
             }
             case IDC_CONVERT_TO_BASE16:
             {
-                OnTargetChanged(crypt::Encoding::base16);
+                OnTargetChanged(nppcrypt::Encoding::base16);
                 enableOptions(true);
                 break;
             }
             case IDC_CONVERT_TO_BASE32:
             {
-                OnTargetChanged(crypt::Encoding::base32);
+                OnTargetChanged(nppcrypt::Encoding::base32);
                 enableOptions(true);
                 break;
             }
             case IDC_CONVERT_TO_BASE64:
             {
-                OnTargetChanged(crypt::Encoding::base64);
+                OnTargetChanged(nppcrypt::Encoding::base64);
                 enableOptions(true);
                 break;
             }
@@ -191,27 +191,27 @@ INT_PTR CALLBACK DlgConvert::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPa
 void DlgConvert::updateOptions()
 {
     if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_ASCII, BM_GETCHECK, 0, 0))
-        options.from = crypt::Encoding::ascii;
+        options.from = nppcrypt::Encoding::ascii;
     else if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE16, BM_GETCHECK, 0, 0))
-        options.from = crypt::Encoding::base16;
+        options.from = nppcrypt::Encoding::base16;
     else if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE32, BM_GETCHECK, 0, 0))
-        options.from = crypt::Encoding::base32;
+        options.from = nppcrypt::Encoding::base32;
     else if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE64, BM_GETCHECK, 0, 0))
-        options.from = crypt::Encoding::base64;
+        options.from = nppcrypt::Encoding::base64;
 
     if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_ASCII, BM_GETCHECK, 0, 0))
-        options.to = crypt::Encoding::ascii;
+        options.to = nppcrypt::Encoding::ascii;
     else if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE16, BM_GETCHECK, 0, 0))
-        options.to = crypt::Encoding::base16;
+        options.to = nppcrypt::Encoding::base16;
     else if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE32, BM_GETCHECK, 0, 0))
-        options.to = crypt::Encoding::base32;
+        options.to = nppcrypt::Encoding::base32;
     else if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE64, BM_GETCHECK, 0, 0))
-        options.to = crypt::Encoding::base64;
+        options.to = nppcrypt::Encoding::base64;
 
-    if (options.to != crypt::Encoding::ascii) {
+    if (options.to != nppcrypt::Encoding::ascii) {
         options.uppercase = !!::SendDlgItemMessage(_hSelf, IDC_CONVERT_UPPERCASE, BM_GETCHECK, 0, 0);
         options.linebreaks = !!::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINEBREAKS, BM_GETCHECK, 0, 0);
-        options.eol = !!::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_WINDOWS, BM_GETCHECK, 0, 0) ? crypt::EOL::windows : crypt::EOL::unix;
+        options.eol = !!::SendDlgItemMessage(_hSelf, IDC_CONVERT_LB_WINDOWS, BM_GETCHECK, 0, 0) ? nppcrypt::EOL::windows : nppcrypt::EOL::unix;
         options.linelength = (int)::SendDlgItemMessage(_hSelf, IDC_CONVERT_LINELENGTH_SPIN, UDM_GETPOS32, 0, 0);
     }
 }
@@ -239,11 +239,11 @@ void DlgConvert::enableOptions(bool v) const
     }
 }
 
-void DlgConvert::OnSourceChanged(crypt::Encoding enc) const
+void DlgConvert::OnSourceChanged(nppcrypt::Encoding enc) const
 {
     switch (enc)
     {
-    case crypt::Encoding::ascii:
+    case nppcrypt::Encoding::ascii:
     {
         if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_ASCII, BM_GETCHECK, 0, 0)) {
             ::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE16, BM_SETCHECK, true, 0);
@@ -252,7 +252,7 @@ void DlgConvert::OnSourceChanged(crypt::Encoding enc) const
         }
         break;
     }
-    case crypt::Encoding::base16:
+    case nppcrypt::Encoding::base16:
     {
         if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE16, BM_GETCHECK, 0, 0)) {
             ::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE32, BM_SETCHECK, true, 0);
@@ -260,7 +260,7 @@ void DlgConvert::OnSourceChanged(crypt::Encoding enc) const
         }
         break;
     }
-    case crypt::Encoding::base32:
+    case nppcrypt::Encoding::base32:
     {
         if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE32, BM_GETCHECK, 0, 0)) {
             ::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE64, BM_SETCHECK, true, 0);
@@ -269,7 +269,7 @@ void DlgConvert::OnSourceChanged(crypt::Encoding enc) const
         }
         break;
     }
-    case crypt::Encoding::base64:
+    case nppcrypt::Encoding::base64:
     {
         if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE64, BM_GETCHECK, 0, 0)) {
             ::SendDlgItemMessage(_hSelf, IDC_CONVERT_TO_BASE32, BM_SETCHECK, true, 0);
@@ -280,11 +280,11 @@ void DlgConvert::OnSourceChanged(crypt::Encoding enc) const
     }
 }
 
-void DlgConvert::OnTargetChanged(crypt::Encoding enc) const
+void DlgConvert::OnTargetChanged(nppcrypt::Encoding enc) const
 {
     switch (enc)
     {
-    case crypt::Encoding::ascii:
+    case nppcrypt::Encoding::ascii:
     {
         if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_ASCII, BM_GETCHECK, 0, 0)) {
             ::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE16, BM_SETCHECK, true, 0);
@@ -293,7 +293,7 @@ void DlgConvert::OnTargetChanged(crypt::Encoding enc) const
         }
         break;
     }
-    case crypt::Encoding::base16:
+    case nppcrypt::Encoding::base16:
     {
         if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE16, BM_GETCHECK, 0, 0)) {
             ::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE32, BM_SETCHECK, true, 0);
@@ -301,7 +301,7 @@ void DlgConvert::OnTargetChanged(crypt::Encoding enc) const
         }
         break;
     }
-    case crypt::Encoding::base32:
+    case nppcrypt::Encoding::base32:
     {
         if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE32, BM_GETCHECK, 0, 0)) {
             ::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE64, BM_SETCHECK, true, 0);
@@ -310,7 +310,7 @@ void DlgConvert::OnTargetChanged(crypt::Encoding enc) const
         }
         break;
     }
-    case crypt::Encoding::base64:
+    case nppcrypt::Encoding::base64:
     {
         if (!!::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE64, BM_GETCHECK, 0, 0)) {
             ::SendDlgItemMessage(_hSelf, IDC_CONVERT_FROM_BASE32, BM_SETCHECK, true, 0);

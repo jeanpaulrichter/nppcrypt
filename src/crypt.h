@@ -19,7 +19,7 @@ GNU General Public License for more details.
 #include <string>
 #include "cryptopp/secblock.h"
 
-namespace crypt
+namespace nppcrypt
 {
     typedef CryptoPP::byte byte;
     typedef std::basic_string<char, std::char_traits<char>, CryptoPP::AllocatorWithCleanup<char> > secure_string;
@@ -185,9 +185,9 @@ namespace crypt
         {
             Crypt() : cipher(Cipher::rijndael), mode(Mode::gcm), iv(IV::random), aad(true) {};
 
-            crypt::Cipher           cipher;
-            crypt::Mode             mode;
-            crypt::IV               iv;
+            nppcrypt::Cipher           cipher;
+            nppcrypt::Mode             mode;
+            nppcrypt::IV               iv;
             bool                    aad;
 
             struct Key
@@ -202,8 +202,8 @@ namespace crypt
 
             struct Encoding
             {
-                Encoding() : enc(crypt::Encoding::base64), linelength(128), linebreaks(true), eol(EOL::windows), uppercase(true) {};
-                crypt::Encoding     enc;
+                Encoding() : enc(nppcrypt::Encoding::base64), linelength(128), linebreaks(true), eol(EOL::windows), uppercase(true) {};
+                nppcrypt::Encoding     enc;
                 size_t              linelength;
                 bool                linebreaks;
                 EOL                 eol;
@@ -214,21 +214,21 @@ namespace crypt
 
         struct Hash
         {
-            Hash() : encoding(crypt::Encoding::base16), algorithm(crypt::Hash::md5), use_key(false), digest_length(16) {};
+            Hash() : encoding(nppcrypt::Encoding::base16), algorithm(nppcrypt::Hash::md5), use_key(false), digest_length(16) {};
 
-            crypt::Hash             algorithm;
+            nppcrypt::Hash             algorithm;
             size_t                  digest_length;
-            crypt::Encoding         encoding;
+            nppcrypt::Encoding         encoding;
             bool                    use_key;
             UserData                key;
         };
 
         struct Convert
         {
-            Convert() : from(crypt::Encoding::ascii), to(crypt::Encoding::base64), linebreaks(true), eol(EOL::windows), linelength(64), uppercase(true) {};
+            Convert() : from(nppcrypt::Encoding::ascii), to(nppcrypt::Encoding::base64), linebreaks(true), eol(EOL::windows), linelength(64), uppercase(true) {};
 
-            crypt::Encoding         from;
-            crypt::Encoding         to;
+            nppcrypt::Encoding         from;
+            nppcrypt::Encoding         to;
             bool                    linebreaks;
             EOL                     eol;
             bool                    uppercase;
@@ -238,7 +238,7 @@ namespace crypt
 
     /* ---------------------------------------------------------------------------------------------------------------------------------- */
     
-    bool getCipherInfo(crypt::Cipher cipher, crypt::Mode mode, size_t& key_length, size_t& iv_length, size_t& block_size);
+    bool getCipherInfo(nppcrypt::Cipher cipher, nppcrypt::Mode mode, size_t& key_length, size_t& iv_length, size_t& block_size);
     bool getHashInfo(Hash h, size_t& length, size_t& keylength);
     void encrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const UserData& password, InitData& init);
     void decrypt(const byte* in, size_t in_len, std::basic_string<byte>& buffer, const Options::Crypt& options, const UserData& password, InitData& init);

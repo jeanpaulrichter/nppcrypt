@@ -21,6 +21,6 @@ GNU General Public License for more details.
 /* Set console echo (in own file because unistd.h pollutes the global namespace...) */
 void setEcho(bool enable = true);
 bool setLocale();
-void readLine(crypt::secure_string& out);
+void readLine(nppcrypt::secure_string& out);
 
 #endif

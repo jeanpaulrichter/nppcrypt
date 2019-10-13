@@ -33,16 +33,16 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
     {
     case WM_INITDIALOG :
     {
-        ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(crypt::Constants::rand_char_max, 1));
+        ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETRANGE, true, (LPARAM)MAKELONG(nppcrypt::Constants::rand_char_max, 1));
         ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETBUDDY, (WPARAM)GetDlgItem(_hSelf,IDC_RANDOM_EDIT), 0);
         ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETPOS32, 0, options.length);
 
-        if (!help::buffer::isCurrent8Bit() && options.encoding == crypt::Encoding::ascii) {
-            options.encoding = crypt::Encoding::base16;
+        if (!help::buffer::isCurrent8Bit() && options.encoding == nppcrypt::Encoding::ascii) {
+            options.encoding = nppcrypt::Encoding::base16;
             ::EnableWindow(::GetDlgItem(_hSelf, IDC_RANDOM_ENC_BINARY), false);
         }
 
-        using namespace crypt;
+        using namespace nppcrypt;
 
         switch (options.encoding) {
             case Encoding::ascii: ::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BINARY, BM_SETCHECK, BST_CHECKED, 0); break;
@@ -86,33 +86,33 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
             {
                 try {
                     if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BINARY, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                        options.encoding = crypt::Encoding::ascii;
+                        options.encoding = nppcrypt::Encoding::ascii;
                     } else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE16, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                        options.encoding = crypt::Encoding::base16;
+                        options.encoding = nppcrypt::Encoding::base16;
                     } else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE32, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                        options.encoding = crypt::Encoding::base32;
+                        options.encoding = nppcrypt::Encoding::base32;
                     } else {
-                        options.encoding = crypt::Encoding::base64;
+                        options.encoding = nppcrypt::Encoding::base64;
                     }
-                    crypt::UserData data;
+                    nppcrypt::UserData data;
                     options.length = (size_t)::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_GETPOS32, 0, 0);
 
                     if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPECIALS, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                        options.restriction = crypt::UserData::Restriction::specials;
+                        options.restriction = nppcrypt::UserData::Restriction::specials;
                     } else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_DIGITS, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                        options.restriction = crypt::UserData::Restriction::digits;
+                        options.restriction = nppcrypt::UserData::Restriction::digits;
                     } else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_LETTERS, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                        options.restriction = crypt::UserData::Restriction::letters;
+                        options.restriction = nppcrypt::UserData::Restriction::letters;
                     } else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ALPHANUM, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                        options.restriction = crypt::UserData::Restriction::alphanum;
+                        options.restriction = nppcrypt::UserData::Restriction::alphanum;
                     } else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_PASSWORD, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                        options.restriction = crypt::UserData::Restriction::password;
+                        options.restriction = nppcrypt::UserData::Restriction::password;
                     } else {
-                        options.restriction = crypt::UserData::Restriction::none;
+                        options.restriction = nppcrypt::UserData::Restriction::none;
                     }
 
                     data.random(options.length, options.restriction);
-                    crypt::secure_string str;
+                    nppcrypt::secure_string str;
                     data.get(str, options.encoding);
 
                     if (LOWORD(wParam) == IDC_OK) {
@@ -133,42 +133,42 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
             }
             case IDC_RANDOM_ENC_BINARY:
             {
-                updateEncodingControls(crypt::Encoding::ascii);
+                updateEncodingControls(nppcrypt::Encoding::ascii);
                 break;
             }
             case IDC_RANDOM_ENC_BASE16:
             {
-                updateEncodingControls(crypt::Encoding::base16);
+                updateEncodingControls(nppcrypt::Encoding::base16);
                 break;
             }
             case IDC_RANDOM_ENC_BASE32:
             {
-                updateEncodingControls(crypt::Encoding::base32);
+                updateEncodingControls(nppcrypt::Encoding::base32);
                 break;
             }
             case IDC_RANDOM_ENC_BASE64:
             {
-                updateEncodingControls(crypt::Encoding::base64);
+                updateEncodingControls(nppcrypt::Encoding::base64);
                 break;
             }
             case IDC_RANDOM_BINARY:
             {
                 if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BINARY, BM_GETCHECK, 0, 0) == BST_CHECKED) {
                     help_enc.setWarning(true);
-                    help_enc.setTooltip(crypt::help::getInfo(crypt::Encoding::ascii));
+                    help_enc.setTooltip(nppcrypt::help::getInfo(nppcrypt::Encoding::ascii));
                 }
                 break;
             }
             case IDC_RANDOM_ALPHANUM: case IDC_RANDOM_SPECIALS: case IDC_RANDOM_DIGITS: case IDC_RANDOM_LETTERS: case IDC_RANDOM_PASSWORD:
             {
                 if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BINARY, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                    updateEncodingControls(crypt::Encoding::ascii);
+                    updateEncodingControls(nppcrypt::Encoding::ascii);
                 } else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE16, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                    updateEncodingControls(crypt::Encoding::base16);
+                    updateEncodingControls(nppcrypt::Encoding::base16);
                 } else if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_ENC_BASE32, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                    updateEncodingControls(crypt::Encoding::base32);
+                    updateEncodingControls(nppcrypt::Encoding::base32);
                 } else {
-                    updateEncodingControls(crypt::Encoding::base64);
+                    updateEncodingControls(nppcrypt::Encoding::base64);
                 }
                 break;
             }
@@ -180,11 +180,11 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
             /* prevent out of bounds user input to length spin-control */
             if (LOWORD(wParam) == IDC_RANDOM_EDIT) {
                 if (GetWindowTextLength(::GetDlgItem(_hSelf, IDC_RANDOM_EDIT)) > 0) {
-                    crypt::secure_string temp_str;
+                    nppcrypt::secure_string temp_str;
                     getText(IDC_RANDOM_EDIT, temp_str);
                     int temp = std::stoi(temp_str.c_str());
-                    if (temp > crypt::Constants::rand_char_max) {
-                        ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETPOS32, 0, crypt::Constants::rand_char_max);
+                    if (temp > nppcrypt::Constants::rand_char_max) {
+                        ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETPOS32, 0, nppcrypt::Constants::rand_char_max);
                     } else if (temp < 1) {
                         ::SendDlgItemMessage(_hSelf, IDC_RANDOM_SPIN, UDM_SETPOS32, 0, 1);
                     }
@@ -201,19 +201,19 @@ INT_PTR CALLBACK DlgRandom::run_dlgProc(UINT message, WPARAM wParam, LPARAM lPar
     return FALSE;
 }
 
-void DlgRandom::updateEncodingControls(crypt::Encoding enc)
+void DlgRandom::updateEncodingControls(nppcrypt::Encoding enc)
 {
-    help_enc.setURL(crypt::help::getHelpURL(enc));
-    if (enc == crypt::Encoding::ascii) {
+    help_enc.setURL(nppcrypt::help::getHelpURL(enc));
+    if (enc == nppcrypt::Encoding::ascii) {
         if (::SendDlgItemMessage(_hSelf, IDC_RANDOM_BINARY, BM_GETCHECK, 0, 0) == BST_CHECKED) {
             help_enc.setWarning(true);
-            help_enc.setTooltip(crypt::help::getInfo(crypt::Encoding::ascii));
+            help_enc.setTooltip(nppcrypt::help::getInfo(nppcrypt::Encoding::ascii));
         } else {
             help_enc.setWarning(false);
             help_enc.setTooltip("ascii/utf8 output");
         }
     } else {
         help_enc.setWarning(false);
-        help_enc.setTooltip(crypt::help::getInfo(enc));
+        help_enc.setTooltip(nppcrypt::help::getInfo(enc));
     }
 }

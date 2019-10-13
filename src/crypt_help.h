@@ -18,7 +18,7 @@ GNU General Public License for more details.
 
 #include "crypt.h"
 
-namespace crypt
+namespace nppcrypt
 {
     enum Properties { WEAK = 1, EAX = 2, CCM = 4, GCM = 8, BLOCK = 16, STREAM = 32, HMAC_SUPPORT = 64, KEY_SUPPORT = 128, KEY_REQUIRED = 256 };
 
@@ -104,7 +104,7 @@ namespace crypt
         class CipherModes
         {
         public:
-            CipherModes(crypt::Cipher c);
+            CipherModes(nppcrypt::Cipher c);
             CipherModes& operator++();
             const char* operator*() const;
         private:
@@ -115,7 +115,7 @@ namespace crypt
         class CipherKeys
         {
         public:
-            CipherKeys(crypt::Cipher c);
+            CipherKeys(nppcrypt::Cipher c);
             CipherKeys& operator++();
             int operator*() const;
         private:
@@ -138,7 +138,7 @@ namespace crypt
         class HashDigests
         {
         public:
-            HashDigests(crypt::Hash h);
+            HashDigests(nppcrypt::Hash h);
             HashDigests& operator++();
             int operator*() const;
         private:

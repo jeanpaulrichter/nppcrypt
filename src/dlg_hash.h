@@ -26,7 +26,7 @@ GNU General Public License for more details.
 class DlgHash : public ModalDialog
 {
 public:
-            DlgHash(crypt::Options::Hash& opt);
+            DlgHash(nppcrypt::Options::Hash& opt);
     void    destroy();
 
 private:
@@ -43,9 +43,9 @@ private:
     /**** enable/disable key-controls ****/
     void updateKeyControls(bool enable);
     /**** update encoding controls ****/
-    void updateEncodingControls(crypt::Encoding enc);
+    void updateEncodingControls(nppcrypt::Encoding enc);
 
-    crypt::Options::Hash&   options;
+    nppcrypt::Options::Hash&   options;
     size_t                  keylength;
     bool                    invalid_key;
     HelpCtrl                help_enc;

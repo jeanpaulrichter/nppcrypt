@@ -28,26 +28,26 @@ struct CryptInfo {
     enum class Modus : unsigned { easy, advanced };
     CryptInfo() : modus(Modus::easy) {};
 
-    crypt::Options::Crypt   options;
-    crypt::UserData         password;
+    nppcrypt::Options::Crypt   options;
+    nppcrypt::UserData         password;
     CryptHeader::HMAC       hmac;
     Modus                   modus;
 };
 
 struct RandomOptions
 {
-    RandomOptions() : length(16), restriction(crypt::UserData::Restriction::alphanum), encoding(crypt::Encoding::ascii) {};
+    RandomOptions() : length(16), restriction(nppcrypt::UserData::Restriction::alphanum), encoding(nppcrypt::Encoding::ascii) {};
     size_t                          length;
-    crypt::UserData::Restriction    restriction;
-    crypt::Encoding                 encoding;
+    nppcrypt::UserData::Restriction    restriction;
+    nppcrypt::Encoding                 encoding;
 };
 
 struct CurrentOptions
 {
     CryptInfo               crypt;
-    crypt::Options::Hash    hash;
+    nppcrypt::Options::Hash    hash;
     RandomOptions           random;
-    crypt::Options::Convert convert;
+    nppcrypt::Options::Convert convert;
 };
 
 class CPreferences
@@ -79,23 +79,23 @@ public:
     const TCHAR*            getKeyLabel(size_t i) const;
     const unsigned char*    getKey(size_t i) const;
 
-    const crypt::Options::Crypt& getDefaultEncryption() { return default_crypt; };
-    const crypt::EncodingAlphabet* getBase32Alphabet() { return &base32_alphabet; };
-    const crypt::EncodingAlphabet* getBase64Alphabet() { return &base64_alphabet; };
+    const nppcrypt::Options::Crypt& getDefaultEncryption() { return default_crypt; };
+    const nppcrypt::EncodingAlphabet* getBase32Alphabet() { return &base32_alphabet; };
+    const nppcrypt::EncodingAlphabet* getBase64Alphabet() { return &base64_alphabet; };
 
 private:
     CPreferences(CPreferences const&);
     CPreferences& operator=(CPreferences const&);
 
-    void                    writeCryptOptions(std::ofstream& f, const crypt::Options::Crypt& opt, const std::string& indent, const std::string& eol);
-    void                    parseCryptOptions(tinyxml2::XMLElement* parent, crypt::Options::Crypt& opt);
+    void                    writeCryptOptions(std::ofstream& f, const nppcrypt::Options::Crypt& opt, const std::string& indent, const std::string& eol);
+    void                    parseCryptOptions(tinyxml2::XMLElement* parent, nppcrypt::Options::Crypt& opt);
 
     std::vector<KeyPreset>  keys;
     std::wstring            filepath;
     bool                    file_loaded;
-    crypt::Options::Crypt   default_crypt;
-    crypt::EncodingAlphabet base32_alphabet;
-    crypt::EncodingAlphabet base64_alphabet;
+    nppcrypt::Options::Crypt   default_crypt;
+    nppcrypt::EncodingAlphabet base32_alphabet;
+    nppcrypt::EncodingAlphabet base64_alphabet;
 };
 
 extern CPreferences&        preferences;

@@ -25,14 +25,14 @@ class DlgInitdata : public ModalDialog
 {
 public:
                         DlgInitdata();
-    bool                doDialog(crypt::InitData* data, size_t saltlen, size_t taglen);
+    bool                doDialog(nppcrypt::InitData* data, size_t saltlen, size_t taglen);
     void                destroy();
 private:
     INT_PTR CALLBACK    run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
     bool                checkTag(bool updatedata);
     bool                checkSalt(bool updatedata);
 
-    crypt::InitData*    pdata;
+    nppcrypt::InitData*    pdata;
     size_t              saltlength;
     size_t              taglength;
     bool                invalid_salt;
