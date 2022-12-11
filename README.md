@@ -93,7 +93,7 @@ Sadly 1.0.1.6 is not backward compatible (mostly because of a changed header for
 Download repository, open nppcrypt.sln under projects/msvc2017 and compile the project "nppcrypt" or the project "cmdline" (Microsoft Visual Studio 2017 needed)
 
 
-- *Linux*:
+- *Linux & Mac*:
 ```
 git clone https://github.com/jeanpaulrichter/nppcrypt.git
 cd nppcrypt
