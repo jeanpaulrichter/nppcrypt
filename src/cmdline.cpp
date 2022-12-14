@@ -999,8 +999,10 @@ int main(int argc, char** argv)
         return app.exit(e);
     } catch (std::exception& e) {
         std::cerr << "error:" << e.what() << std::endl;
+        return 1;
     } catch (...) {
         std::cerr << "unexpected error." << std::endl;
+        return 2;
     }
     return 0;
 }

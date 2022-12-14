@@ -24,7 +24,7 @@ ifeq ($(mode),debug)
 else
 	CFLAGS += -g2 -Os -fdata-sections -ffunction-sections -DNDEBUG
 	CXXFLAGS += -g2 -Os -fdata-sections -ffunction-sections -DNDEBUG
-	LDFLAGS += -static -s
+	LDFLAGS += 
 	SUBDIR := release
 endif
 

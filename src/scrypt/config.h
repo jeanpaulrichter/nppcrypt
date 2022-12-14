@@ -1,8 +1,11 @@
 #define VERSION "1.2.1"
 
+// see https://github.com/cpredef/predef
+#if (defined(_M_IX86) || defined(__i386__) || defined(__i386) || defined(_X86_) || defined(__I86__) || defined(__INTEL__)) && !CRYPTOPP_BOOL_X32
 #define CPUSUPPORT_X86_CPUID 1
 #define CPUSUPPORT_X86_SSE2 1
 #define CPUSUPPORT_X86_AESNI 1
+#endif
 
 #define HAVE_INTTYPES_H 1
 #define HAVE_MEMORY_H 1
