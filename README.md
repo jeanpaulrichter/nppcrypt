@@ -1,6 +1,8 @@
 ## nppcrypt
 [![Build status](https://ci.appveyor.com/api/projects/status/x5fsebx1ofk0qync?svg=true)](https://ci.appveyor.com/project/jeanpaulrichter/nppcrypt)
 
+*** **Important: This software is no longer being maintained. Use at your own risk** ***
+
 encryption-tool / plugin for notepad++ (https://notepad-plus-plus.org).
 
 features: encryption/decryption with symmetric ciphers like aes. hash-functions like sha3. generation of random values (i.e. for passwords), various encoding options.
