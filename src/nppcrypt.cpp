@@ -50,6 +50,9 @@ HINSTANCE               m_hInstance;
 CurrentOptions          current;
 cryptfilemap            crypt_files;
 NppCryptFileSave        crypt_file_cursave;
+UINT_PTR                last_known_scintilla_first_line = 0;
+UINT_PTR                last_known_scintilla_pos = 0;
+UINT_PTR                last_known_scintilla_anchor = 0;
 
 DlgCrypt                dlg_crypt;
 DlgHash                 dlg_hash(current.hash);
@@ -243,7 +246,9 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
                 if (crypt_file_cursave != NppCryptFileSave::NO_ENCRYPTION) {
                     HWND hCurScintilla = help::scintilla::getCurrent();
                     ::SendMessage(hCurScintilla, SCI_UNDO, 0, 0);
-                    ::SendMessage(hCurScintilla, SCI_GOTOPOS, 0, 0);
+                    ::SendMessage(hCurScintilla, SCI_SETANCHOR, last_known_scintilla_anchor, 0);
+                    ::SendMessage(hCurScintilla, SCI_SETCURRENTPOS, last_known_scintilla_pos, 0);
+                    ::SendMessage(hCurScintilla, SCI_SETFIRSTVISIBLELINE, last_known_scintilla_first_line, last_known_scintilla_first_line);
                     ::SendMessage(hCurScintilla, SCI_EMPTYUNDOBUFFER, 0, 0);
                     ::SendMessage(hCurScintilla, SCI_SETSAVEPOINT, 0, 0);
                 }
@@ -281,6 +286,10 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
                 ::SendMessage(nppData._nppHandle, NPPM_SWITCHTOFILE, 0, (LPARAM)path.c_str());
                 HWND hCurScintilla = help::scintilla::getCurrent();
+
+                last_known_scintilla_first_line = (UINT_PTR)::SendMessage(hCurScintilla, SCI_GETFIRSTVISIBLELINE, 0, 0);
+                last_known_scintilla_pos = (UINT_PTR)::SendMessage(hCurScintilla, SCI_GETCURRENTPOS, 0, 0);
+                last_known_scintilla_anchor = (UINT_PTR)::SendMessage(hCurScintilla, SCI_GETANCHOR, 0, 0);
 
                 int data_length = (int)::SendMessage(hCurScintilla, SCI_GETLENGTH , 0, 0);
                 if (data_length <= 0) {
